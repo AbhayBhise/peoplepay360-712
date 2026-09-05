@@ -30,11 +30,17 @@ declare global {
 // of what the frontend does or doesn't show.
 export function authenticate(req: Request, _res: Response, next: NextFunction) {
   const header = req.headers.authorization;
-  if (!header?.startsWith("Bearer ")) {
+  // A direct browser navigation (e.g. a "Print PDF" link opened in a new tab) cannot set
+  // a custom Authorization header — there's no JS request in the loop to attach one. The
+  // ?token= query param is the standard fallback for exactly this case (same pattern as
+  // signed download URLs elsewhere); still requires a valid JWT, just carried differently.
+  const queryToken = typeof req.query.token === "string" ? req.query.token : undefined;
+  const token = header?.startsWith("Bearer ") ? header.slice("Bearer ".length) : queryToken;
+
+  if (!token) {
     throw ApiError.unauthorized("missing bearer token");
   }
 
-  const token = header.slice("Bearer ".length);
   try {
     const payload = jwt.verify(token, env.jwtSecret) as AuthPayload;
     req.auth = payload;
