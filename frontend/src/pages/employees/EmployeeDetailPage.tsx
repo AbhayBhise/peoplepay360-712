@@ -7,6 +7,7 @@ import {
   CircleDollarSign,
   ArrowLeft,
   Edit,
+  Trash2,
   Mail,
   Building2,
   UserCheck,
@@ -27,6 +28,7 @@ import { Badge } from '../../components/common/Badge';
 import { Card } from '../../components/common/Card';
 import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
+import { Modal } from '../../components/common/Modal';
 import { EmployeeFormModal } from './EmployeeFormModal';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -34,11 +36,13 @@ import { useToast } from '../../context/ToastContext';
 export const EmployeeDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isHRMPlus } = useAuth();
-  const { error } = useToast();
+  const { isHRMPlus, isAdmin } = useAuth();
+  const { success, error } = useToast();
 
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'contracts' | 'attendance' | 'timeoff' | 'payslips'>('overview');
 
   // Sub-view data for smart buttons
@@ -119,6 +123,21 @@ export const EmployeeDetailPage: React.FC = () => {
   const timeOffCount = employee.time_off_count ?? employee.timeOffCount ?? 0;
   const payslipsCount = employee.payslips_count ?? employee.payslipsCount ?? 0;
 
+  const handleDelete = async () => {
+    if (!id) return;
+    setIsDeleting(true);
+    try {
+      await employeesApi.deleteEmployee(id);
+      success('Employee profile removed successfully.');
+      navigate('/employees');
+    } catch (err: any) {
+      error(err.message || 'Failed to delete employee profile.');
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmOpen(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Top Header */}
@@ -136,16 +155,29 @@ export const EmployeeDetailPage: React.FC = () => {
           <span className="text-xs font-bold text-indigo-600 uppercase font-mono">Employee 360</span>
         </div>
 
-        {isHRMPlus() && (
-          <Button
-            variant="outline"
-            size="sm"
-            icon={<Edit className="w-4 h-4" />}
-            onClick={() => setIsEditModalOpen(true)}
-          >
-            Edit Profile
-          </Button>
-        )}
+        <div className="flex items-center gap-2.5">
+          {isHRMPlus() && (
+            <Button
+              variant="outline"
+              size="sm"
+              icon={<Edit className="w-4 h-4" />}
+              onClick={() => setIsEditModalOpen(true)}
+            >
+              Edit Profile
+            </Button>
+          )}
+
+          {isAdmin() && (
+            <Button
+              variant="danger"
+              size="sm"
+              icon={<Trash2 className="w-4 h-4" />}
+              onClick={() => setDeleteConfirmOpen(true)}
+            >
+              Delete Employee
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* EMPLOYEE 360 COMMAND BANNER */}
@@ -635,6 +667,45 @@ export const EmployeeDetailPage: React.FC = () => {
           setEmployee(updated);
         }}
       />
+
+      {/* Admin Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        title="Delete Employee Profile"
+        description="Are you sure you want to delete this employee record?"
+        maxWidth="sm"
+      >
+        <div className="space-y-4">
+          <div className="space-y-2 text-xs text-slate-600">
+            <p>
+              You are about to delete <strong>{employee?.name}</strong> (Employee #{employee?.id}).
+            </p>
+            <p className="text-rose-600 text-2xs bg-rose-50 p-2.5 rounded-lg border border-rose-200 font-medium">
+              This action requires System Administrator authority. Associated records, attendance logs, and contracts will be deactivated or removed per retention policies.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDeleteConfirmOpen(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleDelete}
+              isLoading={isDeleting}
+            >
+              Delete Permanently
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

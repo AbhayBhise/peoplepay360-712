@@ -26,7 +26,7 @@ import { useToast } from '../../context/ToastContext';
 export const PayrunDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isHRPUPlus, isHRPMPlus } = useAuth();
+  const { user, isHRPUPlus, isHRPMPlus } = useAuth();
   const { success, error, warning } = useToast();
 
   const [payrun, setPayrun] = useState<Payrun | null>(null);
@@ -177,17 +177,37 @@ export const PayrunDetailPage: React.FC = () => {
             </Button>
           )}
 
-          {payrun.status === 'computed' && isHRPMPlus() && (
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={<CheckCircle2 className="w-4 h-4" />}
-              onClick={handleValidate}
-              isLoading={actionLoading}
-            >
-              Validate Payrun
-            </Button>
-          )}
+          {/* Check Maker-Checker condition: same user who computed cannot validate */}
+          {payrun.status === 'computed' && isHRPMPlus() && (() => {
+            const computedByVal = payrun.computed_by ?? (payrun as any).computedBy;
+            const isMakerCheckerBlocked = Boolean(
+              computedByVal && user?.id && String(computedByVal) === String(user.id)
+            );
+
+            return (
+              <div className="relative group">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={<CheckCircle2 className="w-4 h-4" />}
+                  onClick={handleValidate}
+                  isLoading={actionLoading}
+                  disabled={isMakerCheckerBlocked}
+                  className={isMakerCheckerBlocked ? 'opacity-50 cursor-not-allowed' : ''}
+                >
+                  Validate Payrun
+                </Button>
+                {isMakerCheckerBlocked && (
+                  <div className="hidden group-hover:block absolute right-0 top-full mt-2 z-30 w-72 p-2.5 bg-slate-900 text-white text-2xs rounded-xl shadow-xl border border-slate-700">
+                    <div className="font-bold text-amber-400 mb-1 flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Maker-Checker Segregation
+                    </div>
+                    You computed this payrun. To enforce audit compliance and segregation of duties, another HR Payroll Manager or Admin must review and validate it.
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {payrun.status === 'validated' && isHRPMPlus() && (
             <Button
@@ -281,6 +301,26 @@ export const PayrunDetailPage: React.FC = () => {
           </ul>
         </div>
       )}
+
+      {/* MAKER-CHECKER COMPLIANCE BANNER */}
+      {payrun.status === 'computed' &&
+        Boolean(
+          (payrun.computed_by ?? (payrun as any).computedBy) &&
+            user?.id &&
+            String(payrun.computed_by ?? (payrun as any).computedBy) === String(user.id)
+        ) && (
+          <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-start gap-3 animate-fade-in shadow-xs">
+            <AlertTriangle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <span className="font-bold text-blue-950">
+                Maker-Checker Segregation of Duties Active
+              </span>
+              <p className="text-2xs text-blue-800 leading-relaxed">
+                You computed this payrun batch. To maintain strict financial controls and regulatory audit integrity, this batch must be validated and authorized by a different HR Payroll Manager or Administrator.
+              </p>
+            </div>
+          </div>
+        )}
 
       {/* Payrun Metadata Card */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
