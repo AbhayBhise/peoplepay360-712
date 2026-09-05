@@ -1,14 +1,18 @@
 import { Router } from "express";
-import { authenticate, requireRole, HRPU_PLUS, HRPM_PLUS } from "../../middleware/auth";
+import { authenticate, requireRole, HRM_PLUS, HRPU_PLUS, HRPM_PLUS } from "../../middleware/auth";
 import * as payrollController from "./payroll.controller";
 
 export const payrollRouter = Router();
 
 payrollRouter.use(authenticate);
 
-// Salary Structures: HRPU reads, HRPM+ writes (HRPU is explicitly read-only per the
-// problem statement's role table — docs/00_PROJECT_BRIEF.md)
-payrollRouter.get("/salary-structures", requireRole(...HRPU_PLUS), payrollController.listStructures);
+// Salary Structures: the LIST endpoint is HRM+ (not HRPU+ like the rest of this
+// resource) because Contract create/edit — an HRM+ permission per the role table —
+// requires picking a salary_structure_id (docs/02_API_CONTRACTS.md section 3). HR
+// Manager needs to read structure names for that dropdown even though they have no
+// other payroll access; the detail/rules endpoints below stay HRPU+ only so the
+// actual rule configuration (amounts, formulas) is still payroll-only.
+payrollRouter.get("/salary-structures", requireRole(...HRM_PLUS), payrollController.listStructures);
 payrollRouter.get("/salary-structures/:id", requireRole(...HRPU_PLUS), payrollController.getStructure);
 payrollRouter.post("/salary-structures", requireRole(...HRPM_PLUS), payrollController.createStructure);
 payrollRouter.put("/salary-structures/:id", requireRole(...HRPM_PLUS), payrollController.updateStructure);
