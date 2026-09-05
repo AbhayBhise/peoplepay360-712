@@ -56,6 +56,8 @@ The QA Test Plan validates the complete integration seams between database const
 | **DASH-01** | Dashboard | Employee Personal Dashboard (`/api/dashboard/me`) | Shows personal wage (`₹`), attendance health, leave quota, payslips | `EMPLOYEE` | ✅ PASS |
 | **DASH-02** | Dashboard | Management Dashboard missing payroll fields | Gracefully displays `₹0` / HR View without `undefined` | `HR_MANAGER` | ✅ PASS |
 | **DASH-03** | Dashboard | Management Dashboard full KPIs (`₹`) | Total Net Paid, Average Salary, Charts render in INR | `HRPU` / `HRPM` / `ADMIN` | ✅ PASS |
+| **DASH-04** | Dashboard | Employee dashboard shape normalization | `data.attendanceThisMonth.present` correctly normalized from `attendance.presentDays` | `EMPLOYEE` | ✅ PASS (BUG-007) |
+| **LEAVE-05** | Time Off | Live quota balance meters | Quota cards show real taken/remaining from DB allocations, not hardcoded 16/20 | All Roles | ✅ PASS (BUG-008) |
 
 ---
 

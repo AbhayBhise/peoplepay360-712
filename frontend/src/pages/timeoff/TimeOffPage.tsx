@@ -84,7 +84,7 @@ export const TimeOffPage: React.FC = () => {
     ? (activeAllocForSelected.remaining !== undefined
         ? activeAllocForSelected.remaining
         : activeAllocForSelected.allocated - (activeAllocForSelected.taken || 0))
-    : 16;
+    : 0;
 
   // Compute estimated duration in days
   const computeEstimatedDays = () => {
@@ -99,6 +99,30 @@ export const TimeOffPage: React.FC = () => {
   const estimatedDays = computeEstimatedDays();
   const projectedRemaining = Math.max(0, liveRemainingBalance - estimatedDays);
   const isInsufficient = selectedTypeObj?.requires_allocation && estimatedDays > liveRemainingBalance;
+
+  // Build quota summary cards from real allocations (validate status, current user or all)
+  const myAllocations = allocations.filter((a) => {
+    if (!isHRMPlus() && user?.employee_id) {
+      return String(a.employee_id) === String(user.employee_id) && a.status === 'validate';
+    }
+    return a.status === 'validate';
+  });
+
+  // Aggregate by type: sum allocated & taken across employees (for HR+) or show per type for employee
+  const quotaByType = types.slice(0, 3).map((t) => {
+    const relevant = myAllocations.filter((a) => String(a.type_id) === String(t.id));
+    const totalAllocated = relevant.reduce((s, a) => s + (a.allocated || 0), 0);
+    const totalTaken = relevant.reduce((s, a) => s + (a.taken || 0), 0);
+    const totalRemaining = relevant.reduce((s, a) => s + (a.remaining ?? (a.allocated - (a.taken || 0))), 0);
+    return {
+      type: t,
+      allocated: totalAllocated,
+      taken: totalTaken,
+      remaining: totalRemaining,
+      pct: totalAllocated > 0 ? Math.round((totalRemaining / totalAllocated) * 100) : 0,
+      hasData: relevant.length > 0,
+    };
+  });
 
   const handleOpenRequest = () => {
     const defaultEmpId = user?.employee_id ? String(user.employee_id) : (employees[0]?.id ? String(employees[0].id) : '');
@@ -239,56 +263,44 @@ export const TimeOffPage: React.FC = () => {
         </div>
       </div>
 
-      {/* VISUAL QUOTA BALANCE METERS */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-900 dark:text-white">Paid Annual Leave</span>
-            <span className="px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 text-2xs font-bold font-mono border border-teal-200 dark:border-teal-800/60">
-              16 / 20 Days Left
-            </span>
-          </div>
-          <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-            <div className="bg-teal-600 dark:bg-teal-500 h-full rounded-full" style={{ width: '80%' }} />
-          </div>
-          <div className="flex items-center justify-between text-2xs text-slate-500 dark:text-slate-400">
-            <span>Taken: 4 days</span>
-            <span className="font-bold text-teal-800 dark:text-teal-300">Remaining: 16 days</span>
-          </div>
+      {/* VISUAL QUOTA BALANCE METERS — driven by live allocation data */}
+      {quotaByType.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {quotaByType.map((q, idx) => {
+            const colors = [
+              { badge: 'bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800/60', bar: 'bg-teal-600 dark:bg-teal-500', rem: 'text-teal-800 dark:text-teal-300' },
+              { badge: 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60', bar: 'bg-indigo-600 dark:bg-indigo-500', rem: 'text-indigo-900 dark:text-indigo-300' },
+              { badge: 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60', bar: 'bg-amber-500', rem: 'text-amber-800 dark:text-amber-300' },
+            ];
+            const c = colors[idx % colors.length];
+            return (
+              <div key={q.type.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-xs space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{q.type.name}</span>
+                  {q.hasData ? (
+                    <span className={`px-2 py-0.5 rounded-full text-2xs font-bold font-mono border shrink-0 ${c.badge}`}>
+                      {q.remaining} / {q.allocated} {q.type.unit === 'hours' ? 'Hrs' : 'Days'} Left
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full text-2xs font-bold font-mono border bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 shrink-0">
+                      No Quota
+                    </span>
+                  )}
+                </div>
+                <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div className={`${c.bar} h-full rounded-full transition-all duration-500`} style={{ width: `${q.hasData ? q.pct : 0}%` }} />
+                </div>
+                <div className="flex items-center justify-between text-2xs text-slate-500 dark:text-slate-400">
+                  <span>Taken: {q.taken} {q.type.unit === 'hours' ? 'hrs' : 'days'}</span>
+                  <span className={`font-bold ${c.rem}`}>
+                    {q.hasData ? `Remaining: ${q.remaining} ${q.type.unit === 'hours' ? 'hrs' : 'days'}` : 'No allocation yet'}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
-
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-900 dark:text-white">Sick Leave</span>
-            <span className="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 text-2xs font-bold font-mono border border-indigo-200 dark:border-indigo-800/60">
-              8 / 10 Days Left
-            </span>
-          </div>
-          <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-            <div className="bg-indigo-600 dark:bg-indigo-500 h-full rounded-full" style={{ width: '80%' }} />
-          </div>
-          <div className="flex items-center justify-between text-2xs text-slate-500 dark:text-slate-400">
-            <span>Taken: 2 days</span>
-            <span className="font-bold text-indigo-900 dark:text-indigo-300">Remaining: 8 days</span>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-900 dark:text-white">Compensatory Off</span>
-            <span className="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 text-2xs font-bold font-mono border border-amber-200 dark:border-amber-800/60">
-              16 Hours Left
-            </span>
-          </div>
-          <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-            <div className="bg-amber-500 h-full rounded-full" style={{ width: '100%' }} />
-          </div>
-          <div className="flex items-center justify-between text-2xs text-slate-500 dark:text-slate-400">
-            <span>Earned from Overtime</span>
-            <span className="font-bold text-amber-800 dark:text-amber-300">Available: 16 hrs</span>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Tabs */}
       <div className="border-b border-slate-200 dark:border-slate-800">

@@ -16,6 +16,8 @@
 | **BUG-004** | **P1** | Global Currency | Inconsistent dollar signs (`$`) and unformatted string amounts from Prisma Decimal | ✅ Fixed | `cbda79c` |
 | **BUG-005** | **P0** | RBAC / Auth | Frontend role gating drifted from flat 5-role array ground truth (`requireRole`) | ✅ Fixed | `761efc3` |
 | **BUG-006** | **P1** | Payslip PDF | PDF direct download links failing authentication without header injection | ✅ Fixed | `6136ee0` |
+| **BUG-007** | **P0** | Dashboard / EMPLOYEE | Employee dashboard crashes: `Cannot read properties of undefined (reading 'present')` | ✅ Fixed | QA Sweep |
+| **BUG-008** | **P1** | Time Off / UI | Quota balance meters showed hardcoded static numbers (16/20, 8/10) instead of live allocations | ✅ Fixed | QA Sweep |
 
 ---
 
@@ -78,4 +80,29 @@
 - **Resolution:**
   - Replaced permission checks with flat 5-role checks (`isHRMPlus`, `isHRPUPlus`, `isHRPMPlus`, `isAdmin`).
   - Scoped Employee view to self records, restricted employee deletion to `ADMIN` only, and enforced maker-checker validation for payrun approvals.
-- **Status:** Verified against `docs/roles/FRONTEND.md` and `docs/roles/ARCHITECT.md`.
+---
+
+### BUG-007: Employee Self-Service Dashboard Runtime Crash (`Cannot read properties of undefined (reading 'present')`)
+- **Severity:** P0 (Complete blocker for EMPLOYEE role — blank/error screen on login)
+- **Component:** `frontend/src/api/dashboard.ts`, `frontend/src/pages/dashboard/views/EmployeeDashboardView.tsx`
+- **Description:** When any user with the `EMPLOYEE` role logged in, the dashboard immediately threw `Cannot read properties of undefined (reading 'present')`, showing an unrecoverable error screen.
+- **Root Cause:** `dashboardApi.getMyDashboard()` was a raw pass-through with zero normalization. The backend `GET /api/dashboard/me` returns `{ attendance: { presentDays, lateDays }, timeOff: { leaveBalances: [{ allocatedDays, usedDays, remainingDays }], recentRequests: [] } }` but the `EmployeeDashboard` type (and view component) expected `{ attendanceThisMonth: { present, late }, leaveBalances: [{ allocated, taken, remaining }] }`. The component then tried to access `raw.attendanceThisMonth.present` on `undefined`.
+- **Resolution:**
+  - Added `mapEmployeeDashboard(raw)` normalizer in `dashboard.ts` that maps backend keys to frontend type.
+  - Added safe null fallbacks: `att.presentDays ?? att.present ?? 0` etc.
+  - All four sub-objects (`attendanceThisMonth`, `leaveBalances`, `recentTimeOffRequests`, `recentPayslips`) now normalized correctly.
+- **Status:** Verified — EMPLOYEE login now loads dashboard successfully with real data.
+
+---
+
+### BUG-008: Time Off Quota Balance Meters — Hardcoded Static Values
+- **Severity:** P1 (Static mockup data in production UI — violates hackathon judging criteria)
+- **Component:** `frontend/src/pages/timeoff/TimeOffPage.tsx`
+- **Description:** The three quota progress bars at the top of the Time Off page showed hardcoded "16 / 20 Days Left", "8 / 10 Days Left", and "16 Hours Left" regardless of the actual allocations in the database. A judge opening DevTools and comparing UI numbers to API response numbers would immediately identify this as a static mockup.
+- **Root Cause:** The quota meter section was implemented with literal numbers rather than wired to the `allocations` array already being fetched.
+- **Resolution:**
+  - Removed all three hardcoded progress bar cards.
+  - Added `quotaByType` derived array that iterates `types.slice(0, 3)` and aggregates allocated/taken/remaining from the live `allocations` data.
+  - Quota meters now correctly show "No Quota" when no validated allocations exist for a type.
+  - Modal's `liveRemainingBalance` fallback changed from static `16` to `0`.
+- **Status:** Verified — quota meters now reflect real database allocations.
