@@ -78,41 +78,24 @@ export const dashboardApi = {
       return raw;
     } catch {
       return {
-        employee: {
-          id: 1,
-          name: 'Sarah Jenkins',
-          jobPosition: 'Lead Engineer',
-          departmentName: 'Engineering & Product',
-          workingScheduleName: 'Standard 40h Full-Time',
-          weeklyHours: 40,
+        attendanceThisMonth: {
+          present: 21,
+          late: 1,
+          missingCheckouts: 0,
+          totalDays: 22,
         },
-        contract: {
-          id: 1,
-          wage: 6500,
-          position: 'Lead Engineer',
-          salaryStructureName: 'Executive & Management Structure',
-          startDate: '2025-01-01',
-          endDate: null,
-        },
-        attendance: {
-          presentDays: 21,
-          lateDays: 1,
-          totalHours: 176,
-          healthPct: 98,
-        },
-        timeOff: {
-          leaveBalances: [
-            { typeId: 1, typeName: 'Paid Time Off', unit: 'days', allocatedDays: 20, usedDays: 4, remainingDays: 16 },
-            { typeId: 2, typeName: 'Sick Leave', unit: 'days', allocatedDays: 10, usedDays: 1, remainingDays: 9 },
-          ],
-          pendingRequests: 0,
-          approvedRequests: 2,
-          recentRequests: [
-            { id: 101, typeName: 'Paid Time Off', dateFrom: '2026-08-10', dateTo: '2026-08-14', durationDays: 4, status: 'validate' },
-          ],
-        },
+        leaveBalances: [
+          { typeName: 'Paid Time Off', allocated: 20, taken: 4, remaining: 16 },
+          { typeName: 'Sick Leave', allocated: 10, taken: 1, remaining: 9 },
+          { typeName: 'Casual Leave', allocated: 5, taken: 0, remaining: 5 },
+        ],
+        recentTimeOffRequests: [
+          { typeName: 'Paid Time Off', dateFrom: '2026-08-10', dateTo: '2026-08-14', duration: 4, status: 'validate' },
+          { typeName: 'Sick Leave', dateFrom: '2026-07-22', dateTo: '2026-07-22', duration: 1, status: 'validate' },
+        ],
         recentPayslips: [
-          { id: 501, payrunId: 1, periodStart: '2026-08-01', periodEnd: '2026-08-31', status: 'paid', basic: 6000, gross: 7200, net: 6480 },
+          { id: 501, net: 64800, status: 'paid', createdAt: '2026-08-31' },
+          { id: 488, net: 64800, status: 'paid', createdAt: '2026-07-31' },
         ],
       };
     }

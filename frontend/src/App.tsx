@@ -6,6 +6,7 @@ import { AppLayout } from './components/layout/AppLayout';
 import { PageLoader, RouteFallbackLoader } from './components/common/PageLoader';
 
 // Lazy-loaded route components for high performance and code-splitting
+const LandingPage = lazy(() => import('./pages/landing/LandingPage').then((m) => ({ default: m.LandingPage })));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
 const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const EmployeesPage = lazy(() => import('./pages/employees/EmployeesPage').then((m) => ({ default: m.EmployeesPage })));
@@ -59,6 +60,9 @@ export const App: React.FC = () => {
         <BrowserRouter>
           <Suspense fallback={<PageLoader />}>
             <Routes>
+              {/* Public Landing Page */}
+              <Route path="/" element={<LandingPage />} />
+
               {/* Public Login Route */}
               <Route
                 path="/login"
@@ -71,30 +75,30 @@ export const App: React.FC = () => {
 
               {/* Protected App Routes */}
               <Route
-                path="/"
                 element={
                   <ProtectedRoute>
                     <AppLayout />
                   </ProtectedRoute>
                 }
               >
-                <Route index element={<Navigate to="/dashboard" replace />} />
-                <Route path="dashboard" element={<DashboardPage />} />
-                <Route path="employees" element={<EmployeesPage />} />
-                <Route path="employees/:id" element={<EmployeeDetailPage />} />
-                <Route path="departments" element={<DepartmentsPage />} />
-                <Route path="contracts" element={<ContractsPage />} />
-                <Route path="working-schedules" element={<WorkingSchedulesPage />} />
-                <Route path="attendance" element={<AttendancePage />} />
-                <Route path="time-off" element={<TimeOffPage />} />
-                <Route path="payroll/payruns" element={<PayrunsPage />} />
-                <Route path="payroll/payruns/:id" element={<PayrunDetailPage />} />
-                <Route path="payroll/payslips" element={<AllPayslipsPage />} />
-                <Route path="payroll/payslips/:id" element={<PayslipDetailPage />} />
-                <Route path="payroll/salary-structures" element={<SalaryStructuresPage />} />
-                <Route path="reports" element={<ReportsPage />} />
-                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/employees" element={<EmployeesPage />} />
+                <Route path="/employees/:id" element={<EmployeeDetailPage />} />
+                <Route path="/departments" element={<DepartmentsPage />} />
+                <Route path="/contracts" element={<ContractsPage />} />
+                <Route path="/working-schedules" element={<WorkingSchedulesPage />} />
+                <Route path="/attendance" element={<AttendancePage />} />
+                <Route path="/time-off" element={<TimeOffPage />} />
+                <Route path="/payroll/payruns" element={<PayrunsPage />} />
+                <Route path="/payroll/payruns/:id" element={<PayrunDetailPage />} />
+                <Route path="/payroll/payslips" element={<AllPayslipsPage />} />
+                <Route path="/payroll/payslips/:id" element={<PayslipDetailPage />} />
+                <Route path="/payroll/salary-structures" element={<SalaryStructuresPage />} />
+                <Route path="/reports" element={<ReportsPage />} />
               </Route>
+
+              {/* Catch-all fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
         </BrowserRouter>

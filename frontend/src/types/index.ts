@@ -233,57 +233,30 @@ export interface AttendanceOverview {
 }
 
 export interface EmployeeDashboard {
-  employee: {
-    id: number | string;
-    name: string;
-    jobPosition?: string;
-    departmentName?: string;
-    workingScheduleName?: string;
-    weeklyHours: number;
-  } | null;
-  contract: {
-    id: number | string;
-    wage: number;
-    position: string;
-    salaryStructureName?: string;
-    startDate: string;
-    endDate: string | null;
-  } | null;
-  attendance: {
-    presentDays: number;
-    lateDays: number;
-    totalHours: number;
-    healthPct: number;
+  attendanceThisMonth: {
+    present: number;
+    late: number;
+    missingCheckouts: number;
+    totalDays: number;
   };
-  timeOff: {
-    leaveBalances: Array<{
-      typeId: number | string;
-      typeName: string;
-      unit: string;
-      allocatedDays: number;
-      usedDays: number;
-      remainingDays: number;
-    }>;
-    pendingRequests: number;
-    approvedRequests: number;
-    recentRequests: Array<{
-      id: number | string;
-      typeName: string;
-      dateFrom: string;
-      dateTo: string;
-      durationDays: number;
-      status: string;
-    }>;
-  };
+  leaveBalances: Array<{
+    typeName: string;
+    allocated: number;
+    taken: number;
+    remaining: number;
+  }>;
+  recentTimeOffRequests: Array<{
+    typeName: string;
+    dateFrom: string;
+    dateTo: string;
+    duration: number;
+    status: string;
+  }>;
   recentPayslips: Array<{
     id: number | string;
-    payrunId: number | string;
-    periodStart: string;
-    periodEnd: string;
+    net: number | string;
     status: string;
-    basic: number;
-    gross: number;
-    net: number;
+    createdAt?: string;
   }>;
 }
 

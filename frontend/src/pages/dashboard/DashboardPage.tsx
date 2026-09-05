@@ -13,6 +13,8 @@ import {
   ArrowUpRight,
   ArrowRight,
   Sparkles,
+  AlertCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboard';
 import { departmentsApi } from '../../api/departments';
@@ -56,11 +58,31 @@ export const DashboardPage: React.FC = () => {
     setLoading(true);
     try {
       if (!isHRMPlus()) {
-        // Employee-only role: fetch personal workspace metrics from /api/dashboard/me
+        // 1. Employee: Only call GET /api/dashboard/me (all HRM+ endpoints 403 for employee)
         const myData = await dashboardApi.getMyDashboard();
         setEmployeeDashboard(myData);
+      } else if (!isHRPUPlus()) {
+        // 2. HR Manager: Call summary, attendance-overview, alerts (salary charts 403 for HR Manager)
+        const filters = {
+          period_start: periodStart || undefined,
+          period_end: periodEnd || undefined,
+          department_id: departmentId ? Number(departmentId) : undefined,
+          employee_type: employeeType || undefined,
+        };
+
+        const [sum, depts, att, alertList] = await Promise.all([
+          dashboardApi.getSummary(filters).catch(() => null),
+          departmentsApi.getDepartments().catch(() => []),
+          dashboardApi.getAttendanceOverview(filters).catch(() => null),
+          dashboardApi.getAlerts().catch(() => []),
+        ]);
+
+        setSummary(sum);
+        setDepartments(depts || []);
+        setAttendanceOverview(att);
+        setAlerts(alertList || []);
       } else {
-        // HRM+ management roles
+        // 3. HR Payroll User / Manager / Admin: Full access to all endpoints
         const filters = {
           period_start: periodStart || undefined,
           period_end: periodEnd || undefined,
@@ -95,39 +117,35 @@ export const DashboardPage: React.FC = () => {
     loadDashboard();
   }, [periodStart, periodEnd, departmentId, employeeType, user]);
 
-  const userName = user?.name || user?.email?.split('@')[0] || 'Team';
-  const primaryRole = user?.roles?.[0] || 'User';
+  const userName = user?.name || user?.email?.split('@')[0] || 'Team Member';
+  const primaryRole = user?.roles?.[0] || 'EMPLOYEE';
 
   return (
     <div className="space-y-6 animate-fade-in">
       {!isHRMPlus() ? (
-        /* ================= EMPLOYEE SELF-SERVICE PERSONAL DASHBOARD ================= */
+        /* ========================================================================= */
+        /* 1. EMPLOYEE PERSONAL WORKSPACE (GET /api/dashboard/me)                    */
+        /* ========================================================================= */
         <>
-          {/* Employee Welcome Banner */}
+          {/* Employee Welcome Header */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-linear-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 rounded-3xl border border-slate-800 shadow-xl">
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-2xs font-bold font-mono">
-                  EMPLOYEE WORKSPACE
+                <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-2xs font-bold font-mono uppercase tracking-wider">
+                  Employee Self-Service Hub
                 </span>
                 <span className="text-slate-500">·</span>
-                <span className="text-2xs text-slate-300 font-medium">
-                  {employeeDashboard?.employee?.jobPosition || 'Team Member'}
-                </span>
+                <span className="text-2xs text-slate-300 font-medium">Role: {primaryRole}</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                Welcome back, {employeeDashboard?.employee?.name || userName}
+                Welcome back, {userName}
               </h1>
-              <p className="text-xs text-slate-300 flex items-center gap-2">
-                <Building2 className="w-3.5 h-3.5 text-teal-400" />
-                <span>{employeeDashboard?.employee?.departmentName || 'General Workforce'}</span>
-                <span>·</span>
-                <Clock className="w-3.5 h-3.5 text-indigo-400" />
-                <span>{employeeDashboard?.employee?.workingScheduleName || 'Standard Full-Time'}</span>
+              <p className="text-xs text-slate-300">
+                Personal overview of your attendance activity, leave quota balances, and salary statements
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2.5">
               <Button
                 variant="outline"
                 size="sm"
@@ -135,7 +153,7 @@ export const DashboardPage: React.FC = () => {
                 className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs cursor-pointer"
                 icon={<Clock className="w-4 h-4" />}
               >
-                Punch Attendance
+                Log Punch
               </Button>
               <Button
                 variant="primary"
@@ -144,99 +162,99 @@ export const DashboardPage: React.FC = () => {
                 className="bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs cursor-pointer"
                 icon={<CalendarDays className="w-4 h-4 text-slate-950" />}
               >
-                Request Time Off
+                Request Leave
               </Button>
             </div>
           </div>
 
           {loading ? (
-            <Spinner label="Loading your personal workforce intelligence..." />
+            <Spinner label="Loading your personal dashboard..." />
           ) : (
             <>
-              {/* Employee Personal 4 KPIs */}
+              {/* Employee 4 Metric Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* 1. Monthly Wage */}
+                {/* 1. Present Days */}
                 <div className="bg-white/95 rounded-2xl border border-slate-200/80 border-t-4 border-t-emerald-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift">
                   <div className="flex items-center justify-between">
-                    <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Current Base Wage</span>
+                    <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Present This Month</span>
                     <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-100">
-                      <CircleDollarSign className="w-4 h-4" />
+                      <CheckCircle2 className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="mt-3">
                     <div className="text-2xl font-extrabold text-slate-900 font-financial tracking-tight">
-                      {formatCurrency(employeeDashboard?.contract?.wage || 0)}
+                      {employeeDashboard?.attendanceThisMonth.present ?? 0} Days
                     </div>
                     <div className="text-2xs text-emerald-700 font-semibold mt-1">
-                      {employeeDashboard?.contract?.salaryStructureName || 'Standard Active Contract'}
+                      Out of {employeeDashboard?.attendanceThisMonth.totalDays ?? 0} scheduled working days
                     </div>
                   </div>
                 </div>
 
-                {/* 2. Attendance Health */}
-                <div className="bg-white/95 rounded-2xl border border-slate-200/80 border-t-4 border-t-sky-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift">
+                {/* 2. Late Arrivals */}
+                <div className="bg-white/95 rounded-2xl border border-slate-200/80 border-t-4 border-t-amber-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift">
                   <div className="flex items-center justify-between">
-                    <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Attendance Health</span>
-                    <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center border border-sky-100">
-                      <HeartPulse className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    <div className="text-2xl font-extrabold text-slate-900 font-financial tracking-tight">
-                      {employeeDashboard?.attendance.healthPct ?? 100}%
-                    </div>
-                    <div className="text-2xs text-sky-700 font-semibold mt-1">
-                      {employeeDashboard?.attendance.presentDays ?? 0} Present · {employeeDashboard?.attendance.lateDays ?? 0} Late
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3. Hours Worked */}
-                <div className="bg-white/95 rounded-2xl border border-slate-200/80 border-t-4 border-t-indigo-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift">
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Monthly Hours</span>
-                    <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
+                    <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Late Entries</span>
+                    <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-100">
                       <Clock className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="mt-3">
                     <div className="text-2xl font-extrabold text-slate-900 font-financial tracking-tight">
-                      {employeeDashboard?.attendance.totalHours ?? 0} hrs
+                      {employeeDashboard?.attendanceThisMonth.late ?? 0}
                     </div>
-                    <div className="text-2xs text-indigo-700 font-semibold mt-1">
-                      Schedule: {employeeDashboard?.employee?.weeklyHours ?? 40} hrs / week
+                    <div className="text-2xs text-amber-700 font-semibold mt-1">
+                      Late punch-ins this month
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Missing Check-Outs */}
+                <div className="bg-white/95 rounded-2xl border border-slate-200/80 border-t-4 border-t-rose-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift">
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Missing Check-Outs</span>
+                    <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center border border-rose-100">
+                      <AlertCircle className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <div className="text-2xl font-extrabold text-slate-900 font-financial tracking-tight">
+                      {employeeDashboard?.attendanceThisMonth.missingCheckouts ?? 0}
+                    </div>
+                    <div className="text-2xs text-rose-700 font-semibold mt-1">
+                      Punches awaiting sign-out
                     </div>
                   </div>
                 </div>
 
                 {/* 4. Total Remaining Leaves */}
-                <div className="bg-white/95 rounded-2xl border border-slate-200/80 border-t-4 border-t-amber-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift">
+                <div className="bg-white/95 rounded-2xl border border-slate-200/80 border-t-4 border-t-teal-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift">
                   <div className="flex items-center justify-between">
-                    <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Remaining Leaves</span>
-                    <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-100">
+                    <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Remaining Leave Quota</span>
+                    <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-100">
                       <CalendarDays className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="mt-3">
                     <div className="text-2xl font-extrabold text-slate-900 font-financial tracking-tight">
-                      {(employeeDashboard?.timeOff.leaveBalances || []).reduce((acc, b) => acc + b.remainingDays, 0)} Days
+                      {(employeeDashboard?.leaveBalances || []).reduce((acc, b) => acc + (b.remaining || 0), 0)} Days
                     </div>
-                    <div className="text-2xs text-amber-700 font-semibold mt-1">
-                      Across {employeeDashboard?.timeOff.leaveBalances.length || 0} Leave Quotas
+                    <div className="text-2xs text-teal-700 font-semibold mt-1">
+                      Across {employeeDashboard?.leaveBalances.length || 0} leave types
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Employee 2-Column Details */}
+              {/* Employee 2-Column Section: Leaves & Payslips */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Left: Leave Quotas & Recent Requests */}
+                {/* Left: Leave Balances & Recent Requests */}
                 <div className="lg:col-span-6 bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-6">
                   <div>
                     <div className="flex items-center justify-between">
                       <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
                         <CalendarDays className="w-4 h-4 text-teal-600" />
-                        <span>My Leave Quota Allocations</span>
+                        <span>Leave Balances & Allocations</span>
                       </h3>
                       <Button
                         variant="outline"
@@ -244,27 +262,31 @@ export const DashboardPage: React.FC = () => {
                         onClick={() => navigate('/time-off')}
                         className="text-2xs py-1 cursor-pointer"
                       >
-                        Request Leave
+                        Request Time Off
                       </Button>
                     </div>
-                    <p className="text-2xs text-slate-500 mt-0.5">Real-time allocated vs consumed balance</p>
+                    <p className="text-2xs text-slate-500 mt-0.5">Live remaining days vs allocated quota</p>
                   </div>
 
-                  {(!employeeDashboard?.timeOff.leaveBalances || employeeDashboard.timeOff.leaveBalances.length === 0) ? (
+                  {(!employeeDashboard?.leaveBalances || employeeDashboard.leaveBalances.length === 0) ? (
                     <div className="p-6 text-center text-xs text-slate-400 border border-dashed rounded-xl">
-                      No leave allocations assigned.
+                      No leave balances allocated yet.
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      {employeeDashboard.timeOff.leaveBalances.map((bal) => {
-                        const pct = bal.allocatedDays > 0 ? Math.round((bal.usedDays / bal.allocatedDays) * 100) : 0;
+                    <div className="space-y-3.5">
+                      {employeeDashboard.leaveBalances.map((bal) => {
+                        const pct = bal.allocated > 0 ? Math.round((bal.taken / bal.allocated) * 100) : 0;
                         return (
-                          <div key={bal.typeId} className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/80 space-y-2">
+                          <div key={bal.typeName} className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/80 space-y-2">
                             <div className="flex items-center justify-between text-xs">
                               <span className="font-bold text-slate-900">{bal.typeName}</span>
                               <div className="flex items-center gap-2">
-                                <span className="font-financial font-extrabold text-teal-700">{bal.remainingDays} {bal.unit} remaining</span>
-                                <span className="text-2xs text-slate-400 font-medium">({bal.usedDays} used / {bal.allocatedDays} total)</span>
+                                <span className="font-financial font-extrabold text-teal-700">
+                                  {bal.remaining} days left
+                                </span>
+                                <span className="text-2xs text-slate-400 font-medium">
+                                  ({bal.taken} taken / {bal.allocated} allocated)
+                                </span>
                               </div>
                             </div>
                             <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
@@ -280,17 +302,19 @@ export const DashboardPage: React.FC = () => {
                   )}
 
                   {/* Recent Time Off Requests */}
-                  {employeeDashboard?.timeOff.recentRequests && employeeDashboard.timeOff.recentRequests.length > 0 && (
+                  {employeeDashboard?.recentTimeOffRequests && employeeDashboard.recentTimeOffRequests.length > 0 && (
                     <div className="pt-4 border-t border-slate-100 space-y-3">
                       <div className="text-2xs font-bold uppercase tracking-wider text-slate-400">
                         Recent Leave Applications
                       </div>
                       <div className="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
-                        {employeeDashboard.timeOff.recentRequests.map((r) => (
-                          <div key={r.id} className="p-3 flex items-center justify-between text-xs bg-white hover:bg-slate-50">
+                        {employeeDashboard.recentTimeOffRequests.map((r, idx) => (
+                          <div key={idx} className="p-3 flex items-center justify-between text-xs bg-white hover:bg-slate-50">
                             <div>
                               <div className="font-bold text-slate-800">{r.typeName}</div>
-                              <div className="text-2xs text-slate-500 font-mono">{r.dateFrom} to {r.dateTo} ({r.durationDays} days)</div>
+                              <div className="text-2xs text-slate-500 font-mono">
+                                {r.dateFrom} to {r.dateTo} ({r.duration} days)
+                              </div>
                             </div>
                             <Badge variant={r.status === 'validate' ? 'validate' : r.status === 'refused' ? 'refused' : 'draft'}>
                               {r.status === 'validate' ? 'Approved' : r.status === 'refused' ? 'Refused' : 'Pending'}
@@ -316,10 +340,10 @@ export const DashboardPage: React.FC = () => {
                         onClick={() => navigate('/payroll/payslips')}
                         className="text-2xs py-1 cursor-pointer"
                       >
-                        View All
+                        All Payslips
                       </Button>
                     </div>
-                    <p className="text-2xs text-slate-500 mt-0.5">Disbursed salary statements with downloadable PDFs</p>
+                    <p className="text-2xs text-slate-500 mt-0.5">Your personal net disbursements with PDF downloads</p>
                   </div>
 
                   {(!employeeDashboard?.recentPayslips || employeeDashboard.recentPayslips.length === 0) ? (
@@ -335,15 +359,16 @@ export const DashboardPage: React.FC = () => {
                         >
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-slate-900 text-xs">Period: {ps.periodStart} → {ps.periodEnd}</span>
+                              <span className="font-mono font-bold text-slate-900 text-xs">Payslip #{ps.id}</span>
                               <Badge variant={ps.status === 'paid' ? 'paid' : ps.status === 'validated' ? 'validated' : 'computed'}>
                                 {ps.status}
                               </Badge>
                             </div>
-                            <div className="text-xs text-slate-500 mt-1 flex items-center gap-3">
-                              <span>Gross: <strong className="text-slate-700">{formatCurrency(ps.gross)}</strong></span>
-                              <span>·</span>
-                              <span>Net: <strong className="text-emerald-700 font-financial">{formatCurrency(ps.net)}</strong></span>
+                            <div className="text-xs text-slate-500 mt-1 flex items-center gap-2">
+                              <span>Net Salary:</span>
+                              <span className="font-financial font-extrabold text-emerald-700 text-sm">
+                                {formatCurrency(ps.net)}
+                              </span>
                             </div>
                           </div>
 
@@ -354,7 +379,7 @@ export const DashboardPage: React.FC = () => {
                             className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-2xs shadow-xs flex items-center gap-1.5 transition-colors shrink-0"
                           >
                             <ArrowUpRight className="w-3.5 h-3.5" />
-                            <span>PDF</span>
+                            <span>Download PDF</span>
                           </a>
                         </div>
                       ))}
@@ -366,14 +391,16 @@ export const DashboardPage: React.FC = () => {
           )}
         </>
       ) : (
-        /* ================= HRM+ / MANAGEMENT COMMAND CENTER ================= */
+        /* ========================================================================= */
+        /* 2. MANAGEMENT COMMAND CENTER (HR Manager vs HR Payroll / Admin)           */
+        /* ========================================================================= */
         <>
-          {/* 1. COMMAND BRIEFING HEADER & GLOBAL FILTER */}
+          {/* Header & Global Filters */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-2xs font-bold font-mono">
-                  WORKFORCE COMMAND CENTER
+                  {isHRPUPlus() ? 'PAYROLL & WORKFORCE COMMAND CENTER' : 'HR WORKFORCE OPERATIONS'}
                 </span>
                 <span className="text-slate-300">·</span>
                 <span className="text-2xs text-slate-500 font-medium">Role: <strong>{primaryRole}</strong></span>
@@ -382,7 +409,9 @@ export const DashboardPage: React.FC = () => {
                 Good day, {userName}
               </h1>
               <p className="text-xs text-slate-500">
-                Live operational intelligence across employee contracts, daily attendance, and payroll computation
+                {isHRPUPlus()
+                  ? 'Live operational intelligence across employee contracts, daily attendance, and payroll computation'
+                  : 'Live employee headcount, daily attendance monitoring, and leave management'}
               </p>
             </div>
 
@@ -438,7 +467,7 @@ export const DashboardPage: React.FC = () => {
             <Spinner label="Aggregating live command center data..." />
           ) : (
             <>
-              {/* 2. ACTION CENTER — WHAT NEEDS ATTENTION TODAY */}
+              {/* Action Center Alerts */}
               <div className="bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 rounded-2xl p-6 text-white shadow-lg border border-slate-800">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
@@ -450,7 +479,9 @@ export const DashboardPage: React.FC = () => {
                         Action Center & Operational Readiness
                       </h3>
                       <p className="text-2xs text-slate-300">
-                        High-priority tasks requiring HR or Payroll action before period finalization
+                        {isHRPUPlus()
+                          ? 'High-priority tasks requiring HR or Payroll action before period finalization'
+                          : 'High-priority attendance and leave items requiring HR review'}
                       </p>
                     </div>
                   </div>
@@ -499,7 +530,7 @@ export const DashboardPage: React.FC = () => {
                     </Button>
                   </div>
 
-                  {/* Actionable Alert 3: Payrun Validation */}
+                  {/* Actionable Alert 3: Payrun Validation (Payroll roles only) */}
                   {isHRPUPlus() && (
                     <div className="bg-white/10 backdrop-blur-xs p-3.5 rounded-xl border border-white/15 flex items-start justify-between gap-3 hover:bg-white/15 transition-all">
                       <div className="min-w-0">
@@ -524,7 +555,7 @@ export const DashboardPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* 3. PAYROLL HEALTH PROGRESSION STEPPER */}
+              {/* Lifecycle Stepper (Payroll roles only) */}
               {isHRPUPlus() && (
                 <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
                   <div className="flex items-center justify-between mb-3">
@@ -587,213 +618,307 @@ export const DashboardPage: React.FC = () => {
                 </div>
               )}
 
-              {/* 4. FIVE CORE KPI METRIC CARDS */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                {/* KPI 1: Total Net Paid */}
-                <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 border-t-4 border-t-emerald-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default animate-slide-up stagger-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Total Net Paid</span>
-                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-100 shadow-2xs">
-                      <CircleDollarSign className="w-4 h-4" />
+              {/* KPI Cards Section */}
+              {isHRPUPlus() ? (
+                /* Full 5 KPI Cards for HR Payroll User / Manager / Admin */
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                  {/* KPI 1: Total Net Paid */}
+                  <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 border-t-4 border-t-emerald-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift">
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Total Net Paid</span>
+                      <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-100">
+                        <CircleDollarSign className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <div className="text-2xl font-extrabold text-slate-900 font-financial tracking-tight">
+                        {formatCurrency(summary?.total_net_paid ?? 0)}
+                      </div>
+                      <div className="text-2xs text-emerald-700 font-semibold mt-1 flex items-center gap-1">
+                        <TrendingUp className="w-3 h-3" /> Disbursed Net Payroll
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-3">
-                    <div className="text-2xl font-extrabold text-slate-900 font-financial tracking-tight">
-                      {isHRPUPlus() ? formatCurrency(summary?.total_net_paid ?? 0) : 'HR View'}
+
+                  {/* KPI 2: Payslips Generated */}
+                  <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 border-t-4 border-t-indigo-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift">
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Payslips Generated</span>
+                      <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
+                        <FileSpreadsheet className="w-4 h-4" />
+                      </div>
                     </div>
-                    <div className="text-2xs text-emerald-700 font-semibold mt-1 flex items-center gap-1">
-                      <TrendingUp className="w-3 h-3" /> {isHRPUPlus() ? 'Disbursed Net Payroll' : 'Payroll Restricted'}
+                    <div className="mt-3">
+                      <div className="text-2xl font-extrabold text-slate-900 font-financial tracking-tight">
+                        {summary?.payslips_generated ?? 0}
+                      </div>
+                      <div className="text-2xs text-indigo-700 font-semibold mt-1">
+                        Batched Line Items
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* KPI 3: Average Salary */}
+                  <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 border-t-4 border-t-teal-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift">
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Average Salary</span>
+                      <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-100">
+                        <TrendingUp className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <div className="text-2xl font-extrabold text-slate-900 font-financial tracking-tight">
+                        {formatCurrency(summary?.average_salary ?? 0)}
+                      </div>
+                      <div className="text-2xs text-teal-700 font-semibold mt-1">
+                        Mean Contract Wage
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* KPI 4: Approved Time Off */}
+                  <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 border-t-4 border-t-amber-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift">
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Approved Leaves</span>
+                      <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-100">
+                        <CalendarDays className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <div className="text-2xl font-extrabold text-slate-900 font-financial tracking-tight">
+                        {summary?.approved_time_off_count ?? 0} Days
+                      </div>
+                      <div className="text-2xs text-amber-700 font-semibold mt-1">
+                        Validated Requests
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* KPI 5: Attendance Health */}
+                  <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 border-t-4 border-t-sky-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift">
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Attendance Health</span>
+                      <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center border border-sky-100">
+                        <HeartPulse className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <div className="text-2xl font-extrabold text-slate-900 font-financial tracking-tight">
+                        {summary?.attendance_health_pct ?? 100}%
+                      </div>
+                      <div className="text-2xs text-sky-700 font-semibold mt-1">
+                        On-Time Punch Ratio
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                {/* KPI 2: Payslips Generated */}
-                <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 border-t-4 border-t-indigo-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default animate-slide-up stagger-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Payslips Generated</span>
-                    <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-2xs">
-                      <FileSpreadsheet className="w-4 h-4" />
+              ) : (
+                /* HR Manager: ONLY 2 Non-Payroll KPI Cards (Approved Leaves & Attendance Health) */
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* HR KPI 1: Approved Time Off */}
+                  <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 border-t-4 border-t-amber-500 p-6 shadow-xs flex flex-col justify-between hover-card-lift">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Approved Leave Requests</span>
+                        <div className="text-3xl font-extrabold text-slate-900 font-financial tracking-tight mt-2">
+                          {summary?.approved_time_off_count ?? 0} Days
+                        </div>
+                      </div>
+                      <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-100 shadow-2xs">
+                        <CalendarDays className="w-6 h-6" />
+                      </div>
+                    </div>
+                    <div className="text-xs text-amber-700 font-semibold mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                      <span>Validated Employee Leaves</span>
+                      <Button variant="outline" size="sm" onClick={() => navigate('/time-off')} className="text-2xs py-1">
+                        Review All
+                      </Button>
                     </div>
                   </div>
-                  <div className="mt-3">
-                    <div className="text-2xl font-extrabold text-slate-900 font-financial tracking-tight">
-                      {isHRPUPlus() ? (summary?.payslips_generated ?? 0) : '—'}
+
+                  {/* HR KPI 2: Attendance Health */}
+                  <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 border-t-4 border-t-sky-500 p-6 shadow-xs flex flex-col justify-between hover-card-lift">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Attendance Health & Ratio</span>
+                        <div className="text-3xl font-extrabold text-slate-900 font-financial tracking-tight mt-2">
+                          {summary?.attendance_health_pct ?? 100}%
+                        </div>
+                      </div>
+                      <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-700 flex items-center justify-center border border-sky-100 shadow-2xs">
+                        <HeartPulse className="w-6 h-6" />
+                      </div>
                     </div>
-                    <div className="text-2xs text-indigo-700 font-semibold mt-1">
-                      {isHRPUPlus() ? 'Batched Line Items' : 'Payroll Role Only'}
+                    <div className="text-xs text-sky-700 font-semibold mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                      <span>On-Time Shift Attendance</span>
+                      <Button variant="outline" size="sm" onClick={() => navigate('/attendance')} className="text-2xs py-1">
+                        Punch Logs
+                      </Button>
                     </div>
                   </div>
                 </div>
+              )}
 
-                {/* KPI 3: Average Salary */}
-                <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 border-t-4 border-t-teal-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default animate-slide-up stagger-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Average Salary</span>
-                    <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-100 shadow-2xs">
-                      <TrendingUp className="w-4 h-4" />
+              {/* Charts & Breakdown Section */}
+              {isHRPUPlus() ? (
+                /* Full Financial Breakdown for Payroll Roles */
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* Left: Department Salary Expenditure */}
+                  <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                          <Building2 className="w-4 h-4 text-indigo-600" />
+                          <span>Department Salary Expenditure & Headcount</span>
+                        </h3>
+                        <p className="text-2xs text-slate-500 mt-0.5">
+                          Live department payroll expenses and workforce distribution
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="mt-3">
-                    <div className="text-2xl font-extrabold text-slate-900 font-financial tracking-tight">
-                      {isHRPUPlus() ? formatCurrency(summary?.average_salary ?? 0) : 'HR View'}
-                    </div>
-                    <div className="text-2xs text-teal-700 font-semibold mt-1">
-                      {isHRPUPlus() ? 'Mean Contract Wage' : 'Payroll Restricted'}
-                    </div>
-                  </div>
-                </div>
 
-                {/* KPI 4: Approved Time Off */}
-                <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 border-t-4 border-t-amber-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default animate-slide-up stagger-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Approved Leaves</span>
-                    <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-100 shadow-2xs">
-                      <CalendarDays className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    <div className="text-2xl font-extrabold text-slate-900 font-financial tracking-tight">
-                      {summary?.approved_time_off_count ?? 0} Days
-                    </div>
-                    <div className="text-2xs text-amber-700 font-semibold mt-1">
-                      Validated Requests
-                    </div>
-                  </div>
-                </div>
+                    {salaryByDept.length === 0 ? (
+                      <div className="p-8 text-center text-xs text-slate-400 border border-dashed rounded-xl">
+                        No department salary data available.
+                      </div>
+                    ) : (
+                      <div className="space-y-3.5 pt-1">
+                        {salaryByDept.map((dept) => {
+                          const maxVal = Math.max(...salaryByDept.map((d) => d.total_salary), 1);
+                          const pct = Math.round((dept.total_salary / maxVal) * 100);
 
-                {/* KPI 5: Attendance Health */}
-                <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 border-t-4 border-t-sky-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default animate-slide-up stagger-5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Attendance Health</span>
-                    <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center border border-sky-100 shadow-2xs">
-                      <HeartPulse className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    <div className="text-2xl font-extrabold text-slate-900 font-financial tracking-tight">
-                      {summary?.attendance_health_pct ?? 100}%
-                    </div>
-                    <div className="text-2xs text-sky-700 font-semibold mt-1">
-                      On-Time Punch Ratio
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 5. DEPARTMENT ANALYSIS & ATTENDANCE HEALTH BREAKDOWNS */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Left: Department Salary Expenditure (Payroll roles) / Department Headcount (HR Manager) */}
-                <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                        <Building2 className="w-4 h-4 text-indigo-600" />
-                        <span>{isHRPUPlus() ? 'Department Salary Expenditure & Headcount' : 'Department Workforce Distribution'}</span>
-                      </h3>
-                      <p className="text-2xs text-slate-500 mt-0.5">
-                        {isHRPUPlus()
-                          ? 'Live department payroll expenses and workforce distribution'
-                          : 'Live headcount and staffing allocation across department units'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {salaryByDept.length === 0 ? (
-                    <div className="p-8 text-center text-xs text-slate-400 border border-dashed rounded-xl">
-                      No department data available.
-                    </div>
-                  ) : (
-                    <div className="space-y-3.5 pt-1">
-                      {salaryByDept.map((dept) => {
-                        const maxVal = isHRPUPlus()
-                          ? Math.max(...salaryByDept.map((d) => d.total_salary), 1)
-                          : Math.max(...salaryByDept.map((d) => d.headcount), 1);
-                        const currentVal = isHRPUPlus() ? dept.total_salary : dept.headcount;
-                        const pct = Math.round((currentVal / maxVal) * 100);
-
-                        return (
-                          <div key={dept.department_id} className="space-y-1.5">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="font-bold text-slate-900">{dept.department_name}</span>
-                              <div className="flex items-center gap-3">
-                                <span className="text-2xs text-slate-500 font-medium">{dept.headcount} Staff</span>
-                                {isHRPUPlus() && (
+                          return (
+                            <div key={dept.department_id} className="space-y-1.5">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-bold text-slate-900">{dept.department_name}</span>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-2xs text-slate-500 font-medium">{dept.headcount} Staff</span>
                                   <span className="font-financial font-extrabold text-slate-900">
                                     {formatCurrency(dept.total_salary)}
                                   </span>
-                                )}
+                                </div>
+                              </div>
+                              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                <div
+                                  className="bg-linear-to-r from-indigo-600 to-teal-500 h-full rounded-full transition-all duration-500"
+                                  style={{ width: `${Math.max(pct, 6)}%` }}
+                                />
                               </div>
                             </div>
-                            <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                              <div
-                                className="bg-linear-to-r from-indigo-600 to-teal-500 h-full rounded-full transition-all duration-500"
-                                style={{ width: `${Math.max(pct, 6)}%` }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Right: Attendance Health Breakdown */}
-                <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-indigo-600" />
-                      <span>Attendance Health Radar</span>
-                    </h3>
-                    <p className="text-2xs text-slate-500 mt-0.5">Real-time punch metrics and exception rates</p>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                  {/* Right: Attendance Health Radar + Net Trend */}
+                  <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-indigo-600" />
+                        <span>Attendance Health Radar</span>
+                      </h3>
+                      <p className="text-2xs text-slate-500 mt-0.5">Real-time punch metrics and exception rates</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                        <span className="text-emerald-700 text-2xs block font-bold uppercase tracking-wider">Present Today</span>
+                        <span className="font-extrabold font-financial text-emerald-950 text-xl mt-0.5 block">
+                          {attendanceOverview?.present ?? 0}
+                        </span>
+                      </div>
+                      <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
+                        <span className="text-amber-700 text-2xs block font-bold uppercase tracking-wider">Late Arrivals</span>
+                        <span className="font-extrabold font-financial text-amber-950 text-xl mt-0.5 block">
+                          {attendanceOverview?.late ?? 0}
+                        </span>
+                      </div>
+                      <div className="p-3 bg-rose-50 rounded-xl border border-rose-100">
+                        <span className="text-rose-700 text-2xs block font-bold uppercase tracking-wider">Missing Check-Out</span>
+                        <span className="font-extrabold font-financial text-rose-950 text-xl mt-0.5 block">
+                          {attendanceOverview?.missing_checkouts ?? 0}
+                        </span>
+                      </div>
+                      <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
+                        <span className="text-blue-700 text-2xs block font-bold uppercase tracking-wider">Shift Coverage</span>
+                        <span className="font-extrabold font-financial text-blue-950 text-xl mt-0.5 block">
+                          {attendanceOverview?.coverage_pct ?? 100}%
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Monthly Net Payroll Trend */}
+                    {netTrend.length > 0 && (
+                      <div className="pt-2 border-t border-slate-100">
+                        <div className="text-2xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                          Monthly Net Payroll Trend
+                        </div>
+                        <div className="space-y-1.5">
+                          {netTrend.map((item) => (
+                            <div key={item.month} className="flex items-center justify-between text-xs py-1">
+                              <span className="text-slate-600 font-semibold">{item.month}</span>
+                              <span className="font-financial font-extrabold text-emerald-800">
+                                {formatCurrency(item.net_total)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* HR Manager: Attendance Health Radar & Operations View (No Financial Data) */
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-indigo-600" />
+                        <span>Daily Workforce Attendance Health</span>
+                      </h3>
+                      <p className="text-2xs text-slate-500 mt-0.5">Real-time attendance logs and shift coverage overview</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => navigate('/attendance')} className="text-2xs">
+                      Manage Attendance
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs pt-2">
+                    <div className="p-4 bg-emerald-50/80 rounded-2xl border border-emerald-100">
                       <span className="text-emerald-700 text-2xs block font-bold uppercase tracking-wider">Present Today</span>
-                      <span className="font-extrabold font-financial text-emerald-950 text-xl mt-0.5 block">
+                      <span className="font-extrabold font-financial text-emerald-950 text-2xl mt-1 block">
                         {attendanceOverview?.present ?? 0}
                       </span>
+                      <span className="text-2xs text-emerald-700/80 mt-1 block">Staff on duty</span>
                     </div>
-                    <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
+
+                    <div className="p-4 bg-amber-50/80 rounded-2xl border border-amber-100">
                       <span className="text-amber-700 text-2xs block font-bold uppercase tracking-wider">Late Arrivals</span>
-                      <span className="font-extrabold font-financial text-amber-950 text-xl mt-0.5 block">
+                      <span className="font-extrabold font-financial text-amber-950 text-2xl mt-1 block">
                         {attendanceOverview?.late ?? 0}
                       </span>
+                      <span className="text-2xs text-amber-700/80 mt-1 block">Punched after start time</span>
                     </div>
-                    <div className="p-3 bg-rose-50 rounded-xl border border-rose-100">
+
+                    <div className="p-4 bg-rose-50/80 rounded-2xl border border-rose-100">
                       <span className="text-rose-700 text-2xs block font-bold uppercase tracking-wider">Missing Check-Out</span>
-                      <span className="font-extrabold font-financial text-rose-950 text-xl mt-0.5 block">
+                      <span className="font-extrabold font-financial text-rose-950 text-2xl mt-1 block">
                         {attendanceOverview?.missing_checkouts ?? 0}
                       </span>
+                      <span className="text-2xs text-rose-700/80 mt-1 block">Unclosed shifts</span>
                     </div>
-                    <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
+
+                    <div className="p-4 bg-blue-50/80 rounded-2xl border border-blue-100">
                       <span className="text-blue-700 text-2xs block font-bold uppercase tracking-wider">Shift Coverage</span>
-                      <span className="font-extrabold font-financial text-blue-950 text-xl mt-0.5 block">
+                      <span className="font-extrabold font-financial text-blue-950 text-2xl mt-1 block">
                         {attendanceOverview?.coverage_pct ?? 100}%
                       </span>
+                      <span className="text-2xs text-blue-700/80 mt-1 block">On-time ratio</span>
                     </div>
                   </div>
-
-                  {/* Monthly Net Payroll Trend (Payroll roles only) */}
-                  {isHRPUPlus() && netTrend.length > 0 && (
-                    <div className="pt-2 border-t border-slate-100">
-                      <div className="text-2xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                        Monthly Net Payroll Trend
-                      </div>
-                      <div className="space-y-1.5">
-                        {netTrend.map((item) => (
-                          <div key={item.month} className="flex items-center justify-between text-xs py-1">
-                            <span className="text-slate-600 font-semibold">{item.month}</span>
-                            <span className="font-financial font-extrabold text-emerald-800">
-                              {formatCurrency(item.net_total)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
-              </div>
+              )}
             </>
           )}
         </>
