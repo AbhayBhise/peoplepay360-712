@@ -15,6 +15,7 @@ import {
   ChevronRight,
   ShieldCheck,
   Sparkles,
+  LogOut,
 } from 'lucide-react';
 
 interface NavItem {
@@ -34,7 +35,7 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({
   isOpen = true,
   onClose,
 }) => {
-  const { user, isHRMPlus, isHRPUPlus, isHRPMPlus, hasRole } = useAuth();
+  const { user, logout, isHRMPlus, isHRPUPlus, isHRPMPlus, hasRole } = useAuth();
   const location = useLocation();
 
   const sections: NavSection[] = [
@@ -224,6 +225,16 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({
               </div>
             </div>
           </div>
+          <button
+            onClick={async () => {
+              await logout();
+              window.location.href = '/login';
+            }}
+            title="Sign out"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-700/60 transition-colors cursor-pointer"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </aside>

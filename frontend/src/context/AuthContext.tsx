@@ -8,6 +8,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<User>;
+  register: (name: string, email: string, password: string, role?: string) => Promise<User>;
   logout: () => Promise<void>;
   hasRole: (requiredRole: Role | Role[]) => boolean;
   isHRMPlus: () => boolean;
@@ -68,6 +69,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return res.user;
   };
 
+  const register = async (name: string, email: string, password: string, role?: string): Promise<User> => {
+    const res = await authApi.register({ name, email, password, role });
+    setToken(res.token);
+    setUser(res.user);
+    localStorage.setItem(TOKEN_KEY, res.token);
+    localStorage.setItem(USER_KEY, JSON.stringify(res.user));
+    return res.user;
+  };
+
+
   const logout = async () => {
     try {
       if (token) {
@@ -117,6 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!token && !!user,
         isLoading,
         login,
+        register,
         logout,
         hasRole,
         isHRMPlus,
