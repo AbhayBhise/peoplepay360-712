@@ -2,7 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { ToastProvider } from './context/ToastContext';
+import { ToastProvider, useToast } from './context/ToastContext';
 import { AppLayout } from './components/layout/AppLayout';
 import { PageLoader, RouteFallbackLoader } from './components/common/PageLoader';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
@@ -47,6 +47,16 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 // Route guard for role-protected views (e.g. Admin only)
 const RoleProtectedRoute: React.FC<{ role: string | string[]; children: React.ReactNode }> = ({ role, children }) => {
   const { isAuthenticated, isLoading, hasRole } = useAuth();
+  const { error: toastError } = useToast();
+
+  const authorized = hasRole(role as any);
+
+  React.useEffect(() => {
+    if (!isLoading && isAuthenticated && !authorized) {
+      const roleStr = Array.isArray(role) ? role.join(' / ') : role;
+      toastError(`Access restricted. Requires ${roleStr} role permissions.`, 'Unauthorized Access');
+    }
+  }, [isLoading, isAuthenticated, authorized, role, toastError]);
 
   if (isLoading) {
     return <RouteFallbackLoader />;
@@ -56,7 +66,7 @@ const RoleProtectedRoute: React.FC<{ role: string | string[]; children: React.Re
     return <Navigate to="/login" replace />;
   }
 
-  if (!hasRole(role as any)) {
+  if (!authorized) {
     return <Navigate to="/dashboard" replace />;
   }
 

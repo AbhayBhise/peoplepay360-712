@@ -244,14 +244,6 @@ export const LoginPage: React.FC = () => {
             >
               Sign In to Workspace
             </Button>
-
-            {/* Create account link */}
-            <p className="text-center text-xs text-slate-500 mt-1">
-              New to PeoplePay360?{' '}
-              <Link to="/signup" className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">
-                Create an account
-              </Link>
-            </p>
           </form>
         </div>
       </div>
