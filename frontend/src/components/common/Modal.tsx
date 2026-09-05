@@ -51,16 +51,16 @@ export const Modal: React.FC<ModalProps> = ({
 
         {/* Modal Dialog */}
         <div
-          className={`inline-block w-full ${maxWidthStyles[maxWidth]} my-8 p-6 text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl border border-slate-200 z-10 animate-scale-in`}
+          className={`inline-block w-full ${maxWidthStyles[maxWidth]} my-8 p-6 text-left align-middle transition-all transform bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-2xl rounded-2xl border border-slate-200 dark:border-slate-800 z-10 animate-scale-in`}
         >
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-5">
             <div>
-              {title && <h3 className="text-lg font-bold text-slate-900 tracking-tight">{title}</h3>}
-              {description && <p className="text-xs text-slate-500 mt-0.5">{description}</p>}
+              {title && <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">{title}</h3>}
+              {description && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{description}</p>}
             </div>
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-lg transition-colors cursor-pointer"
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-lg transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
