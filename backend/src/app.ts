@@ -5,6 +5,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import { apiRouter } from "./routes";
 import { errorHandler } from "./middleware/errorHandler";
+import { morganStream } from "./utils/logger";
 
 export const app = express();
 
@@ -18,7 +19,7 @@ app.use(helmet());
 // frontend on :3000 talking to the backend on :4000 (or a teammate's machine) just works.
 app.use(cors({ origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : true }));
 app.use(compression());
-app.use(morgan("dev"));
+app.use(morgan("combined", { stream: morganStream }));
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/health", (_req, res) => res.json({ success: true, data: { status: "ok" } }));

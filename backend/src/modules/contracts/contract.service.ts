@@ -39,10 +39,12 @@ async function assertNoOverlappingActiveContract(
 
   const conflict = existingActive.find((c) => rangesOverlap(startDate, endDate, c.startDate, c.endDate));
   if (conflict) {
+    const emp = await prisma.employee.findUnique({ where: { id: employeeId }, select: { name: true } });
+    const empName = emp?.name ? `${emp.name}` : "This employee";
+    const startStr = conflict.startDate.toISOString().slice(0, 10);
+    const endStr = conflict.endDate ? conflict.endDate.toISOString().slice(0, 10) : "ongoing";
     throw ApiError.conflict(
-      `contract: overlaps with active contract #${conflict.id} (${conflict.startDate.toISOString().slice(0, 10)} – ${
-        conflict.endDate ? conflict.endDate.toISOString().slice(0, 10) : "ongoing"
-      })`
+      `contract: overlaps with active contract (${startStr} – ${endStr}) for ${empName}. Please set the existing contract to Expired/Cancelled or create this contract in Draft status.`
     );
   }
 }

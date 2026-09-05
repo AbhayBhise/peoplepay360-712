@@ -12,6 +12,7 @@ import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
+import { Pagination } from '../../components/common/Pagination';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { formatCurrency } from '../../utils/currency';
@@ -23,6 +24,10 @@ export const ContractsPage: React.FC = () => {
   const [structures, setStructures] = useState<SalaryStructure[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [employeeId, setEmployeeId] = useState<string>('');
@@ -33,8 +38,10 @@ export const ContractsPage: React.FC = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [status, setStatus] = useState<string>('active');
+  const [expireExisting, setExpireExisting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const todayStr = new Date().toISOString().split('T')[0];
   const { isHRMPlus } = useAuth();
   const { success, error } = useToast();
 
@@ -62,20 +69,26 @@ export const ContractsPage: React.FC = () => {
     loadData();
   }, []);
 
+  const existingActiveContract = employeeId
+    ? contracts.find((c) => String(c.employee_id || (c as any).employeeId) === String(employeeId) && c.status === 'active')
+    : null;
+
   const handleOpenCreate = () => {
     setEmployeeId('');
     setDepartmentId('');
     setPosition('');
     setWage('');
     setStructureId('');
-    setStartDate(new Date().toISOString().split('T')[0]);
+    setStartDate(todayStr);
     setEndDate('');
     setStatus('active');
+    setExpireExisting(false);
     setIsModalOpen(true);
   };
 
   const handleEmployeeChange = (idVal: string) => {
     setEmployeeId(idVal);
+    setExpireExisting(false);
     const emp = employees.find((e) => String(e.id) === String(idVal));
     if (emp) {
       if (emp.department_id) setDepartmentId(String(emp.department_id));
@@ -90,6 +103,11 @@ export const ContractsPage: React.FC = () => {
       return;
     }
 
+    if (startDate < todayStr) {
+      error('Contract Start Date cannot be in the past.');
+      return;
+    }
+
     if (endDate && endDate <= startDate) {
       error('Contract End Date must be after Start Date.');
       return;
@@ -97,6 +115,11 @@ export const ContractsPage: React.FC = () => {
 
     setSubmitting(true);
     try {
+      // If auto-expire checkbox is checked for an existing active contract
+      if (existingActiveContract && expireExisting && status === 'active') {
+        await contractsApi.updateContract(String(existingActiveContract.id), { status: 'expired' });
+      }
+
       await contractsApi.createContract({
         employee_id: employeeId,
         department_id: departmentId,
@@ -117,6 +140,10 @@ export const ContractsPage: React.FC = () => {
       setSubmitting(false);
     }
   };
+
+  // Paginated records
+  const totalPages = Math.ceil(contracts.length / itemsPerPage);
+  const paginatedContracts = contracts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="space-y-6 animate-fade-in text-slate-800 dark:text-slate-100">
@@ -164,7 +191,7 @@ export const ContractsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {contracts.map((c) => {
+                {paginatedContracts.map((c) => {
                   const emp = employees.find((e) => String(e.id) === String(c.employee_id));
                   const struct = structures.find((s) => String(s.id) === String(c.salary_structure_id));
 
@@ -177,7 +204,7 @@ export const ContractsPage: React.FC = () => {
                     >
                       <td className="py-3 px-4">
                         <div className="font-bold text-slate-900 dark:text-white">
-                          {c.employee_name || emp?.name || `Employee #${c.employee_id}`}
+                          {(c as any).employee?.name || c.employee_name || (c as any).employeeName || emp?.name || (c.employee_id || (c as any).employeeId ? `Employee #${(c.employee_id || (c as any).employeeId).substring(0, 8)}` : 'Staff Member')}
                         </div>
                         <div className="text-2xs text-slate-400 dark:text-slate-500 font-mono">Contract #{c.id}</div>
                       </td>
@@ -186,7 +213,7 @@ export const ContractsPage: React.FC = () => {
                         {formatCurrency(c.wage)}
                       </td>
                       <td className="py-3 px-4 text-indigo-900 dark:text-indigo-300 font-medium">
-                        {c.salary_structure_name || struct?.name || `Structure #${c.salary_structure_id}`}
+                        {c.salary_structure_name || (c as any).salaryStructureName || struct?.name || (c.salary_structure_id ? `Structure #${c.salary_structure_id}` : 'Standard Structure')}
                       </td>
                       <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
                         {c.start_date} {c.end_date ? `to ${c.end_date}` : '→ Ongoing'}
@@ -210,6 +237,19 @@ export const ContractsPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Footer */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={contracts.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(size) => {
+              setItemsPerPage(size);
+              setCurrentPage(1);
+            }}
+          />
         </div>
       )}
 
@@ -233,6 +273,28 @@ export const ContractsPage: React.FC = () => {
             }))}
             required
           />
+
+          {existingActiveContract && (
+            <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300 space-y-2">
+              <div className="flex items-start gap-2 font-medium">
+                <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  This employee already has an active contract running from{' '}
+                  <span className="font-bold">{existingActiveContract.start_date}</span>{' '}
+                  {existingActiveContract.end_date ? `to ${existingActiveContract.end_date}` : '(Ongoing)'}.
+                </div>
+              </div>
+              <label className="flex items-center gap-2 pt-1 font-semibold text-amber-900 dark:text-amber-200 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={expireExisting}
+                  onChange={(e) => setExpireExisting(e.target.checked)}
+                  className="rounded border-amber-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                />
+                <span>Set current active contract to Expired automatically</span>
+              </label>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
@@ -268,14 +330,17 @@ export const ContractsPage: React.FC = () => {
               label="Start Date"
               type="date"
               value={startDate}
+              min={todayStr}
               onChange={(e) => setStartDate(e.target.value)}
               required
+              helperText="Cannot be in the past"
             />
 
             <Input
               label="End Date (Optional)"
               type="date"
               value={endDate}
+              min={startDate || todayStr}
               onChange={(e) => setEndDate(e.target.value)}
               helperText="Leave empty for permanent/ongoing contracts"
             />

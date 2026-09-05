@@ -20,6 +20,7 @@ import { Badge } from '../../components/common/Badge';
 import { Card } from '../../components/common/Card';
 import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
+import { Pagination } from '../../components/common/Pagination';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { formatCurrency } from '../../utils/currency';
@@ -33,6 +34,10 @@ export const PayrunDetailPage: React.FC = () => {
   const [payrun, setPayrun] = useState<Payrun | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const loadPayrun = async () => {
     if (!id) return;
@@ -397,10 +402,10 @@ export const PayrunDetailPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {payslipsList.map((p) => (
+                {payslipsList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p) => (
                   <tr key={p.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">
-                      {p.employee_name || `Employee #${p.employee_id}`}
+                      {(p as any).employee?.name || p.employee_name || (p as any).employeeName || ((p as any).employee?.employeeCode || (p as any).employeeCode || (p.employee_id || (p as any).employeeId ? `Employee #${(p.employee_id || (p as any).employeeId).substring(0, 8)}` : 'Staff Member'))}
                     </td>
                     <td className="py-3 px-4 text-slate-600 dark:text-slate-300">{p.worked_days !== undefined ? `${p.worked_days} Days` : '22 Days'}</td>
                     <td className="py-3 px-4 font-financial text-slate-800 dark:text-slate-200">{formatCurrency(p.basic)}</td>
@@ -440,6 +445,18 @@ export const PayrunDetailPage: React.FC = () => {
                 ))}
               </tbody>
             </table>
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.ceil(payslipsList.length / itemsPerPage)}
+              totalItems={payslipsList.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(size) => {
+                setItemsPerPage(size);
+                setCurrentPage(1);
+              }}
+            />
           </div>
         )}
       </div>

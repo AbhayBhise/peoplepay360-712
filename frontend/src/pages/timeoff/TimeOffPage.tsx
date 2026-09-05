@@ -18,6 +18,7 @@ import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
+import { Pagination } from '../../components/common/Pagination';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 
@@ -28,6 +29,10 @@ export const TimeOffPage: React.FC = () => {
   const [types, setTypes] = useState<TimeOffType[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // New Request Modal state
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
@@ -374,13 +379,13 @@ export const TimeOffPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {requests.map((r) => {
+                  {requests.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((r) => {
                     const empId = r.employee_id || (r as any).employeeId;
                     const typeId = r.type_id || (r as any).typeId;
                     const emp = employees.find((e) => String(e.id) === String(empId));
                     const tObj = types.find((t) => String(t.id) === String(typeId));
-                    const empDisplayName = r.employee_name || (r as any).employeeName || emp?.name || (empId ? `Employee #${empId}` : 'Employee');
-                    const typeDisplayName = r.type_name || (r as any).typeName || tObj?.name || (typeId ? `Type #${typeId}` : 'Leave Type');
+                    const empDisplayName = (r as any).employee?.name || r.employee_name || (r as any).employeeName || emp?.name || ((r as any).employee?.employeeCode || (emp as any)?.employeeCode || (empId && empId !== 'undefined' ? `Employee #${String(empId).substring(0, 8)}` : 'Staff Member'));
+                    const typeDisplayName = (r as any).type?.name || r.type_name || (r as any).typeName || tObj?.name || (typeId && typeId !== 'undefined' ? `Type #${String(typeId).substring(0, 8)}` : 'Leave Type');
 
                     return (
                       <tr key={r.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
@@ -444,6 +449,18 @@ export const TimeOffPage: React.FC = () => {
                 </tbody>
               </table>
             </div>
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.ceil(requests.length / itemsPerPage)}
+              totalItems={requests.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(size) => {
+                setItemsPerPage(size);
+                setCurrentPage(1);
+              }}
+            />
           </div>
         )
       ) : activeTab === 'allocations' ? (
@@ -469,8 +486,8 @@ export const TimeOffPage: React.FC = () => {
                   const emp = employees.find((e) => String(e.id) === String(empId));
                   const tObj = types.find((t) => String(t.id) === String(typeId));
                   const remaining = a.remaining !== undefined ? a.remaining : (Number(a.allocated) - (Number(a.taken) || 0));
-                  const empDisplayName = a.employee_name || (a as any).employeeName || emp?.name || (empId ? `Employee #${empId}` : 'Employee');
-                  const typeDisplayName = a.type_name || (a as any).typeName || tObj?.name || (typeId ? `Type #${typeId}` : 'Leave Type');
+                  const empDisplayName = (a as any).employee?.name || a.employee_name || (a as any).employeeName || emp?.name || ((a as any).employee?.employeeCode || (emp as any)?.employeeCode || (empId && empId !== 'undefined' ? `Employee #${String(empId).substring(0, 8)}` : 'Staff Member'));
+                  const typeDisplayName = (a as any).type?.name || a.type_name || (a as any).typeName || tObj?.name || (typeId && typeId !== 'undefined' ? `Type #${String(typeId).substring(0, 8)}` : 'Leave Type');
 
                   return (
                     <tr key={a.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
@@ -601,14 +618,17 @@ export const TimeOffPage: React.FC = () => {
               label="Start Date"
               type="date"
               value={reqDateFrom}
+              min={new Date().toISOString().split('T')[0]}
               onChange={(e) => setReqDateFrom(e.target.value)}
               required
+              helperText="Cannot select past dates"
             />
 
             <Input
               label="End Date"
               type="date"
               value={reqDateTo}
+              min={reqDateFrom || new Date().toISOString().split('T')[0]}
               onChange={(e) => setReqDateTo(e.target.value)}
               required
             />

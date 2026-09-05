@@ -19,6 +19,7 @@ import { Badge } from '../../components/common/Badge';
 import { Card } from '../../components/common/Card';
 import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
+import { Pagination } from '../../components/common/Pagination';
 import { EmployeeFormModal } from './EmployeeFormModal';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -28,6 +29,10 @@ export const EmployeesPage: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [loading, setLoading] = useState(true);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -80,6 +85,11 @@ export const EmployeesPage: React.FC = () => {
       (emp.department_name && emp.department_name.toLowerCase().includes(q))
     );
   });
+
+  const paginatedEmployees = filteredEmployees.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -199,50 +209,62 @@ export const EmployeesPage: React.FC = () => {
         />
       ) : viewMode === 'kanban' ? (
         /* KANBAN VIEW */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredEmployees.map((emp) => (
-            <div
-              key={emp.id}
-              onClick={() => navigate(`/employees/${emp.id}`)}
-              className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs hover:shadow-md hover:border-indigo-500/40 dark:hover:border-indigo-500/40 transition-all cursor-pointer group flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <div className="w-12 h-12 rounded-xl bg-linear-to-tr from-indigo-600 to-teal-500 text-white font-bold text-lg flex items-center justify-center shadow-xs">
-                    {emp.name.charAt(0).toUpperCase()}
-                  </div>
-                  <Badge variant={emp.status === 'active' ? 'active' : 'inactive'} size="sm">
-                    {emp.status}
-                  </Badge>
-                </div>
-
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">
-                  {emp.name}
-                </h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5">{emp.job_position}</p>
-
-                <div className="mt-3.5 space-y-1.5 border-t border-slate-100 dark:border-slate-800 pt-3 text-2xs text-slate-500 dark:text-slate-400">
-                  <div className="flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
-                    <span className="truncate">
-                      {emp.department_name || `Department #${emp.department_id || '—'}`}
-                    </span>
-                  </div>
-                  {emp.manager_name && (
-                    <div className="flex items-center gap-1.5">
-                      <UserCheck className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 flex-shrink-0" />
-                      <span className="truncate">Manager: {emp.manager_name}</span>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {paginatedEmployees.map((emp) => (
+              <div
+                key={emp.id}
+                onClick={() => navigate(`/employees/${emp.id}`)}
+                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs hover:shadow-md hover:border-indigo-500/40 dark:hover:border-indigo-500/40 transition-all cursor-pointer group flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="w-12 h-12 rounded-xl bg-linear-to-tr from-indigo-600 to-teal-500 text-white font-bold text-lg flex items-center justify-center shadow-xs">
+                      {emp.name.charAt(0).toUpperCase()}
                     </div>
-                  )}
+                    <Badge variant={emp.status === 'active' ? 'active' : 'inactive'} size="sm">
+                      {emp.status}
+                    </Badge>
+                  </div>
+
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">
+                    {emp.name}
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5">{emp.job_position}</p>
+
+                  <div className="mt-3.5 space-y-1.5 border-t border-slate-100 dark:border-slate-800 pt-3 text-2xs text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>{emp.department_name || `Department #${emp.department_id || '—'}`}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <UserCheck className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>Manager: {emp.manager_name || 'None'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-2 flex items-center justify-between text-2xs font-semibold text-indigo-600 dark:text-indigo-400 group-hover:translate-x-0.5 transition-transform">
+                  <span>View Details</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </div>
               </div>
+            ))}
+          </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-2xs text-slate-400 dark:text-slate-400 font-semibold group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                <span>Open Employee Hub</span>
-                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-              </div>
-            </div>
-          ))}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.ceil(filteredEmployees.length / itemsPerPage)}
+              totalItems={filteredEmployees.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(size) => {
+                setItemsPerPage(size);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
         </div>
       ) : (
         /* LIST VIEW */
@@ -260,7 +282,7 @@ export const EmployeesPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {filteredEmployees.map((emp) => (
+                {paginatedEmployees.map((emp) => (
                   <tr
                     key={emp.id}
                     onClick={() => navigate(`/employees/${emp.id}`)}
@@ -297,6 +319,18 @@ export const EmployeesPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(filteredEmployees.length / itemsPerPage)}
+            totalItems={filteredEmployees.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(size) => {
+              setItemsPerPage(size);
+              setCurrentPage(1);
+            }}
+          />
         </div>
       )}
 

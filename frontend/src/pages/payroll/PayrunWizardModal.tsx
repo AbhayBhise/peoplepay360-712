@@ -306,7 +306,7 @@ export const PayrunWizardModal: React.FC<PayrunWizardModalProps> = ({
                       <div>
                         <div className="text-xs font-bold text-slate-900 dark:text-white">{emp.name}</div>
                         <div className="text-2xs text-slate-500 dark:text-slate-400">
-                          {emp.job_position} · {emp.department_name || `Dept #${emp.department_id}`}
+                          {emp.job_position || (emp as any).jobPosition || 'Employee'} · {emp.department_name || (emp as any).departmentName || (emp.department_id || (emp as any).departmentId ? `Dept #${emp.department_id || (emp as any).departmentId}` : 'General')}
                         </div>
                       </div>
                     </div>

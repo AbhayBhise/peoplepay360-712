@@ -7,6 +7,7 @@ import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
+import { Pagination } from '../../components/common/Pagination';
 import { PayrunWizardModal } from './PayrunWizardModal';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -17,6 +18,10 @@ export const PayrunsPage: React.FC = () => {
   const [structures, setStructures] = useState<SalaryStructure[]>([]);
   const [loading, setLoading] = useState(true);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const { isHRPUPlus } = useAuth();
   const { error } = useToast();
@@ -93,7 +98,7 @@ export const PayrunsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {payruns.map((pr) => (
+                {payruns.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((pr) => (
                   <tr
                     key={pr.id}
                     onClick={() => navigate(`/payroll/payruns/${pr.id}`)}
@@ -142,6 +147,18 @@ export const PayrunsPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(payruns.length / itemsPerPage)}
+            totalItems={payruns.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(size) => {
+              setItemsPerPage(size);
+              setCurrentPage(1);
+            }}
+          />
         </div>
       )}
 

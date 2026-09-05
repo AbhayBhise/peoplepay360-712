@@ -377,7 +377,7 @@ export const EmployeeDetailPage: React.FC = () => {
                     <div>
                       <span className="text-slate-400 dark:text-slate-500 block uppercase text-2xs font-semibold">Reporting Manager</span>
                       <span className="font-bold text-slate-900 dark:text-white text-sm mt-0.5 block">
-                        {employee.manager_name || (employee.manager_id ? `Manager #${employee.manager_id}` : 'None (Top Executive)')}
+                        {employee.manager_name || (employee as any).managerName || (employee.manager_id || (employee as any).managerId ? `Manager #${(employee.manager_id || (employee as any).managerId).substring(0, 8)}` : 'None (Top Executive)')}
                       </span>
                     </div>
                   </div>
@@ -471,7 +471,7 @@ export const EmployeeDetailPage: React.FC = () => {
                         <tr key={c.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
                           <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">{c.position}</td>
                           <td className="py-3 px-4 font-financial font-extrabold text-slate-900 dark:text-white">{formatCurrency(c.wage)}</td>
-                          <td className="py-3 px-4 text-indigo-900 dark:text-indigo-300 font-semibold">{c.salary_structure_name || `Structure #${c.salary_structure_id}`}</td>
+                          <td className="py-3 px-4 text-indigo-900 dark:text-indigo-300 font-semibold">{c.salary_structure_name || (c as any).salaryStructureName || (c.salary_structure_id ? `Structure #${c.salary_structure_id}` : 'Standard Structure')}</td>
                           <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
                             {c.start_date} {c.end_date ? `to ${c.end_date}` : '→ Permanent'}
                           </td>
@@ -566,7 +566,7 @@ export const EmployeeDetailPage: React.FC = () => {
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {timeOff.map((t) => (
                         <tr key={t.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
-                          <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">{t.type_name || `Type #${t.type_id}`}</td>
+                          <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">{t.type_name || (t as any).typeName || (t.type_id || (t as any).typeId ? `Leave Type #${t.type_id || (t as any).typeId}` : 'Standard Leave')}</td>
                           <td className="py-3 px-4 text-slate-600 dark:text-slate-300">{t.date_from} → {t.date_to}</td>
                           <td className="py-3 px-4 font-financial font-extrabold text-slate-900 dark:text-white">{t.duration || '—'} Days</td>
                           <td className="py-3 px-4">
@@ -680,7 +680,7 @@ export const EmployeeDetailPage: React.FC = () => {
         <div className="space-y-4">
           <div className="space-y-2 text-xs text-slate-600">
             <p>
-              You are about to delete <strong>{employee?.name}</strong> (Employee #{employee?.id}).
+              You are about to delete <strong>{employee?.name || 'this employee'}</strong> ({(employee as any)?.employee_code || (employee as any)?.employeeCode || (employee?.id ? `ID #${employee.id.substring(0, 8)}` : 'Employee')}).
             </p>
             <p className="text-rose-600 text-2xs bg-rose-50 p-2.5 rounded-lg border border-rose-200 font-medium">
               This action requires System Administrator authority. Associated records, attendance logs, and contracts will be deactivated or removed per retention policies.

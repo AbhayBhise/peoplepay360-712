@@ -133,7 +133,7 @@ export const PayslipDetailPage: React.FC = () => {
           <div>
             <span className="text-slate-500 dark:text-slate-400 block">Employee</span>
             <span className="font-bold text-slate-900 dark:text-white text-sm">
-              {payslip.employee_name || (payslip.employee_id ? `Employee #${payslip.employee_id}` : 'Staff Member')}
+              {(payslip as any).employee?.name || payslip.employee_name || (payslip as any).employeeName || ((payslip as any).employee?.employeeCode || (payslip as any).employeeCode || ((payslip.employee_id || (payslip as any).employeeId) ? `Employee #${(payslip.employee_id || (payslip as any).employeeId).substring(0, 8)}` : 'Staff Member'))}
             </span>
           </div>
           <div>
