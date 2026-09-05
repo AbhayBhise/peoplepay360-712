@@ -251,7 +251,8 @@ Every endpoint marked with a role requirement must reject at the **route/middlew
 
 ---
 
-## Open decisions the Architect must pin down and update here
+## Decisions (resolved during implementation)
 
-- Exact role split for `validate`/`mark-paid` between HRPU and HRPM (marked above with a TODO-style note — resolve before backend implements those two endpoints).
-- Whether `/api/dashboard/summary` is one endpoint with role-based field filtering or two endpoints (HR-only vs Payroll-inclusive) — pick one, document it, don't let frontend and backend guess independently.
+- **Payrun `validate`/`mark-paid` role split**: HRPU+ can create/compute/read payruns; **HRPM+ only** can validate and mark-paid — this pairs with the maker-checker DB constraint (a payrun's `computedBy` and `validatedBy` must differ), giving a real two-person-integrity workflow rather than one role doing everything. Implemented in `backend/src/modules/payroll/payroll.routes.ts` and enforced again in `payrun.service.ts` (clear error if the same user tries both steps).
+- **Dashboard endpoint shape**: one shared set of `/api/dashboard/*` endpoints for all HRM+ roles, no field-splitting between HR-only vs payroll-inclusive KPIs. Implemented in `backend/src/modules/dashboard/`.
+- **`employee_type` dashboard filter**: accepted as a query param for forward compatibility but currently a no-op — no `employmentType`/similar field exists on `Employee`/`Contract` yet. Add a migration for it if this filter needs to be real before the demo; flagged in `dashboard.service.ts`.
