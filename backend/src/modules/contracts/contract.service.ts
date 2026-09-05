@@ -3,6 +3,7 @@ import { prisma } from "../../prisma";
 import { ApiError } from "../../utils/ApiError";
 import { AuthPayload, isHrmPlus } from "../../middleware/auth";
 import { createContractSchema, updateContractSchema } from "./contract.validation";
+import { PaginationParams, paginatedResult } from "../../utils/pagination";
 
 type CreateInput = z.infer<typeof createContractSchema>;
 type UpdateInput = z.infer<typeof updateContractSchema>;
@@ -58,23 +59,32 @@ function todayCovered(startDate: Date, endDate: Date | null): boolean {
   return startDate <= now && (endDate === null || endDate >= now);
 }
 
-export function listContracts(auth: AuthPayload, filters: { employeeId?: string; status?: string }) {
-  const visibilityFilter = isHrmPlus(auth.roles)
-    ? {}
-    : { employeeId: auth.employeeId ?? "__no_self_employee__" };
+function withActiveFlag<T extends { status: string; startDate: Date; endDate: Date | null }>(rows: T[]) {
+  return rows.map((c) => ({ ...c, isActiveForToday: c.status === "active" && todayCovered(c.startDate, c.endDate) }));
+}
 
-  return prisma.contract
-    .findMany({
-      where: {
-        ...visibilityFilter,
-        employeeId: filters.employeeId || undefined,
-        status: (filters.status as "draft" | "active" | "expired" | "cancelled") || undefined,
-      },
-      orderBy: { startDate: "desc" },
-    })
-    .then((contracts) =>
-      contracts.map((c) => ({ ...c, isActiveForToday: c.status === "active" && todayCovered(c.startDate, c.endDate) }))
-    );
+// Pagination is opt-in — see employee.service.ts for the same pattern and why.
+export async function listContracts(
+  auth: AuthPayload,
+  filters: { employeeId?: string; status?: string },
+  pagination?: PaginationParams
+) {
+  const where = {
+    ...(isHrmPlus(auth.roles) ? {} : { employeeId: auth.employeeId ?? "__no_self_employee__" }),
+    employeeId: filters.employeeId || undefined,
+    status: (filters.status as "draft" | "active" | "expired" | "cancelled") || undefined,
+  };
+
+  if (!pagination) {
+    const rows = await prisma.contract.findMany({ where, orderBy: { startDate: "desc" } });
+    return withActiveFlag(rows);
+  }
+
+  const [rows, total] = await Promise.all([
+    prisma.contract.findMany({ where, orderBy: { startDate: "desc" }, skip: pagination.skip, take: pagination.take }),
+    prisma.contract.count({ where }),
+  ]);
+  return paginatedResult(withActiveFlag(rows), total, pagination);
 }
 
 export async function getContract(auth: AuthPayload, id: string) {

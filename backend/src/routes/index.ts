@@ -8,6 +8,7 @@ import { attendanceRouter } from "../modules/attendance/attendance.routes";
 import { timeOffRouter } from "../modules/time-off/timeOff.routes";
 import { payrollRouter } from "../modules/payroll/payroll.routes";
 import { dashboardRouter } from "../modules/dashboard/dashboard.routes";
+import { adminRouter } from "../modules/admin/admin.routes";
 
 export const apiRouter = Router();
 
@@ -20,5 +21,7 @@ apiRouter.use("/attendance", attendanceRouter);
 apiRouter.use("/time-off", timeOffRouter);
 apiRouter.use("/", payrollRouter);
 apiRouter.use("/dashboard", dashboardRouter);
+apiRouter.use("/admin", adminRouter);
 
-// Every module in docs/02_API_CONTRACTS.md is now implemented.
+// Every module in docs/02_API_CONTRACTS.md is now implemented, plus Admin user
+// management (docs/roles/ARCHITECT.md follow-up — was previously entirely missing).

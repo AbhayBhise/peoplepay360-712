@@ -3,14 +3,19 @@ import { asyncHandler } from "../../utils/asyncHandler";
 import { ok } from "../../utils/response";
 import * as attendanceService from "./attendance.service";
 import { checkInSchema, checkOutSchema, correctAttendanceSchema } from "./attendance.validation";
+import { parsePaginationIfRequested } from "../../utils/pagination";
 
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const rows = await attendanceService.listAttendance(req.auth!, {
-    employeeId: typeof req.query.employee_id === "string" ? req.query.employee_id : undefined,
-    dateFrom: typeof req.query.date_from === "string" ? new Date(req.query.date_from) : undefined,
-    dateTo: typeof req.query.date_to === "string" ? new Date(req.query.date_to) : undefined,
-    status: typeof req.query.status === "string" ? req.query.status : undefined,
-  });
+  const rows = await attendanceService.listAttendance(
+    req.auth!,
+    {
+      employeeId: typeof req.query.employee_id === "string" ? req.query.employee_id : undefined,
+      dateFrom: typeof req.query.date_from === "string" ? new Date(req.query.date_from) : undefined,
+      dateTo: typeof req.query.date_to === "string" ? new Date(req.query.date_to) : undefined,
+      status: typeof req.query.status === "string" ? req.query.status : undefined,
+    },
+    parsePaginationIfRequested(req)
+  );
   return ok(res, rows);
 });
 

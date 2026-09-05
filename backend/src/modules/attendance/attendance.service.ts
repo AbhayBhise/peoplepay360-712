@@ -3,6 +3,7 @@ import { prisma } from "../../prisma";
 import { ApiError } from "../../utils/ApiError";
 import { AuthPayload, isHrmPlus } from "../../middleware/auth";
 import { checkInSchema, checkOutSchema, correctAttendanceSchema } from "./attendance.validation";
+import { PaginationParams, paginatedResult } from "../../utils/pagination";
 
 type CheckInInput = z.infer<typeof checkInSchema>;
 type CheckOutInput = z.infer<typeof checkOutSchema>;
@@ -22,33 +23,37 @@ function assertSelfOrHrmPlus(auth: AuthPayload, employeeId: string) {
   }
 }
 
-export function listAttendance(
-  auth: AuthPayload,
-  filters: { employeeId?: string; dateFrom?: Date; dateTo?: Date; status?: string }
-) {
-  const visibilityFilter = isHrmPlus(auth.roles)
-    ? {}
-    : { employeeId: auth.employeeId ?? "__no_self_employee__" };
+function withException<T extends { checkOut: Date | null }>(rows: T[]) {
+  return rows.map((r) => ({
+    ...r,
+    exception: r.checkOut === null ? ("missing_checkout" as const) : ("none" as const),
+  }));
+}
 
-  return prisma.attendance
-    .findMany({
-      where: {
-        ...visibilityFilter,
-        employeeId: filters.employeeId || undefined,
-        status: (filters.status as "present" | "late" | "absent" | "manual_edit") || undefined,
-        checkIn:
-          filters.dateFrom || filters.dateTo
-            ? { gte: filters.dateFrom, lte: filters.dateTo }
-            : undefined,
-      },
-      orderBy: { checkIn: "desc" },
-    })
-    .then((rows) =>
-      rows.map((r) => ({
-        ...r,
-        exception: r.checkOut === null ? ("missing_checkout" as const) : ("none" as const),
-      }))
-    );
+// Pagination is opt-in — see employee.service.ts for the same pattern and why.
+export async function listAttendance(
+  auth: AuthPayload,
+  filters: { employeeId?: string; dateFrom?: Date; dateTo?: Date; status?: string },
+  pagination?: PaginationParams
+) {
+  const where = {
+    ...(isHrmPlus(auth.roles) ? {} : { employeeId: auth.employeeId ?? "__no_self_employee__" }),
+    employeeId: filters.employeeId || undefined,
+    status: (filters.status as "present" | "late" | "absent" | "manual_edit") || undefined,
+    checkIn:
+      filters.dateFrom || filters.dateTo ? { gte: filters.dateFrom, lte: filters.dateTo } : undefined,
+  };
+
+  if (!pagination) {
+    const rows = await prisma.attendance.findMany({ where, orderBy: { checkIn: "desc" } });
+    return withException(rows);
+  }
+
+  const [rows, total] = await Promise.all([
+    prisma.attendance.findMany({ where, orderBy: { checkIn: "desc" }, skip: pagination.skip, take: pagination.take }),
+    prisma.attendance.count({ where }),
+  ]);
+  return paginatedResult(withException(rows), total, pagination);
 }
 
 export async function checkIn(auth: AuthPayload, input: CheckInInput) {

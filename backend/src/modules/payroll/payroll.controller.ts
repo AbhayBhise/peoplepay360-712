@@ -11,6 +11,7 @@ import {
   updateSalaryRuleSchema,
 } from "./salaryStructure.validation";
 import { previewPayrunSchema, createPayrunSchema } from "./payrun.validation";
+import { recordAudit } from "../../utils/audit";
 
 // ---- Salary Structures ----
 export const listStructures = asyncHandler(async (_req: Request, res: Response) => {
@@ -57,13 +58,18 @@ export const getPayrun = asyncHandler(async (req: Request, res: Response) => {
   return ok(res, await payrunService.getPayrun(req.params.id));
 });
 export const computePayrun = asyncHandler(async (req: Request, res: Response) => {
-  return ok(res, await payrunService.computePayrun(req.auth!, req.params.id));
+  const payrun = await payrunService.computePayrun(req.auth!, req.params.id);
+  await recordAudit(req, { module: "payrun", action: "compute", recordId: req.params.id, after: { status: payrun.status } });
+  return ok(res, payrun);
 });
 export const validatePayrun = asyncHandler(async (req: Request, res: Response) => {
-  return ok(res, await payrunService.validatePayrun(req.auth!, req.params.id));
+  const payrun = await payrunService.validatePayrun(req.auth!, req.params.id);
+  await recordAudit(req, { module: "payrun", action: "validate", recordId: req.params.id, after: { status: payrun.status } });
+  return ok(res, payrun);
 });
 export const markPayrunPaid = asyncHandler(async (req: Request, res: Response) => {
   await payrunService.markPayrunPaid(req.params.id);
+  await recordAudit(req, { module: "payrun", action: "mark_paid", recordId: req.params.id, after: { status: "paid" } });
   return ok(res, { id: req.params.id, status: "paid" });
 });
 export const sendPayslips = asyncHandler(async (req: Request, res: Response) => {

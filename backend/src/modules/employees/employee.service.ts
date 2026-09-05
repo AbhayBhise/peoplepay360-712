@@ -3,6 +3,7 @@ import { prisma } from "../../prisma";
 import { ApiError } from "../../utils/ApiError";
 import { AuthPayload, isHrmPlus } from "../../middleware/auth";
 import { createEmployeeSchema, updateEmployeeSchema } from "./employee.validation";
+import { PaginationParams, paginatedResult } from "../../utils/pagination";
 
 type CreateInput = z.infer<typeof createEmployeeSchema>;
 type UpdateInput = z.infer<typeof updateEmployeeSchema>;
@@ -16,21 +17,28 @@ interface ListFilters {
 // docs/02_API_CONTRACTS.md section 2: HRM+ sees everyone, Employee sees only self.
 // This is the Data layer of RBAC (docs/roles/ARCHITECT.md) — enforced here, server-side,
 // not left to the frontend to "just not ask" for other employees' records.
-export function listEmployees(auth: AuthPayload, filters: ListFilters) {
-  const visibilityFilter = isHrmPlus(auth.roles)
-    ? {}
-    : { id: auth.employeeId ?? "__no_self_employee__" };
+//
+// Pagination is opt-in: pass `pagination` to get a { items, page, limit, total, totalPages }
+// envelope; omit it to get the full list back exactly as before (kept for backward
+// compatibility with existing frontend call sites that don't send page/limit yet).
+export async function listEmployees(auth: AuthPayload, filters: ListFilters, pagination?: PaginationParams) {
+  const where = {
+    ...(isHrmPlus(auth.roles) ? {} : { id: auth.employeeId ?? "__no_self_employee__" }),
+    departmentId: filters.departmentId || undefined,
+    status: (filters.status as "active" | "inactive") || undefined,
+    name: filters.search ? { contains: filters.search, mode: "insensitive" as const } : undefined,
+  };
+  const include = { department: true, manager: true, workingSchedule: true };
 
-  return prisma.employee.findMany({
-    where: {
-      ...visibilityFilter,
-      departmentId: filters.departmentId || undefined,
-      status: (filters.status as "active" | "inactive") || undefined,
-      name: filters.search ? { contains: filters.search, mode: "insensitive" } : undefined,
-    },
-    orderBy: { name: "asc" },
-    include: { department: true, manager: true, workingSchedule: true },
-  });
+  if (!pagination) {
+    return prisma.employee.findMany({ where, orderBy: { name: "asc" }, include });
+  }
+
+  const [items, total] = await Promise.all([
+    prisma.employee.findMany({ where, orderBy: { name: "asc" }, include, skip: pagination.skip, take: pagination.take }),
+    prisma.employee.count({ where }),
+  ]);
+  return paginatedResult(items, total, pagination);
 }
 
 function assertCanView(auth: AuthPayload, employeeId: string) {
