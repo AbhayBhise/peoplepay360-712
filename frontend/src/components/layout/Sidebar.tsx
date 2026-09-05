@@ -128,12 +128,6 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({
           icon: <BarChart3 className="w-4 h-4" />,
           visible: isHRPUPlus(),
         },
-        {
-          label: 'My Profile',
-          path: '/profile',
-          icon: <User className="w-4 h-4" />,
-          visible: true,
-        },
       ],
     },
     {
@@ -144,17 +138,6 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({
           path: '/admin/users',
           icon: <ShieldCheck className="w-4 h-4" />,
           visible: hasRole('Admin'),
-        },
-      ],
-    },
-    {
-      title: 'Administration',
-      items: [
-        {
-          label: 'User Management',
-          path: '/admin/users',
-          icon: <ShieldCheck className="w-4 h-4" />,
-          visible: user?.roles?.includes('Admin') ?? false,
         },
       ],
     },
@@ -238,35 +221,30 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({
         })}
       </nav>
 
-      {/* User Role Card in Footer */}
+      {/* User Profile Card in Footer */}
       <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/40">
-        <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
-          <div
-            onClick={() => navigate('/profile')}
-            className="flex items-center gap-2.5 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
-            title="View Profile"
-          >
+        <div
+          onClick={() => {
+            navigate('/profile');
+            if (onClose) onClose();
+          }}
+          className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between cursor-pointer hover:bg-indigo-50/60 dark:hover:bg-slate-800/80 transition-colors group"
+          title="View My Profile & Account Settings"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-linear-to-tr from-indigo-600 to-teal-500 text-white font-bold flex items-center justify-center text-xs shrink-0 shadow-2xs border border-white/20">
               {user?.name ? user.name.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase() || 'U'}
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{user?.name || user?.email?.split('@')[0]}</div>
+              <div className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                {user?.name || user?.email?.split('@')[0]}
+              </div>
               <div className="text-2xs text-teal-600 dark:text-teal-400 font-semibold truncate flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span>{primaryRole}</span>
               </div>
             </div>
           </div>
-          <button
-            onClick={async () => {
-              await logout();
-              window.location.href = '/';
-            }}
-            title="Sign out"
-            className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-200 dark:hover:bg-slate-700/60 transition-colors cursor-pointer"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
         </div>
       </div>
     </aside>

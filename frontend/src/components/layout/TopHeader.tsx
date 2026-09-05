@@ -118,16 +118,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           <span>{primaryRole}</span>
         </div>
 
-        {/* Quick Sign Out Header Button */}
-        <button
-          onClick={handleLogout}
-          title="Sign out of PeoplePay360"
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-slate-200/80 dark:border-slate-700 hover:border-rose-200 dark:hover:border-rose-800/50 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
-        >
-          <LogOut className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
-          <span className="hidden sm:inline">Sign out</span>
-        </button>
-
         {/* User Avatar & Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
@@ -157,7 +147,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                 </div>
               </div>
 
-              <div className="py-1">
+              <div className="py-1 space-y-0.5">
                 <button
                   onClick={() => {
                     navigate('/dashboard');
@@ -167,17 +157,14 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                 >
                   <span>Workforce Dashboard</span>
                 </button>
-              </div>
-
-              <div className="border-t border-slate-100 dark:border-slate-700/60 pt-1">
                 <button
-                  type="button"
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onClick={handleLogout}
-                  className="w-full text-left flex items-center gap-2 px-4 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer transition-colors"
+                  onClick={() => {
+                    navigate('/profile');
+                    setDropdownOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700 flex items-center justify-between cursor-pointer"
                 >
-                  <LogOut className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                  <span>Sign out</span>
+                  <span>My Profile & Settings</span>
                 </button>
               </div>
             </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   User,
   ShieldCheck,
@@ -13,6 +14,7 @@ import {
   Eye,
   EyeOff,
   Sparkles,
+  LogOut,
 } from 'lucide-react';
 import { authApi, UserProfile } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
@@ -23,8 +25,9 @@ import { Badge } from '../../components/common/Badge';
 import { Spinner } from '../../components/common/Spinner';
 
 export const ProfilePage: React.FC = () => {
-  const { user: authUser } = useAuth();
+  const { user: authUser, logout } = useAuth();
   const { success, error } = useToast();
+  const navigate = useNavigate();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,6 +56,16 @@ export const ProfilePage: React.FC = () => {
   useEffect(() => {
     loadProfile();
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      success('Logged out successfully.');
+      navigate('/', { replace: true });
+    } catch (err: any) {
+      error(err.message || 'Failed to sign out.');
+    }
+  };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,6 +145,20 @@ export const ProfilePage: React.FC = () => {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Sign Out Button - Exclusively on Profile Page */}
+        <div className="shrink-0 pt-2 sm:pt-0">
+          <Button
+            type="button"
+            variant="danger"
+            size="md"
+            onClick={handleLogout}
+            icon={<LogOut className="w-4 h-4" />}
+            className="w-full sm:w-auto shadow-md font-bold"
+          >
+            Sign Out
+          </Button>
         </div>
       </div>
 
