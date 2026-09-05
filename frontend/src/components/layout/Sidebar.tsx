@@ -123,10 +123,10 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({
       title: 'Insights',
       items: [
         {
-          label: 'Reports & Analytics',
+          label: 'Insights & Analytics',
           path: '/reports',
           icon: <BarChart3 className="w-4 h-4" />,
-          visible: isHRPUPlus(),
+          visible: true,
         },
       ],
     },

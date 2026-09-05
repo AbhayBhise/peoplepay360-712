@@ -164,7 +164,7 @@ export const App: React.FC = () => {
                     <Route path="/payroll/payslips" element={<AllPayslipsPage />} />
                     <Route path="/payroll/payslips/:id" element={<PayslipDetailPage />} />
                     <Route path="/payroll/salary-structures" element={<RoleProtectedRoute isAllowed={(a) => a.isHRPUPlus()}><SalaryStructuresPage /></RoleProtectedRoute>} />
-                    <Route path="/reports" element={<RoleProtectedRoute isAllowed={(a) => a.isHRPUPlus()}><ReportsPage /></RoleProtectedRoute>} />
+                    <Route path="/reports" element={<ReportsPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/admin/users" element={<RoleProtectedRoute isAllowed={(a) => a.isAdmin()}><UsersPage /></RoleProtectedRoute>} />
                     <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
