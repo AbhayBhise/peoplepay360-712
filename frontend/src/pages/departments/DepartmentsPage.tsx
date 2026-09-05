@@ -22,8 +22,8 @@ export const DepartmentsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDept, setEditingDept] = useState<Department | null>(null);
   const [name, setName] = useState('');
-  const [parentId, setParentId] = useState<number | ''>('');
-  const [headId, setHeadId] = useState<number | ''>('');
+  const [parentId, setParentId] = useState<string>('');
+  const [headId, setHeadId] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
 
   // Delete confirmation
@@ -64,8 +64,8 @@ export const DepartmentsPage: React.FC = () => {
   const handleOpenEdit = (dept: Department) => {
     setEditingDept(dept);
     setName(dept.name);
-    setParentId(dept.parent_department_id || '');
-    setHeadId(dept.head_employee_id || '');
+    setParentId(dept.parent_department_id ? String(dept.parent_department_id) : '');
+    setHeadId(dept.head_employee_id ? String(dept.head_employee_id) : '');
     setIsModalOpen(true);
   };
 
@@ -76,7 +76,7 @@ export const DepartmentsPage: React.FC = () => {
       return;
     }
 
-    if (editingDept && parentId === editingDept.id) {
+    if (editingDept && parentId && String(parentId) === String(editingDept.id)) {
       error('A department cannot be its own parent department (no self-parenting).');
       return;
     }
@@ -85,8 +85,8 @@ export const DepartmentsPage: React.FC = () => {
     try {
       const payload = {
         name: name.trim(),
-        parent_department_id: parentId ? Number(parentId) : null,
-        head_employee_id: headId ? Number(headId) : null,
+        parent_department_id: parentId || null,
+        head_employee_id: headId || null,
       };
 
       if (editingDept) {
@@ -122,15 +122,15 @@ export const DepartmentsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in text-slate-800 dark:text-slate-100">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <Building2 className="w-6 h-6 text-indigo-600" />
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <Building2 className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
             <span>Departments</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Define and manage organizational units, hierarchy, and department managers
           </p>
         </div>
@@ -157,10 +157,10 @@ export const DepartmentsPage: React.FC = () => {
           onAction={handleOpenCreate}
         />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider">
+              <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
                 <tr>
                   <th className="py-3 px-4">Department Name</th>
                   <th className="py-3 px-4">Parent Department</th>
@@ -169,43 +169,43 @@ export const DepartmentsPage: React.FC = () => {
                   {isHRMPlus() && <th className="py-3 px-4 text-right">Actions</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {departments.map((dept) => {
-                  const parentDept = departments.find((d) => d.id === dept.parent_department_id);
-                  const headEmp = employees.find((e) => e.id === dept.head_employee_id);
+                  const parentDept = departments.find((d) => String(d.id) === String(dept.parent_department_id));
+                  const headEmp = employees.find((e) => String(e.id) === String(dept.head_employee_id));
 
                   return (
-                    <tr key={dept.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={dept.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center font-bold text-xs">
+                          <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/60 flex items-center justify-center font-bold text-xs">
                             <Building2 className="w-4 h-4" />
                           </div>
                           <div>
-                            <div className="font-bold text-slate-900">{dept.name}</div>
+                            <div className="font-bold text-slate-900 dark:text-white">{dept.name}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-slate-600">
+                      <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
                         {dept.parent_department_name || (parentDept ? parentDept.name : '—')}
                       </td>
-                      <td className="py-3 px-4 text-slate-600">
+                      <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
                         {dept.head_employee_name || (headEmp ? `${headEmp.name} (${headEmp.job_position})` : '—')}
                       </td>
-                      <td className="py-3 px-4 font-mono text-slate-400">#{dept.id}</td>
+                      <td className="py-3 px-4 font-mono text-slate-400 dark:text-slate-500">#{dept.id}</td>
                       {isHRMPlus() && (
                         <td className="py-3 px-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => handleOpenEdit(dept)}
-                              className="p-1.5 rounded-md text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-md text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors cursor-pointer"
                               title="Edit Department"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => setDeptToDelete(dept)}
-                              className="p-1.5 rounded-md text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-md text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
                               title="Delete Department"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -241,26 +241,26 @@ export const DepartmentsPage: React.FC = () => {
           <Select
             label="Parent Department"
             value={parentId}
-            onChange={(e) => setParentId(e.target.value ? Number(e.target.value) : '')}
+            onChange={(e) => setParentId(e.target.value)}
             placeholder="None (Top Level Department)"
             options={departments
-              .filter((d) => !editingDept || d.id !== editingDept.id)
-              .map((d) => ({ value: d.id, label: d.name }))}
+              .filter((d) => !editingDept || String(d.id) !== String(editingDept.id))
+              .map((d) => ({ value: String(d.id), label: d.name }))}
             helperText="Select a parent department to organize sub-units"
           />
 
           <Select
             label="Head of Department"
             value={headId}
-            onChange={(e) => setHeadId(e.target.value ? Number(e.target.value) : '')}
+            onChange={(e) => setHeadId(e.target.value)}
             placeholder="Select Employee..."
             options={employees.map((e) => ({
-              value: e.id,
+              value: String(e.id),
               label: `${e.name} — ${e.job_position}`,
             }))}
           />
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={submitting}>
               Cancel
             </Button>
@@ -279,8 +279,8 @@ export const DepartmentsPage: React.FC = () => {
         maxWidth="sm"
       >
         <div className="space-y-4">
-          <div className="flex items-start gap-3 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900">
-            <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-xl text-xs text-rose-900 dark:text-rose-200">
+            <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
             <div>
               Are you sure you want to delete department{' '}
               <strong className="font-bold">{deptToDelete?.name}</strong>?
@@ -299,3 +299,5 @@ export const DepartmentsPage: React.FC = () => {
     </div>
   );
 };
+
+export default DepartmentsPage;

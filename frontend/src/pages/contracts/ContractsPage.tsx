@@ -25,11 +25,11 @@ export const ContractsPage: React.FC = () => {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [employeeId, setEmployeeId] = useState<number | ''>('');
-  const [departmentId, setDepartmentId] = useState<number | ''>('');
+  const [employeeId, setEmployeeId] = useState<string>('');
+  const [departmentId, setDepartmentId] = useState<string>('');
   const [position, setPosition] = useState('');
   const [wage, setWage] = useState<number | ''>('');
-  const [structureId, setStructureId] = useState<number | ''>('');
+  const [structureId, setStructureId] = useState<string>('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [status, setStatus] = useState<string>('active');
@@ -74,11 +74,11 @@ export const ContractsPage: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleEmployeeChange = (idVal: number) => {
+  const handleEmployeeChange = (idVal: string) => {
     setEmployeeId(idVal);
-    const emp = employees.find((e) => e.id === idVal);
+    const emp = employees.find((e) => String(e.id) === String(idVal));
     if (emp) {
-      if (emp.department_id) setDepartmentId(emp.department_id);
+      if (emp.department_id) setDepartmentId(String(emp.department_id));
       if (emp.job_position) setPosition(emp.job_position);
     }
   };
@@ -98,11 +98,11 @@ export const ContractsPage: React.FC = () => {
     setSubmitting(true);
     try {
       await contractsApi.createContract({
-        employee_id: Number(employeeId),
-        department_id: Number(departmentId),
+        employee_id: employeeId,
+        department_id: departmentId,
         position,
         wage: Number(wage),
-        salary_structure_id: Number(structureId),
+        salary_structure_id: structureId,
         start_date: startDate,
         end_date: endDate || null,
         status,
@@ -119,15 +119,15 @@ export const ContractsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in text-slate-800 dark:text-slate-100">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <FileSpreadsheet className="w-6 h-6 text-indigo-600" />
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <FileSpreadsheet className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
             <span>Employee Contracts</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Manage employee wage contracts, salary structures, and active payroll eligibility
           </p>
         </div>
@@ -150,10 +150,10 @@ export const ContractsPage: React.FC = () => {
           onAction={handleOpenCreate}
         />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider">
+              <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
                 <tr>
                   <th className="py-3 px-4">Employee</th>
                   <th className="py-3 px-4">Job Position</th>
@@ -163,32 +163,32 @@ export const ContractsPage: React.FC = () => {
                   <th className="py-3 px-4">Active Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {contracts.map((c) => {
-                  const emp = employees.find((e) => e.id === c.employee_id);
-                  const struct = structures.find((s) => s.id === c.salary_structure_id);
+                  const emp = employees.find((e) => String(e.id) === String(c.employee_id));
+                  const struct = structures.find((s) => String(s.id) === String(c.salary_structure_id));
 
                   return (
                     <tr
                       key={c.id}
-                      className={`hover:bg-indigo-50/30 transition-colors ${
-                        c.is_active_for_today ? 'bg-emerald-50/20' : ''
+                      className={`hover:bg-indigo-50/30 dark:hover:bg-slate-800/50 transition-colors ${
+                        c.is_active_for_today ? 'bg-emerald-50/20 dark:bg-emerald-950/20' : ''
                       }`}
                     >
                       <td className="py-3 px-4">
-                        <div className="font-bold text-slate-900">
+                        <div className="font-bold text-slate-900 dark:text-white">
                           {c.employee_name || emp?.name || `Employee #${c.employee_id}`}
                         </div>
-                        <div className="text-2xs text-slate-400">Contract #{c.id}</div>
+                        <div className="text-2xs text-slate-400 dark:text-slate-500 font-mono">Contract #{c.id}</div>
                       </td>
-                      <td className="py-3 px-4 font-medium text-slate-700">{c.position}</td>
-                      <td className="py-3 px-4 font-mono font-bold text-slate-900">
+                      <td className="py-3 px-4 font-medium text-slate-700 dark:text-slate-300">{c.position}</td>
+                      <td className="py-3 px-4 font-financial font-bold text-slate-900 dark:text-white">
                         {formatCurrency(c.wage)}
                       </td>
-                      <td className="py-3 px-4 text-indigo-900 font-medium">
+                      <td className="py-3 px-4 text-indigo-900 dark:text-indigo-300 font-medium">
                         {c.salary_structure_name || struct?.name || `Structure #${c.salary_structure_id}`}
                       </td>
-                      <td className="py-3 px-4 text-slate-600">
+                      <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
                         {c.start_date} {c.end_date ? `to ${c.end_date}` : '→ Ongoing'}
                       </td>
                       <td className="py-3 px-4">
@@ -197,8 +197,8 @@ export const ContractsPage: React.FC = () => {
                             {c.status}
                           </Badge>
                           {c.is_active_for_today && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-2xs font-bold border border-emerald-300">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-2xs font-bold border border-emerald-300 dark:border-emerald-800/60">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                               Active Today
                             </span>
                           )}
@@ -225,10 +225,10 @@ export const ContractsPage: React.FC = () => {
           <Select
             label="Employee"
             value={employeeId}
-            onChange={(e) => handleEmployeeChange(Number(e.target.value))}
+            onChange={(e) => handleEmployeeChange(e.target.value)}
             placeholder="Select Employee..."
             options={employees.map((e) => ({
-              value: e.id,
+              value: String(e.id),
               label: `${e.name} (${e.job_position})`,
             }))}
             required
@@ -248,7 +248,7 @@ export const ContractsPage: React.FC = () => {
               type="number"
               placeholder="e.g. 50000"
               value={wage}
-              onChange={(e) => setWage(Number(e.target.value))}
+              onChange={(e) => setWage(e.target.value ? Number(e.target.value) : '')}
               required
             />
           </div>
@@ -256,9 +256,9 @@ export const ContractsPage: React.FC = () => {
           <Select
             label="Salary Structure"
             value={structureId}
-            onChange={(e) => setStructureId(Number(e.target.value))}
+            onChange={(e) => setStructureId(e.target.value)}
             placeholder="Select Salary Structure..."
-            options={structures.map((s) => ({ value: s.id, label: s.name }))}
+            options={structures.map((s) => ({ value: String(s.id), label: s.name }))}
             required
             helperText="Defines the salary computation rules applied during payruns"
           />
@@ -281,7 +281,7 @@ export const ContractsPage: React.FC = () => {
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={submitting}>
               Cancel
             </Button>
@@ -294,3 +294,5 @@ export const ContractsPage: React.FC = () => {
     </div>
   );
 };
+
+export default ContractsPage;

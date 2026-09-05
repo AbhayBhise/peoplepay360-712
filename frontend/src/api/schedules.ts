@@ -11,11 +11,11 @@ export const schedulesApi = {
     }
   },
 
-  getScheduleById: async (id: number): Promise<WorkingSchedule> => {
+  getScheduleById: async (id: number | string): Promise<WorkingSchedule> => {
     try {
       return await apiRequest<WorkingSchedule>(apiClient.get(`/api/working-schedules/${id}`));
     } catch {
-      const s = MOCK_SCHEDULES.find((item) => item.id === id);
+      const s = MOCK_SCHEDULES.find((item) => String(item.id) === String(id));
       return s || MOCK_SCHEDULES[0];
     }
   },
@@ -36,7 +36,7 @@ export const schedulesApi = {
         if (diff > 0) totalMins += diff;
       });
       const newSched: WorkingSchedule = {
-        id: MOCK_SCHEDULES.length + 1,
+        id: String(MOCK_SCHEDULES.length + 1),
         name: data.name,
         type: data.type,
         weekly_hours: Number((totalMins / 60).toFixed(1)),
@@ -48,7 +48,7 @@ export const schedulesApi = {
   },
 
   updateSchedule: async (
-    id: number,
+    id: number | string,
     data: {
       name: string;
       type: string;
@@ -58,12 +58,12 @@ export const schedulesApi = {
     try {
       return await apiRequest<WorkingSchedule>(apiClient.put(`/api/working-schedules/${id}`, data));
     } catch {
-      const index = MOCK_SCHEDULES.findIndex((s) => s.id === id);
+      const index = MOCK_SCHEDULES.findIndex((s) => String(s.id) === String(id));
       if (index !== -1) {
         MOCK_SCHEDULES[index] = { ...MOCK_SCHEDULES[index], ...data };
         return MOCK_SCHEDULES[index];
       }
-      return { id, ...data, weekly_hours: 40 };
+      return { id: String(id), ...data, weekly_hours: 40 };
     }
   },
 };

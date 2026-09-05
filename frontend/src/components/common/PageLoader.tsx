@@ -16,17 +16,17 @@ export const PageLoader: React.FC<{ label?: string }> = ({
       </div>
 
       <div className="text-center space-y-2 max-w-xs">
-        <p className="text-sm font-bold text-slate-800 tracking-tight flex items-center justify-center gap-2">
-          <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
+        <p className="text-sm font-bold text-slate-800 dark:text-slate-200 tracking-tight flex items-center justify-center gap-2">
+          <Loader2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-spin" />
           <span>{label}</span>
         </p>
         
         {/* Animated Loading Bar */}
-        <div className="w-48 h-1.5 bg-slate-200/80 rounded-full overflow-hidden mx-auto">
+        <div className="w-48 h-1.5 bg-slate-200/80 dark:bg-slate-800 rounded-full overflow-hidden mx-auto">
           <div className="w-full h-full bg-linear-to-r from-indigo-600 via-teal-400 to-indigo-600 rounded-full skeleton-shimmer" />
         </div>
 
-        <p className="text-2xs text-slate-400 font-medium tracking-wide uppercase">PeoplePay360 Operations</p>
+        <p className="text-2xs text-slate-400 dark:text-slate-500 font-medium tracking-wide uppercase">PeoplePay360 Operations</p>
       </div>
     </div>
   );

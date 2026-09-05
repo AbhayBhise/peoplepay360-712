@@ -47,11 +47,11 @@ export const PayrunsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <CircleDollarSign className="w-6 h-6 text-indigo-600" />
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <CircleDollarSign className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
             <span>Payroll Runs (Payruns)</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Execute batch payroll computation, review line-item rules, validate and disburse salary
           </p>
         </div>
@@ -78,10 +78,10 @@ export const PayrunsPage: React.FC = () => {
           onAction={() => setIsWizardOpen(true)}
         />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider">
+              <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
                 <tr>
                   <th className="py-3 px-4">Payrun Batch</th>
                   <th className="py-3 px-4">Salary Structure</th>
@@ -92,29 +92,29 @@ export const PayrunsPage: React.FC = () => {
                   <th className="py-3 px-4 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {payruns.map((pr) => (
                   <tr
                     key={pr.id}
                     onClick={() => navigate(`/payroll/payruns/${pr.id}`)}
-                    className="hover:bg-indigo-50/40 cursor-pointer transition-colors"
+                    className="hover:bg-indigo-50/40 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
                   >
                     <td className="py-3 px-4">
-                      <div className="font-bold text-slate-900">
+                      <div className="font-bold text-slate-900 dark:text-white">
                         {pr.name || `Payrun #${pr.id}`}
                       </div>
-                      <div className="text-2xs text-slate-400 font-mono">ID: #{pr.id}</div>
+                      <div className="text-2xs text-slate-400 dark:text-slate-500 font-mono">ID: #{pr.id}</div>
                     </td>
-                    <td className="py-3 px-4 text-indigo-900 font-semibold">
+                    <td className="py-3 px-4 text-indigo-900 dark:text-indigo-300 font-semibold">
                       {pr.structure_name || `Structure #${pr.structure_id}`}
                     </td>
-                    <td className="py-3 px-4 text-slate-600">
+                    <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
                       {pr.period_start} → {pr.period_end}
                     </td>
-                    <td className="py-3 px-4 font-medium text-slate-800">
+                    <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">
                       {pr.employee_count ?? pr.payslips?.length ?? '—'} Employees
                     </td>
-                    <td className="py-3 px-4 font-mono font-bold text-emerald-700">
+                    <td className="py-3 px-4 font-mono font-bold text-emerald-700 dark:text-emerald-400">
                       {pr.total_net ? formatCurrency(pr.total_net) : '—'}
                     </td>
                     <td className="py-3 px-4">
@@ -133,7 +133,7 @@ export const PayrunsPage: React.FC = () => {
                       </Badge>
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <span className="text-xs font-semibold text-indigo-600 hover:underline">
+                      <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">
                         Open Processing →
                       </span>
                     </td>

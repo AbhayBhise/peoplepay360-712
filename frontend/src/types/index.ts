@@ -1,19 +1,19 @@
 export type Role = 'Employee' | 'HR Manager' | 'HR Payroll User' | 'HR Payroll Manager' | 'Admin';
 
 export interface User {
-  id: number | string;
-  employee_id?: number | string;
+  id: string;
+  employee_id?: string;
   email: string;
   name?: string;
   roles: Role[];
 }
 
 export interface Department {
-  id: number;
+  id: string;
   name: string;
-  parent_department_id?: number | null;
+  parent_department_id?: string | null;
   parent_department_name?: string;
-  head_employee_id?: number | null;
+  head_employee_id?: string | null;
   head_employee_name?: string;
   employee_count?: number;
   created_at?: string;
@@ -28,7 +28,7 @@ export interface WorkingScheduleLine {
 }
 
 export interface WorkingSchedule {
-  id: number;
+  id: string;
   name: string;
   type: string;
   weekly_hours: number;
@@ -36,16 +36,16 @@ export interface WorkingSchedule {
 }
 
 export interface Employee {
-  id: number;
+  id: string;
   name: string;
   email?: string;
-  department_id?: number;
+  department_id?: string;
   department_name?: string;
-  manager_id?: number | null;
+  manager_id?: string | null;
   manager_name?: string;
   job_position: string;
   status: 'active' | 'inactive';
-  working_schedule_id?: number;
+  working_schedule_id?: string;
   working_schedule_name?: string;
   hire_date?: string;
   wage?: number;
@@ -61,14 +61,14 @@ export interface Employee {
 }
 
 export interface Contract {
-  id: number;
-  employee_id: number;
+  id: string;
+  employee_id: string;
   employee_name?: string;
-  department_id?: number;
+  department_id?: string;
   department_name?: string;
   position: string;
   wage: number;
-  salary_structure_id: number;
+  salary_structure_id: string;
   salary_structure_name?: string;
   start_date: string;
   end_date?: string | null;
@@ -77,8 +77,8 @@ export interface Contract {
 }
 
 export interface Attendance {
-  id: number;
-  employee_id: number;
+  id: string;
+  employee_id: string;
   employee_name?: string;
   check_in: string;
   check_out?: string | null;
@@ -89,7 +89,7 @@ export interface Attendance {
 }
 
 export interface TimeOffType {
-  id: number;
+  id: string;
   name: string;
   unit: 'days' | 'hours';
   requires_allocation: boolean;
@@ -97,10 +97,10 @@ export interface TimeOffType {
 }
 
 export interface TimeOffAllocation {
-  id: number;
-  employee_id: number;
+  id: string;
+  employee_id: string;
   employee_name?: string;
-  type_id: number;
+  type_id: string;
   type_name?: string;
   allocated: number;
   taken?: number;
@@ -111,10 +111,10 @@ export interface TimeOffAllocation {
 }
 
 export interface TimeOffRequest {
-  id: number;
-  employee_id: number;
+  id: string;
+  employee_id: string;
   employee_name?: string;
-  type_id: number;
+  type_id: string;
   type_name?: string;
   date_from: string;
   date_to: string;
@@ -124,8 +124,8 @@ export interface TimeOffRequest {
 }
 
 export interface SalaryRule {
-  id: number;
-  structure_id: number;
+  id: string;
+  structure_id: string;
   name: string;
   code: string;
   category: 'Basic' | 'Allowance' | 'Deduction' | 'Gross' | 'Net';
@@ -138,7 +138,7 @@ export interface SalaryRule {
 }
 
 export interface SalaryStructure {
-  id: number;
+  id: string;
   name: string;
   active: boolean;
   rules_count?: number;
@@ -147,9 +147,9 @@ export interface SalaryStructure {
 }
 
 export interface Payrun {
-  id: number;
+  id: string;
   name?: string;
-  structure_id: number;
+  structure_id: string;
   structure_name?: string;
   period_start: string;
   period_end: string;
@@ -164,8 +164,8 @@ export interface Payrun {
 }
 
 export interface PayslipSummary {
-  id: number;
-  employee_id: number;
+  id: string;
+  employee_id: string;
   employee_name?: string;
   status: string;
   worked_days?: number;
@@ -177,19 +177,19 @@ export interface PayslipSummary {
 }
 
 export interface PayslipLine {
-  rule_id: number;
+  rule_id: string;
   category: string;
   name: string;
   amount: number;
 }
 
 export interface PayslipDetail {
-  id: number;
-  employee_id: number;
+  id: string;
+  employee_id: string;
   employee_name?: string;
-  structure_id: number;
+  structure_id: string;
   structure_name?: string;
-  payrun_id?: number;
+  payrun_id?: string;
   period_start: string;
   period_end: string;
   status: string;
@@ -211,7 +211,7 @@ export interface DashboardSummary {
 }
 
 export interface SalaryByDepartment {
-  department_id: number;
+  department_id: string;
   department_name: string;
   headcount: number;
   total_salary: number;
@@ -230,6 +230,34 @@ export interface AttendanceOverview {
   missing_checkouts: number;
   manual_edits: number;
   coverage_pct: number;
+}
+
+export interface EmployeeDashboard {
+  attendanceThisMonth: {
+    present: number;
+    late: number;
+    missingCheckouts: number;
+    totalDays: number;
+  };
+  leaveBalances: Array<{
+    typeName: string;
+    allocated: number;
+    taken: number;
+    remaining: number;
+  }>;
+  recentTimeOffRequests: Array<{
+    typeName: string;
+    dateFrom: string;
+    dateTo: string;
+    duration: number;
+    status: string;
+  }>;
+  recentPayslips: Array<{
+    id: string;
+    net: number | string;
+    status: string;
+    createdAt?: string;
+  }>;
 }
 
 export interface ApiResponse<T = any> {

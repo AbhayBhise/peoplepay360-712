@@ -4,7 +4,7 @@ import { MOCK_ATTENDANCE, MOCK_EMPLOYEES } from './mockData';
 
 export const attendanceApi = {
   getAttendance: async (filters?: {
-    employee_id?: number;
+    employee_id?: number | string;
     date_from?: string;
     date_to?: string;
     status?: string;
@@ -14,7 +14,7 @@ export const attendanceApi = {
     } catch {
       let result = [...MOCK_ATTENDANCE];
       if (filters?.employee_id) {
-        result = result.filter((a) => a.employee_id === Number(filters.employee_id));
+        result = result.filter((a) => String(a.employee_id) === String(filters.employee_id));
       }
       return result;
     }
@@ -23,15 +23,15 @@ export const attendanceApi = {
   checkIn: async (data: { employee_id?: number | string; check_in?: string }): Promise<Attendance> => {
     try {
       const payload = {
-        employeeId: String(data.employee_id || 1),
+        employeeId: data.employee_id ? String(data.employee_id) : '1',
         checkIn: data.check_in || new Date().toISOString(),
       };
       return await apiRequest<Attendance>(apiClient.post('/api/attendance/check-in', payload));
     } catch {
       const emp = MOCK_EMPLOYEES.find((e) => String(e.id) === String(data.employee_id));
       const newAtt: Attendance = {
-        id: MOCK_ATTENDANCE.length + 201,
-        employee_id: Number(data.employee_id || 1),
+        id: String(MOCK_ATTENDANCE.length + 201),
+        employee_id: data.employee_id ? String(data.employee_id) : '1',
         employee_name: emp?.name || 'Current User',
         check_in: data.check_in || new Date().toISOString().replace('T', ' ').slice(0, 16),
         check_out: null,
@@ -61,8 +61,8 @@ export const attendanceApi = {
         return MOCK_ATTENDANCE[index];
       }
       return {
-        id: Number(id) || 1,
-        employee_id: 1,
+        id: String(id),
+        employee_id: '1',
         check_in: '09:00',
         check_out: checkOutTime,
         worked_hours: 8.0,
@@ -89,8 +89,7 @@ export const attendanceApi = {
         MOCK_ATTENDANCE[index] = { ...MOCK_ATTENDANCE[index], ...data };
         return MOCK_ATTENDANCE[index];
       }
-      return { id: Number(id) || 1, employee_id: 1, check_in: data.check_in || '', check_out: data.check_out, worked_hours: 8 };
+      return { id: String(id), employee_id: '1', check_in: data.check_in || '', check_out: data.check_out, worked_hours: 8 };
     }
   },
 };
-

@@ -41,7 +41,7 @@ export const AppLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-transparent text-slate-900 font-sans relative overflow-x-hidden">
+    <div className="min-h-screen flex bg-transparent text-slate-900 dark:text-slate-100 font-sans relative overflow-x-hidden">
       {/* Ambient background decoration glow orbs */}
       <div className="fixed pointer-events-none -top-24 -right-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl -z-10" />
       <div className="fixed pointer-events-none top-1/3 -left-28 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl -z-10" />
@@ -71,11 +71,11 @@ export const AppLayout: React.FC = () => {
         />
 
         {/* Sub-Header Context Bar with Breadcrumb */}
-        <div className="bg-white/75 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 py-2.5 shadow-2xs">
+        <div className="bg-white/75 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 lg:px-8 py-2.5 shadow-2xs transition-colors duration-200">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <nav className="flex items-center space-x-1.5 text-xs text-slate-500">
-              <Link to="/dashboard" className="hover:text-indigo-600 flex items-center gap-1.5 font-medium transition-colors">
-                <Home className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600" />
+            <nav className="flex items-center space-x-1.5 text-xs text-slate-500 dark:text-slate-400">
+              <Link to="/dashboard" className="hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1.5 font-medium transition-colors">
+                <Home className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
                 <span>Command Center</span>
               </Link>
               {pathSegments.map((seg, idx) => {
@@ -83,13 +83,13 @@ export const AppLayout: React.FC = () => {
                 const isLast = idx === pathSegments.length - 1;
                 return (
                   <React.Fragment key={url}>
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" />
                     {isLast ? (
-                      <span className="font-bold text-indigo-600 truncate bg-indigo-50/80 px-2 py-0.5 rounded-md border border-indigo-100">
+                      <span className="font-bold text-indigo-600 dark:text-indigo-300 truncate bg-indigo-50/80 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-100 dark:border-indigo-800/60">
                         {getSegmentTitle(seg)}
                       </span>
                     ) : (
-                      <Link to={url} className="hover:text-indigo-600 font-medium truncate transition-colors">
+                      <Link to={url} className="hover:text-indigo-600 dark:hover:text-indigo-400 font-medium truncate transition-colors">
                         {getSegmentTitle(seg)}
                       </Link>
                     )}

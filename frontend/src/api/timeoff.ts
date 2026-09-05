@@ -21,7 +21,7 @@ export const timeOffApi = {
       return await apiRequest<TimeOffType>(apiClient.post('/api/time-off/types', data));
     } catch {
       const newType: TimeOffType = {
-        id: MOCK_TIME_OFF_TYPES.length + 1,
+        id: String(MOCK_TIME_OFF_TYPES.length + 1),
         name: data.name || 'Custom Leave',
         unit: data.unit || 'days',
         requires_allocation: data.requires_allocation ?? true,
@@ -31,22 +31,22 @@ export const timeOffApi = {
     }
   },
 
-  updateType: async (id: number, data: Partial<TimeOffType>): Promise<TimeOffType> => {
+  updateType: async (id: number | string, data: Partial<TimeOffType>): Promise<TimeOffType> => {
     try {
       return await apiRequest<TimeOffType>(apiClient.put(`/api/time-off/types/${id}`, data));
     } catch {
-      const index = MOCK_TIME_OFF_TYPES.findIndex((t) => t.id === id);
+      const index = MOCK_TIME_OFF_TYPES.findIndex((t) => String(t.id) === String(id));
       if (index !== -1) {
         MOCK_TIME_OFF_TYPES[index] = { ...MOCK_TIME_OFF_TYPES[index], ...data };
         return MOCK_TIME_OFF_TYPES[index];
       }
-      return { id, name: 'Leave', unit: 'days', requires_allocation: true, ...data };
+      return { id: String(id), name: 'Leave', unit: 'days', requires_allocation: true, ...data };
     }
   },
 
   getAllocations: async (filters?: {
-    employee_id?: number;
-    type_id?: number;
+    employee_id?: number | string;
+    type_id?: number | string;
     status?: string;
   }): Promise<TimeOffAllocation[]> => {
     try {
@@ -54,7 +54,7 @@ export const timeOffApi = {
     } catch {
       let result = [...MOCK_ALLOCATIONS];
       if (filters?.employee_id) {
-        result = result.filter((a) => a.employee_id === Number(filters.employee_id));
+        result = result.filter((a) => String(a.employee_id) === String(filters.employee_id));
       }
       return result;
     }
@@ -80,10 +80,10 @@ export const timeOffApi = {
       const emp = MOCK_EMPLOYEES.find((e) => String(e.id) === String(data.employee_id));
       const t = MOCK_TIME_OFF_TYPES.find((item) => String(item.id) === String(data.type_id));
       const newAlloc: TimeOffAllocation = {
-        id: MOCK_ALLOCATIONS.length + 1,
-        employee_id: Number(data.employee_id) || 1,
+        id: String(MOCK_ALLOCATIONS.length + 1),
+        employee_id: String(data.employee_id),
         employee_name: emp?.name,
-        type_id: Number(data.type_id) || 1,
+        type_id: String(data.type_id),
         type_name: t?.name,
         allocated: data.allocated,
         taken: 0,
@@ -106,7 +106,7 @@ export const timeOffApi = {
         MOCK_ALLOCATIONS[index].status = 'validate';
         return MOCK_ALLOCATIONS[index];
       }
-      return { id: Number(id) || 1, employee_id: 1, type_id: 1, allocated: 10, status: 'validate', valid_from: '', valid_to: '' };
+      return { id: String(id), employee_id: '1', type_id: '1', allocated: 10, status: 'validate', valid_from: '', valid_to: '' };
     }
   },
 
@@ -163,10 +163,10 @@ export const timeOffApi = {
       const duration = Math.max(1, Math.ceil((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)) + 1);
 
       const newReq: TimeOffRequest = {
-        id: MOCK_REQUESTS.length + 1,
-        employee_id: Number(data.employee_id) || 1,
+        id: String(MOCK_REQUESTS.length + 1),
+        employee_id: String(data.employee_id),
         employee_name: emp?.name,
-        type_id: Number(data.type_id) || 1,
+        type_id: String(data.type_id),
         type_name: t?.name,
         date_from: data.date_from,
         date_to: data.date_to,
@@ -179,36 +179,36 @@ export const timeOffApi = {
     }
   },
 
-  approveRequest: async (id: number): Promise<TimeOffRequest> => {
+  approveRequest: async (id: number | string): Promise<TimeOffRequest> => {
     try {
       return await apiRequest<TimeOffRequest>(apiClient.post(`/api/time-off/requests/${id}/approve`));
     } catch {
-      const index = MOCK_REQUESTS.findIndex((r) => r.id === id);
+      const index = MOCK_REQUESTS.findIndex((r) => String(r.id) === String(id));
       if (index !== -1) {
         MOCK_REQUESTS[index].status = 'validate';
         // Deduct from allocation
         const req = MOCK_REQUESTS[index];
-        const alloc = MOCK_ALLOCATIONS.find((a) => a.employee_id === req.employee_id && a.type_id === req.type_id);
+        const alloc = MOCK_ALLOCATIONS.find((a) => String(a.employee_id) === String(req.employee_id) && String(a.type_id) === String(req.type_id));
         if (alloc) {
           alloc.taken = (alloc.taken || 0) + (req.duration || 1);
           alloc.remaining = Math.max(0, alloc.allocated - alloc.taken);
         }
         return MOCK_REQUESTS[index];
       }
-      return { id, employee_id: 1, type_id: 1, date_from: '', date_to: '', status: 'validate' };
+      return { id: String(id), employee_id: '1', type_id: '1', date_from: '', date_to: '', status: 'validate' };
     }
   },
 
-  refuseRequest: async (id: number): Promise<TimeOffRequest> => {
+  refuseRequest: async (id: number | string): Promise<TimeOffRequest> => {
     try {
       return await apiRequest<TimeOffRequest>(apiClient.post(`/api/time-off/requests/${id}/refuse`));
     } catch {
-      const index = MOCK_REQUESTS.findIndex((r) => r.id === id);
+      const index = MOCK_REQUESTS.findIndex((r) => String(r.id) === String(id));
       if (index !== -1) {
         MOCK_REQUESTS[index].status = 'refused';
         return MOCK_REQUESTS[index];
       }
-      return { id, employee_id: 1, type_id: 1, date_from: '', date_to: '', status: 'refused' };
+      return { id: String(id), employee_id: '1', type_id: '1', date_from: '', date_to: '', status: 'refused' };
     }
   },
 };

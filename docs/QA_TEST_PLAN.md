@@ -26,7 +26,7 @@ Seeded logins:
 - [ ] Refresh the page while logged in — session persists (not kicked back to login)
 
 ## 2. Dashboard — per role, this is the section most likely to reveal something (see docs/02_API_CONTRACTS.md's revised decision)
-- [ ] **Employee**: sees a personal view (own attendance/leave/payslips) — NOT the company-wide KPI dashboard, NOT a 403 error page
+- [ ] **Employee**: sees a personal view (own attendance/leave/payslips) — NOT the company-wide KPI dashboard, NOT a 403 error page — **`GET /api/dashboard/me` was missing on old branch; now pushed to dev. DASH-04.**
 - [ ] **HR Manager**: sees attendance/leave KPIs — confirm NO salary/payroll figures appear anywhere on the page
 - [ ] **HR Payroll User / Manager / Admin**: sees full dashboard including Total Net Paid, Average Salary, Salary by Department chart
 - [ ] Change the date filter — numbers actually change (proves it's live data, not a static render)

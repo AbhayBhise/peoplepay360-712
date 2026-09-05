@@ -69,17 +69,17 @@ export const LoginPage: React.FC = () => {
         </div>
 
         {/* Login Card */}
-        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-6 sm:p-8 border border-white/40">
+        <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl shadow-2xl p-6 sm:p-8 border border-white/40 dark:border-slate-800">
           <div className="mb-6">
-            <h2 className="text-xl font-bold text-slate-800">Sign in to your account</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Sign in to your account</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Enter authorized workforce credentials to access PeoplePay360
             </p>
           </div>
 
           {errorMessage && (
-            <div className="mb-5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-start gap-2 animate-fade-in">
-              <span className="text-rose-500 font-bold mt-0.5">!</span>
+            <div className="mb-5 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-xs font-medium flex items-start gap-2 animate-fade-in">
+              <span className="text-rose-500 dark:text-rose-400 font-bold mt-0.5">!</span>
               <span className="flex-1 leading-snug">{errorMessage}</span>
             </div>
           )}
@@ -117,8 +117,8 @@ export const LoginPage: React.FC = () => {
           </form>
 
           {/* Quick Demo Logins Switcher */}
-          <div className="mt-8 pt-6 border-t border-slate-200">
-            <div className="flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+          <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
               <span>Demo Quick Sign-In (Click to select role)</span>
             </div>
@@ -128,12 +128,12 @@ export const LoginPage: React.FC = () => {
                   key={acc.label}
                   type="button"
                   onClick={() => handleQuickFill(acc.email, acc.password)}
-                  className="p-2 text-left bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 border border-slate-200 rounded-lg transition-all group cursor-pointer"
+                  className="p-2 text-left bg-slate-50 dark:bg-slate-800/70 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:border-indigo-200 dark:hover:border-indigo-800 border border-slate-200 dark:border-slate-700 rounded-lg transition-all group cursor-pointer"
                 >
-                  <div className="text-xs font-bold text-slate-800 group-hover:text-indigo-600">
+                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
                     {acc.label}
                   </div>
-                  <div className="text-2xs text-slate-500 truncate">{acc.email.split('@')[0]}</div>
+                  <div className="text-2xs text-slate-500 dark:text-slate-400 truncate">{acc.email.split('@')[0]}</div>
                 </button>
               ))}
             </div>

@@ -145,7 +145,7 @@ export const payrollApi = {
       return normalizeStructure(raw);
     } catch {
       const newStruct: SalaryStructure = {
-        id: MOCK_STRUCTURES.length + 1,
+        id: String(MOCK_STRUCTURES.length + 1),
         name: data.name,
         active: data.active,
         rules_count: 0,
@@ -165,7 +165,7 @@ export const payrollApi = {
         MOCK_STRUCTURES[index] = { ...MOCK_STRUCTURES[index], ...data };
         return MOCK_STRUCTURES[index];
       }
-      return { id: Number(id) || 1, name: data.name, active: data.active };
+      return { id: String(id), name: data.name, active: data.active };
     }
   },
 
@@ -197,8 +197,8 @@ export const payrollApi = {
       return normalizeSalaryRule(raw);
     } catch {
       const newRule: SalaryRule = {
-        id: MOCK_RULES.length + 1,
-        structure_id: data.structure_id || 1,
+        id: String(MOCK_RULES.length + 1),
+        structure_id: String(data.structure_id || '1'),
         name: data.name || 'New Rule',
         code: data.code || 'RULE',
         category: data.category || 'Allowance',
@@ -234,7 +234,7 @@ export const payrollApi = {
         MOCK_RULES[index] = { ...MOCK_RULES[index], ...data };
         return MOCK_RULES[index];
       }
-      return { id: Number(id) || 1, structure_id: 1, name: '', code: '', category: 'Basic', sequence: 10, computation_method: 'fixed', ...data };
+      return { id: String(id), structure_id: '1', name: '', code: '', category: 'Basic', sequence: 10, computation_method: 'fixed', ...data };
     }
   },
 
@@ -294,9 +294,9 @@ export const payrollApi = {
     } catch {
       const struct = MOCK_STRUCTURES.find((s) => String(s.id) === String(data.structure_id));
       const newPayrun: Payrun = {
-        id: MOCK_PAYRUNS.length + 1,
+        id: String(MOCK_PAYRUNS.length + 1),
         name: `${new Date(data.period_start).toLocaleString('default', { month: 'long', year: 'numeric' })} Batch Run`,
-        structure_id: Number(data.structure_id) || 1,
+        structure_id: String(data.structure_id),
         structure_name: struct?.name,
         period_start: data.period_start,
         period_end: data.period_end,
@@ -308,8 +308,8 @@ export const payrollApi = {
           const emp = MOCK_EMPLOYEES.find((e) => String(e.id) === String(empId));
           const contract = MOCK_CONTRACTS.find((c) => String(c.employee_id) === String(empId));
           return {
-            id: 600 + idx,
-            employee_id: Number(empId) || idx + 1,
+            id: String(600 + idx),
+            employee_id: String(empId),
             employee_name: emp?.name || `Employee #${empId}`,
             status: 'draft',
             worked_days: 22,
@@ -380,9 +380,9 @@ export const payrollApi = {
             gross,
             net,
             lines: [
-              { rule_id: 1, category: 'Basic', name: 'Basic Wage', amount: ps.basic! },
-              { rule_id: 2, category: 'Allowance', name: 'HRA & Living Allowance', amount: allowance },
-              { rule_id: 3, category: 'Deduction', name: 'Tax & PF Deduction', amount: -deduction },
+              { rule_id: '1', category: 'Basic', name: 'Basic Wage', amount: ps.basic! },
+              { rule_id: '2', category: 'Allowance', name: 'HRA & Living Allowance', amount: allowance },
+              { rule_id: '3', category: 'Deduction', name: 'Tax & PF Deduction', amount: -deduction },
             ],
           };
 
@@ -465,13 +465,13 @@ export const payrollApi = {
       const raw = await apiRequest<any>(apiClient.get(`/api/payslips/${id}`));
       return normalizePayslipDetail(raw);
     } catch {
-      const p = MOCK_PAYSLIP_DETAILS[Number(id)];
+      const p = MOCK_PAYSLIP_DETAILS[String(id)];
       if (p) return p;
       return {
-        id: Number(id),
-        employee_id: 1,
+        id: String(id),
+        employee_id: '1',
         employee_name: 'Staff Member',
-        structure_id: 1,
+        structure_id: '1',
         structure_name: 'Executive & Management Structure',
         period_start: '2026-09-01',
         period_end: '2026-09-30',
@@ -483,10 +483,10 @@ export const payrollApi = {
         gross: 7200,
         net: 6480,
         lines: [
-          { rule_id: 1, category: 'Basic', name: 'Basic Salary (100%)', amount: 6000 },
-          { rule_id: 2, category: 'Allowance', name: 'HRA (20%)', amount: 1200 },
-          { rule_id: 3, category: 'Deduction', name: 'Tax (10%)', amount: -600 },
-          { rule_id: 4, category: 'Deduction', name: 'PF Contribution', amount: -120 },
+          { rule_id: '1', category: 'Basic', name: 'Basic Salary (100%)', amount: 6000 },
+          { rule_id: '2', category: 'Allowance', name: 'HRA (20%)', amount: 1200 },
+          { rule_id: '3', category: 'Deduction', name: 'Tax (10%)', amount: -600 },
+          { rule_id: '4', category: 'Deduction', name: 'PF Contribution', amount: -120 },
         ],
       };
     }
