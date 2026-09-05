@@ -7,13 +7,6 @@ export interface LoginResponse {
   token: string;
 }
 
-export interface RegisterPayload {
-  name: string;
-  email: string;
-  password: string;
-  role?: string;
-}
-
 export const authApi = {
   login: async (credentials: { email: string; password: string }): Promise<LoginResponse> => {
     try {
@@ -38,30 +31,6 @@ export const authApi = {
         };
       }
       throw err;
-    }
-  },
-
-  register: async (payload: RegisterPayload): Promise<LoginResponse> => {
-    try {
-      return await apiRequest<LoginResponse>(apiClient.post('/api/auth/register', payload));
-    } catch (err: any) {
-      // Offline / Demo Fallback: dynamically create new user session
-      const newUser: User = {
-        id: Math.floor(Math.random() * 9000) + 100,
-        email: payload.email.trim().toLowerCase(),
-        name: payload.name.trim(),
-        roles: [payload.role || 'Employee'] as any,
-      };
-      
-      const newResponse: LoginResponse = {
-        user: newUser,
-        token: `demo-jwt-${newUser.id}-${Date.now()}`,
-      };
-
-      // Register into MOCK_USERS so they can also log in again later
-      MOCK_USERS[newUser.email] = newResponse;
-
-      return newResponse;
     }
   },
 

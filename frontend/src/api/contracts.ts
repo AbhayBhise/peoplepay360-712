@@ -19,34 +19,44 @@ export const contractsApi = {
   },
 
   createContract: async (data: {
-    employee_id: number;
-    department_id: number;
-    position: string;
+    employee_id: number | string;
+    department_id?: number | string | null;
+    position?: string | null;
     wage: number;
-    salary_structure_id: number;
+    salary_structure_id?: number | string | null;
     start_date: string;
     end_date?: string | null;
-    status: string;
+    status?: string;
   }): Promise<Contract> => {
     try {
-      return await apiRequest<Contract>(apiClient.post('/api/contracts', data));
+      const payload = {
+        employeeId: String(data.employee_id),
+        departmentId: data.department_id ? String(data.department_id) : undefined,
+        position: data.position || undefined,
+        wage: Number(data.wage),
+        salaryStructureId: data.salary_structure_id ? String(data.salary_structure_id) : undefined,
+        startDate: data.start_date,
+        endDate: data.end_date || null,
+        status: (data.status as any) || 'draft',
+      };
+      return await apiRequest<Contract>(apiClient.post('/api/contracts', payload));
     } catch {
-      const emp = MOCK_EMPLOYEES.find((e) => e.id === data.employee_id);
-      const dept = MOCK_DEPARTMENTS.find((d) => d.id === data.department_id);
-      const struct = MOCK_STRUCTURES.find((s) => s.id === data.salary_structure_id);
+      const emp = MOCK_EMPLOYEES.find((e) => String(e.id) === String(data.employee_id));
+      const dept = MOCK_DEPARTMENTS.find((d) => String(d.id) === String(data.department_id));
+      const struct = MOCK_STRUCTURES.find((s) => String(s.id) === String(data.salary_structure_id));
       const newContract: Contract = {
         id: MOCK_CONTRACTS.length + 101,
-        employee_id: data.employee_id,
+        employee_id: Number(data.employee_id) || 1,
         employee_name: emp?.name,
-        department_id: data.department_id,
+        department_id: Number(data.department_id) || 1,
         department_name: dept?.name,
-        position: data.position,
-        wage: data.wage,
-        salary_structure_id: data.salary_structure_id,
+        position: data.position || 'Staff',
+        wage: Number(data.wage),
+        salary_structure_id: Number(data.salary_structure_id) || 1,
         salary_structure_name: struct?.name,
         start_date: data.start_date,
         end_date: data.end_date,
-        status: data.status as any,
+        status: (data.status as any) || 'draft',
         is_active_for_today: true,
       };
       MOCK_CONTRACTS.unshift(newContract);

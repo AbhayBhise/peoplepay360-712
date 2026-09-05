@@ -48,6 +48,7 @@ export interface Employee {
   working_schedule_id?: number;
   working_schedule_name?: string;
   hire_date?: string;
+  wage?: number;
   // Smart button live counts from GET /api/employees/:id
   contracts_count?: number;
   contractsCount?: number;

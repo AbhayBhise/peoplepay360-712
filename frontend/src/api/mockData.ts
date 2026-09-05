@@ -18,26 +18,49 @@ import {
   AttendanceOverview,
 } from '../types';
 
-// DEMO USERS
+// DEMO USERS (Supports both live backend seed logins and .com demo logins)
 export const MOCK_USERS: Record<string, { user: User; token: string }> = {
+  // Live backend seed accounts
+  'admin@peoplepay360.dev': {
+    user: { id: 1, email: 'admin@peoplepay360.dev', name: 'System Administrator', roles: ['Admin'] },
+    token: 'mock-jwt-admin-token-xyz',
+  },
+  'hr.manager@peoplepay360.dev': {
+    user: { id: 2, employee_id: 1, email: 'hr.manager@peoplepay360.dev', name: 'Rahul Verma', roles: ['HR Manager'] },
+    token: 'mock-jwt-hrm-token-xyz',
+  },
+  'payroll.manager@peoplepay360.dev': {
+    user: { id: 3, employee_id: 2, email: 'payroll.manager@peoplepay360.dev', name: 'Ananya Iyer', roles: ['HR Payroll Manager'] },
+    token: 'mock-jwt-hrpm-token-xyz',
+  },
+  'payroll.user@peoplepay360.dev': {
+    user: { id: 4, employee_id: 3, email: 'payroll.user@peoplepay360.dev', name: 'Priya Sharma', roles: ['HR Payroll User'] },
+    token: 'mock-jwt-hrpu-token-xyz',
+  },
+  'employee.demo@peoplepay360.dev': {
+    user: { id: 5, employee_id: 4, email: 'employee.demo@peoplepay360.dev', name: 'Arjun Mehta', roles: ['Employee'] },
+    token: 'mock-jwt-emp-token-xyz',
+  },
+
+  // Alternate .com accounts
   'admin@peoplepay360.com': {
-    user: { id: 1, email: 'admin@peoplepay360.com', name: 'Alexander Wright', roles: ['Admin'] },
+    user: { id: 1, email: 'admin@peoplepay360.com', name: 'System Administrator', roles: ['Admin'] },
     token: 'mock-jwt-admin-token-xyz',
   },
   'hrmanager@peoplepay360.com': {
-    user: { id: 2, employee_id: 1, email: 'hrmanager@peoplepay360.com', name: 'Sophia Chen', roles: ['HR Manager'] },
+    user: { id: 2, employee_id: 1, email: 'hrmanager@peoplepay360.com', name: 'Rahul Verma', roles: ['HR Manager'] },
     token: 'mock-jwt-hrm-token-xyz',
   },
   'payrollmanager@peoplepay360.com': {
-    user: { id: 3, employee_id: 2, email: 'payrollmanager@peoplepay360.com', name: 'Marcus Vance', roles: ['HR Payroll Manager'] },
+    user: { id: 3, employee_id: 2, email: 'payrollmanager@peoplepay360.com', name: 'Ananya Iyer', roles: ['HR Payroll Manager'] },
     token: 'mock-jwt-hrpm-token-xyz',
   },
   'payrolluser@peoplepay360.com': {
-    user: { id: 4, employee_id: 3, email: 'payrolluser@peoplepay360.com', name: 'Elena Rostova', roles: ['HR Payroll User'] },
+    user: { id: 4, employee_id: 3, email: 'payrolluser@peoplepay360.com', name: 'Priya Sharma', roles: ['HR Payroll User'] },
     token: 'mock-jwt-hrpu-token-xyz',
   },
   'employee@peoplepay360.com': {
-    user: { id: 5, employee_id: 4, email: 'employee@peoplepay360.com', name: 'David Miller', roles: ['Employee'] },
+    user: { id: 5, employee_id: 4, email: 'employee@peoplepay360.com', name: 'Arjun Mehta', roles: ['Employee'] },
     token: 'mock-jwt-emp-token-xyz',
   },
 };

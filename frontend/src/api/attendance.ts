@@ -20,11 +20,15 @@ export const attendanceApi = {
     }
   },
 
-  checkIn: async (data: { employee_id?: number; check_in?: string }): Promise<Attendance> => {
+  checkIn: async (data: { employee_id?: number | string; check_in?: string }): Promise<Attendance> => {
     try {
-      return await apiRequest<Attendance>(apiClient.post('/api/attendance/check-in', data));
+      const payload = {
+        employeeId: String(data.employee_id || 1),
+        checkIn: data.check_in || new Date().toISOString(),
+      };
+      return await apiRequest<Attendance>(apiClient.post('/api/attendance/check-in', payload));
     } catch {
-      const emp = MOCK_EMPLOYEES.find((e) => e.id === Number(data.employee_id));
+      const emp = MOCK_EMPLOYEES.find((e) => String(e.id) === String(data.employee_id));
       const newAtt: Attendance = {
         id: MOCK_ATTENDANCE.length + 201,
         employee_id: Number(data.employee_id || 1),
@@ -40,11 +44,14 @@ export const attendanceApi = {
     }
   },
 
-  checkOut: async (id: number, data: { check_out?: string }): Promise<Attendance> => {
+  checkOut: async (id: number | string, data: { check_out?: string }): Promise<Attendance> => {
     try {
-      return await apiRequest<Attendance>(apiClient.post(`/api/attendance/${id}/check-out`, data));
+      const payload = {
+        checkOut: data.check_out || new Date().toISOString(),
+      };
+      return await apiRequest<Attendance>(apiClient.post(`/api/attendance/${id}/check-out`, payload));
     } catch {
-      const index = MOCK_ATTENDANCE.findIndex((a) => a.id === id);
+      const index = MOCK_ATTENDANCE.findIndex((a) => String(a.id) === String(id));
       const checkOutTime = data.check_out || new Date().toISOString().replace('T', ' ').slice(0, 16);
       if (index !== -1) {
         MOCK_ATTENDANCE[index].check_out = checkOutTime;
@@ -54,7 +61,7 @@ export const attendanceApi = {
         return MOCK_ATTENDANCE[index];
       }
       return {
-        id,
+        id: Number(id) || 1,
         employee_id: 1,
         check_in: '09:00',
         check_out: checkOutTime,
@@ -66,18 +73,24 @@ export const attendanceApi = {
   },
 
   updateAttendance: async (
-    id: number,
-    data: { check_in?: string; check_out?: string; note?: string }
+    id: number | string,
+    data: { check_in?: string; check_out?: string; status?: any; note?: string }
   ): Promise<Attendance> => {
     try {
-      return await apiRequest<Attendance>(apiClient.put(`/api/attendance/${id}`, data));
+      const payload = {
+        checkIn: data.check_in,
+        checkOut: data.check_out,
+        status: data.status,
+      };
+      return await apiRequest<Attendance>(apiClient.put(`/api/attendance/${id}`, payload));
     } catch {
-      const index = MOCK_ATTENDANCE.findIndex((a) => a.id === id);
+      const index = MOCK_ATTENDANCE.findIndex((a) => String(a.id) === String(id));
       if (index !== -1) {
         MOCK_ATTENDANCE[index] = { ...MOCK_ATTENDANCE[index], ...data };
         return MOCK_ATTENDANCE[index];
       }
-      return { id, employee_id: 1, check_in: data.check_in || '', check_out: data.check_out, worked_hours: 8 };
+      return { id: Number(id) || 1, employee_id: 1, check_in: data.check_in || '', check_out: data.check_out, worked_hours: 8 };
     }
   },
 };
+

@@ -101,35 +101,62 @@ export const payrollApi = {
 
   // Payruns (2-Step Wizard)
   previewPayrun: async (data: {
-    structure_id: number;
+    structure_id: number | string;
     period_start: string;
     period_end: string;
   }): Promise<Employee[]> => {
     try {
-      return await apiRequest<Employee[]>(apiClient.post('/api/payruns/preview', data));
+      const payload = {
+        structureId: String(data.structure_id),
+        periodStart: data.period_start,
+        periodEnd: data.period_end,
+      };
+      const res = await apiRequest<any[]>(apiClient.post('/api/payruns/preview', payload));
+      if (Array.isArray(res)) {
+        return res.map((item: any) => ({
+          id: item.employeeId || item.id,
+          name: item.employeeName || item.name,
+          job_position: item.position || item.job_position || 'Staff Member',
+          department_id: item.departmentId || item.department_id || 1,
+          department_name: item.departmentName || item.department_name,
+          wage: item.wage,
+          status: 'active',
+          contracts_count: 1,
+          attendance_count: 22,
+          time_off_count: 0,
+          payslips_count: 0,
+        }));
+      }
+      return [];
     } catch {
       // Return employees having contracts with that structure
       const matchingContractEmpIds = MOCK_CONTRACTS
-        .filter((c) => c.salary_structure_id === Number(data.structure_id))
+        .filter((c) => String(c.salary_structure_id) === String(data.structure_id))
         .map((c) => c.employee_id);
       return MOCK_EMPLOYEES.filter((e) => matchingContractEmpIds.includes(e.id));
     }
   },
 
   createPayrun: async (data: {
-    structure_id: number;
+    structure_id: number | string;
     period_start: string;
     period_end: string;
-    employee_ids: number[];
+    employee_ids: (number | string)[];
   }): Promise<Payrun> => {
     try {
-      return await apiRequest<Payrun>(apiClient.post('/api/payruns', data));
+      const payload = {
+        structureId: String(data.structure_id),
+        periodStart: data.period_start,
+        periodEnd: data.period_end,
+        employeeIds: data.employee_ids.map(String),
+      };
+      return await apiRequest<Payrun>(apiClient.post('/api/payruns', payload));
     } catch {
-      const struct = MOCK_STRUCTURES.find((s) => s.id === data.structure_id);
+      const struct = MOCK_STRUCTURES.find((s) => String(s.id) === String(data.structure_id));
       const newPayrun: Payrun = {
         id: MOCK_PAYRUNS.length + 1,
         name: `${new Date(data.period_start).toLocaleString('default', { month: 'long', year: 'numeric' })} Batch Run`,
-        structure_id: data.structure_id,
+        structure_id: Number(data.structure_id) || 1,
         structure_name: struct?.name,
         period_start: data.period_start,
         period_end: data.period_end,
@@ -138,12 +165,12 @@ export const payrollApi = {
         total_net: 0,
         warnings: [],
         payslips: data.employee_ids.map((empId, idx) => {
-          const emp = MOCK_EMPLOYEES.find((e) => e.id === empId);
-          const contract = MOCK_CONTRACTS.find((c) => c.employee_id === empId);
+          const emp = MOCK_EMPLOYEES.find((e) => String(e.id) === String(empId));
+          const contract = MOCK_CONTRACTS.find((c) => String(c.employee_id) === String(empId));
           return {
             id: 600 + idx,
-            employee_id: empId,
-            employee_name: emp?.name,
+            employee_id: Number(empId) || idx + 1,
+            employee_name: emp?.name || `Employee #${empId}`,
             status: 'draft',
             worked_days: 22,
             basic: contract?.wage || 5000,

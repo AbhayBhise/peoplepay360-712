@@ -64,28 +64,12 @@ export const App: React.FC = () => {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            {/* Public Auth Routes */}
+            {/* Public Login Route */}
             <Route
               path="/login"
               element={
                 <PublicOnlyRoute>
-                  <LoginPage initialMode="login" />
-                </PublicOnlyRoute>
-              }
-            />
-            <Route
-              path="/signup"
-              element={
-                <PublicOnlyRoute>
-                  <LoginPage initialMode="signup" />
-                </PublicOnlyRoute>
-              }
-            />
-            <Route
-              path="/register"
-              element={
-                <PublicOnlyRoute>
-                  <LoginPage initialMode="signup" />
+                  <LoginPage />
                 </PublicOnlyRoute>
               }
             />

@@ -61,27 +61,35 @@ export const employeesApi = {
 
   createEmployee: async (data: {
     name: string;
-    department_id: number;
-    manager_id?: number | null;
-    job_position: string;
+    department_id?: number | string | null;
+    manager_id?: number | string | null;
+    job_position?: string | null;
     status: 'active' | 'inactive';
-    working_schedule_id?: number;
+    working_schedule_id?: number | string | null;
   }): Promise<Employee> => {
     try {
-      return await apiRequest<Employee>(apiClient.post('/api/employees', data));
+      const payload = {
+        name: data.name,
+        departmentId: data.department_id ? String(data.department_id) : undefined,
+        managerId: data.manager_id ? String(data.manager_id) : undefined,
+        jobPosition: data.job_position || undefined,
+        status: data.status,
+        workingScheduleId: data.working_schedule_id ? String(data.working_schedule_id) : undefined,
+      };
+      return await apiRequest<Employee>(apiClient.post('/api/employees', payload));
     } catch {
-      const dept = MOCK_DEPARTMENTS.find((d) => d.id === data.department_id);
-      const mgr = MOCK_EMPLOYEES.find((e) => e.id === data.manager_id);
+      const dept = MOCK_DEPARTMENTS.find((d) => String(d.id) === String(data.department_id));
+      const mgr = MOCK_EMPLOYEES.find((e) => String(e.id) === String(data.manager_id));
       const newEmp: Employee = {
         id: MOCK_EMPLOYEES.length + 1,
         name: data.name,
-        department_id: data.department_id,
+        department_id: Number(data.department_id) || 1,
         department_name: dept?.name || `Dept #${data.department_id}`,
-        manager_id: data.manager_id || null,
+        manager_id: data.manager_id ? Number(data.manager_id) : null,
         manager_name: mgr?.name,
-        job_position: data.job_position,
+        job_position: data.job_position || 'Staff',
         status: data.status,
-        working_schedule_id: data.working_schedule_id,
+        working_schedule_id: Number(data.working_schedule_id) || 1,
         contracts_count: 0,
         attendance_count: 0,
         time_off_count: 0,
@@ -96,22 +104,30 @@ export const employeesApi = {
     id: number | string,
     data: {
       name?: string;
-      department_id?: number;
-      manager_id?: number | null;
-      job_position?: string;
+      department_id?: number | string | null;
+      manager_id?: number | string | null;
+      job_position?: string | null;
       status?: 'active' | 'inactive';
-      working_schedule_id?: number;
+      working_schedule_id?: number | string | null;
     }
   ): Promise<Employee> => {
     try {
-      return await apiRequest<Employee>(apiClient.put(`/api/employees/${id}`, data));
+      const payload = {
+        name: data.name,
+        departmentId: data.department_id ? String(data.department_id) : undefined,
+        managerId: data.manager_id ? String(data.manager_id) : undefined,
+        jobPosition: data.job_position || undefined,
+        status: data.status,
+        workingScheduleId: data.working_schedule_id ? String(data.working_schedule_id) : undefined,
+      };
+      return await apiRequest<Employee>(apiClient.put(`/api/employees/${id}`, payload));
     } catch {
-      const index = MOCK_EMPLOYEES.findIndex((e) => e.id === Number(id));
+      const index = MOCK_EMPLOYEES.findIndex((e) => String(e.id) === String(id));
       if (index !== -1) {
-        MOCK_EMPLOYEES[index] = { ...MOCK_EMPLOYEES[index], ...data };
+        MOCK_EMPLOYEES[index] = { ...MOCK_EMPLOYEES[index], ...data } as any;
         return MOCK_EMPLOYEES[index];
       }
-      return { id: Number(id), name: 'Updated Employee', job_position: 'Staff', status: 'active', ...data };
+      return { id: Number(id) || 1, name: 'Updated Employee', job_position: 'Staff', status: 'active', ...data } as any;
     }
   },
 
