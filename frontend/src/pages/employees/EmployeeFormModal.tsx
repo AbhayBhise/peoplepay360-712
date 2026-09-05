@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
-import { SearchableSelect } from '../../components/common/SearchableSelect';
 import { Button } from '../../components/common/Button';
 import { Employee, Department, WorkingSchedule } from '../../types';
 import { employeesApi } from '../../api/employees';
@@ -160,10 +159,10 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <SearchableSelect
+          <Select
             label="Manager"
             value={managerId}
-            onChange={(val) => setManagerId(val)}
+            onChange={(e) => setManagerId(e.target.value)}
             placeholder="No Manager (Top level)"
             options={potentialManagers.map((m) => ({
               value: String(m.id),
