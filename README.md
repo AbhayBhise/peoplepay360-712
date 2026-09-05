@@ -2,8 +2,8 @@
 
 ![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge&logo=github)
 ![E2E Tests](https://img.shields.io/badge/E2E_Tests-34%2F34_Passed-success?style=for-the-badge&logo=jest)
-![RBAC Pipeline](https://img.shields.io/badge/RBAC_Security-5--Tier_Enforced-blue?style=for-the-badge&logo=shield)
-![High Scale](https://img.shields.io/badge/WriteBuffer-High_RPS_Batching-orange?style=for-the-badge&logo=postgresql)
+![RBAC Security](https://img.shields.io/badge/RBAC_Security-5--Tier_Enforced-blue?style=for-the-badge&logo=shield)
+![Seeded Scale](https://img.shields.io/badge/Seeded-250_Users_--_750_Payslips-orange?style=for-the-badge&logo=postgresql)
 ![License](https://img.shields.io/badge/License-Enterprise-purple?style=for-the-badge)
 
 **PeoplePay360** is a full-stack, enterprise-grade Human Resource Management System (HRMS) and Autonomous Payroll Processing Engine built for modern organizations. Designed with a modular architecture, PeoplePay360 seamlessly handles workforce operations, attendance clocking, leave management, structured salary rule evaluation, and high-concurrency event ingestion.
@@ -13,79 +13,87 @@
 ## 📌 Executive Summary
 
 PeoplePay360 solves enterprise payroll complexity and access governance through:
-1. **Autonomous Salary Computation Engine**: Sequenced rule dependency evaluation (`BASIC` -> `HRA` -> `PF` -> `GROSS` -> `TAX` -> `NET`).
+1. **Autonomous Salary Computation Engine**: Sequenced rule dependency evaluation (`BASIC` $\rightarrow$ `HRA` $\rightarrow$ `TRANSPORT` $\rightarrow$ `GROSS` $\rightarrow$ `PF` $\rightarrow$ `TAX` $\rightarrow$ `NET`).
 2. **Maker-Checker Financial Controls**: Double-authorization governance preventing the same user who computes a payrun from validating or disbursing it.
-3. **High-Throughput Write-Buffer Architecture**: In-memory request batching (50-item threshold / 1000ms timer) to process high-frequency attendance punches and audit logs without PostgreSQL pool exhaustion.
+3. **Smart Anti-Overlap Contract Guard**: Real-time contract overlap detection with 1-click automatic contract expiration.
 4. **4-Layer RBAC Security Pipeline**: Defense-in-depth permission enforcement across UI navigation, React route guards, Express action middleware, and PostgreSQL relational constraints.
 
 ---
 
-## 🏗 System Architecture & Microservices Readiness
+## 👑 User Hierarchy & Role Permission Matrix
 
-PeoplePay360 is built as a **Modular Monolith**, designed for clear domain separation and microservice extraction:
+PeoplePay360 enforces a strict 5-tier Role-Based Access Control (RBAC) permission hierarchy:
 
 ```
-                                  ┌────────────────────────┐
-                                  │   Vite + React SPA     │
-                                  │   (Tailwind CSS v4)    │
-                                  └───────────┬────────────┘
-                                              │ REST API (Stateless JWT)
-                                              ▼
-                                  ┌────────────────────────┐
-                                  │   Express API Gateway  │
-                                  │  (Zod Input Validation)│
-                                  └───────────┬────────────┘
-                                              │
-         ┌───────────────────┬────────────────┼───────────────────┬───────────────────┐
-         ▼                   ▼                ▼                   ▼                   ▼
-┌──────────────────┐┌──────────────────┐┌──────────────────┐┌──────────────────┐┌──────────────────┐
-│  Auth Service    ││  Employee Hub    ││ Attendance &     ││  Payroll Engine  ││ Audit & Batch    │
-│  (JWT, 5-Tier    ││  (Contracts,     ││  TimeOff Service ││  (Rule DAG,      ││ WriteBuffer      │
-│   RBAC Pipeline) ││   Departments)   ││  (Atomic Quota) ││   Maker-Checker) ││ (High RPS Queue) │
-└────────┬─────────┘└────────┬─────────┘└────────┬─────────┘└────────┬─────────┘└────────┬─────────┘
-         │                   │                   │                   │                   │
-         └───────────────────┴───────────────────┼───────────────────┴───────────────────┘
-                                                 ▼
-                                ┌─────────────────────────────────┐
-                                │   Prisma ORM + PostgreSQL       │
-                                │   (ACID Transactions, Relational│
-                                │    Exclusion Constraints)       │
-                                └─────────────────────────────────┘
+                          ┌───────────────────────────┐
+                          │         1. ADMIN          │  (System Governance & User Provisioning)
+                          └─────────────┬─────────────┘
+                                        │
+                          ┌─────────────┴─────────────┐
+                          │   2. HR PAYROLL MANAGER   │  (Payroll Control, Rules & Maker-Checker)
+                          └─────────────┬─────────────┘
+                                        │
+                          ┌─────────────┴─────────────┐
+                          │    3. HR PAYROLL USER     │  (Payrun Execution & Payslip Generation)
+                          └─────────────┬─────────────┘
+                                        │
+                          ┌─────────────┴─────────────┐
+                          │       4. HR MANAGER       │  (Workforce, Contracts, Leaves, Attendance)
+                          └─────────────┬─────────────┘
+                                        │
+                          ┌─────────────┴─────────────┐
+                          │        5. EMPLOYEE        │  (Self-Service Portal, Clocking & Leave Requests)
+                          └───────────────────────────┘
 ```
+
+### 📊 Comprehensive Module Permission Matrix
+
+| System Module / Feature | EMPLOYEE | HR MANAGER | HR PAYROLL USER | HR PAYROLL MANAGER | ADMIN |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Self-Service Portal (`/dashboard/me`)** | ✅ View Own | ✅ View Own | ✅ View Own | ✅ View Own | ✅ Full Access |
+| **Employees Directory (`/employees`)** | ❌ No Access | ✅ Full CRUD | ✅ View Only | ✅ View Only | ✅ Full Access |
+| **Contracts Management (`/contracts`)** | ❌ No Access | ✅ Full CRUD | ✅ View Only | ✅ View Only | ✅ Full Access |
+| **Working Schedules (`/working-schedules`)** | ❌ No Access | ✅ Full CRUD | ✅ View Only | ✅ View Only | ✅ Full Access |
+| **Attendance Clocking (`/attendance`)** | ⏱️ Self Check-In/Out | ✅ View & Correct All | ✅ View All | ✅ View All | ✅ Full Access |
+| **Time Off Requests (`/timeoff`)** | 📝 Request Own | ✅ Approve/Refuse All | ✅ View All | ✅ View All | ✅ Full Access |
+| **Time Off Allocations (`/timeoff`)** | 👁️ View Own Balance | ✅ Manage Allocations | ✅ View All | ✅ View All | ✅ Full Access |
+| **Salary Structures & Rules (`/payroll/structures`)** | ❌ No Access | ❌ No Access | 👁️ View Only | ✅ Full CRUD | ✅ Full Access |
+| **Payrun Execution (`/payroll/payruns`)** | ❌ No Access | ❌ No Access | ⚡ Create & Compute | ✅ Validate & Mark Paid | ✅ Full Access |
+| **Payslips & PDF Export (`/payroll/payslips`)** | 📄 View Own Payslips | ❌ No Access | ✅ View & PDF Export | ✅ View, PDF & Email | ✅ Full Access |
+| **User Provisioning (`/admin/users`)** | ❌ No Access | ❌ No Access | ❌ No Access | ❌ No Access | 🔒 Admin Only |
+| **Audit Logs (`/admin/audit-logs`)** | ❌ No Access | ❌ No Access | ❌ No Access | ❌ No Access | 🔒 Admin Only |
 
 ---
 
-## ⚡ High-Scale Write Buffering Strategy (Millions RPS)
+## 🔐 Seeded Enterprise Test Credentials (250 Seeded Accounts)
 
-To sustain extreme request traffic (e.g., thousands of simultaneous employee morning clock-ins or system audit logging), PeoplePay360 implements an **In-Memory Write Buffer Queue**:
+The database is pre-populated with **250 test user accounts** across all 5 roles. Use any of the canonical logins below for immediate testing:
 
-```
-[ High Concurrency Ingestion (Attendance / Audit Logs) ]
-                       │
-                       ▼
-         ┌──────────────────────────┐
-         │     WriteBuffer Queue    │
-         │  (Max Capacity: 50 items)│
-         └─────────────┬────────────┘
-                       │
-                       ├────── Count Threshold (50) OR Timer (1000ms)
-                       ▼
-         ┌──────────────────────────┐
-         │ Bulk SQL Transaction     │
-         │ (1 Roundtrip createMany) │
-         └──────────────────────────┘
-```
-
-- **Efficiency**: Converts $N$ sequential single-row database queries into $1$ bulk `createMany` operation.
-- **Connection Preservation**: Eliminates connection pool starvation during peak operational surges.
+| Role Level | Role Name | Canonical Email Login | Password | Access Scope & Responsibilities |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. ADMIN** | System Administrator | `admin@peoplepay360.dev` | `Admin@123` | User provisioning (`/admin/users`), audit logs, system roles (5 total admin accounts: `admin01`..`admin04`) |
+| **2. HR_PAYROLL_MANAGER**| HR Payroll Manager | `payroll.manager@peoplepay360.dev` | `Payroll@123` | Maker-Checker validation, payrun marking as paid, salary structures (10 total accounts: `payrollmanager01`..`09`) |
+| **3. HR_PAYROLL_USER** | HR Payroll Specialist | `payroll.user@peoplepay360.dev` | `Payroll@123` | Payrun wizard execution, draft payslip computation, PDF export (15 total accounts: `payrolluser01`..`14`) |
+| **4. HR_MANAGER** | HR Manager | `hr.manager@peoplepay360.dev` | `Manager@123` | Workforce management, contracts, work schedules, time-off approvals (20 total accounts: `hrmanager01`..`19`) |
+| **5. EMPLOYEE** | Standard Employee | `employee.demo@peoplepay360.dev` | `Employee@123` | Personal portal, attendance check-in/out, leave requests (200 total accounts: `emp001`..`emp199`) |
 
 ---
 
-## 🛡️ 4-Layer RBAC Security Pipeline
+## 🛡️ 4-Layer RBAC Security Pipeline Architecture
 
-Security is enforced independently across 4 layers:
+Security is enforced independently across 4 distinct architectural layers:
 
-| Security Layer | Implementation Mechanism | Functional Purpose |
+```
+[Layer 1: UI Navigation Filter] ───► Hides unauthorized sidebar menu links
+                                            │
+[Layer 2: React Route Guard]   ───► Blocks direct URL navigation (RoleProtectedRoute)
+                                            │
+[Layer 3: Express Action API]  ───► Middleware authorization (requireRole("ADMIN", ...))
+                                            │
+[Layer 4: PostgreSQL ACID]     ───► Maker-Checker rules (computedBy !== validatedBy)
+```
+
+| Security Layer | Implementation File | Functional Purpose |
 | :--- | :--- | :--- |
 | **Layer 1: Navigation** | [`Sidebar.tsx`](file:///f:/PROJECTS/Odoo%20Final%20Round/peoplepay360-712/frontend/src/components/layout/Sidebar.tsx) | Dynamically filters sidebar links based on authenticated user permissions. |
 | **Layer 2: Route Guard** | [`RoleProtectedRoute`](file:///f:/PROJECTS/Odoo%20Final%20Round/peoplepay360-712/frontend/src/App.tsx) | Blocks direct URL navigation; redirects unauthorized users to `/dashboard` with toast alert. |
@@ -94,26 +102,12 @@ Security is enforced independently across 4 layers:
 
 ---
 
-## 🔐 Seeded Enterprise Test Credentials
-
-The database contains 5 pre-configured accounts representing each system role:
-
-| Role Level | Role Name | Email Address | Password | Access Rights |
-| :--- | :--- | :--- | :--- | :--- |
-| **1. Admin** | System Administrator | `admin@peoplepay360.dev` | `Admin@123` | User provisioning (`/admin/users`), audit logs, system roles |
-| **2. HR Manager** | HR Manager | `hr.manager@peoplepay360.dev` | `Manager@123` | Employees, Departments, Work Schedules, Attendance, Time-off approvals |
-| **3. Payroll User** | HR Payroll Specialist | `payroll.user@peoplepay360.dev` | `Payroll@123` | Payrun preview, computation, salary structures, payslip generation |
-| **4. Payroll Manager**| HR Payroll Manager | `payroll.manager@peoplepay360.dev` | `Payroll@123` | Maker-Checker validation, payrun marking as paid, disbursement |
-| **5. Employee** | Standard Employee | `employee.demo@peoplepay360.dev` | `Employee@123` | Personal portal (`/dashboard/me`), self check-in/out, leave requests, own payslips |
-
----
-
 ## 🛠️ Technology Stack
 
 - **Frontend**: React 19, TypeScript, Vite 6, Tailwind CSS v4, Lucide Icons, React Router v7
-- **Backend**: Node.js, Express, TypeScript, Prisma ORM 5, Zod Schema Validation, PDFKit
+- **Backend**: Node.js, Express, TypeScript, Prisma ORM 5, Zod Schema Validation, Winston Logging, PDFKit
 - **Database**: PostgreSQL 16 (Relational integrity, ACID compliance, exclusion constraints)
-- **Quality Assurance**: Native E2E Test Suite (TypeScript runner hitting live HTTP server)
+- **Quality Assurance**: Native E2E Test Suite (34/34 passing smoke tests)
 
 ---
 
@@ -124,7 +118,7 @@ The database contains 5 pre-configured accounts representing each system role:
 - PostgreSQL `v14+` running locally on port `5432` (Database: `peoplepay360`)
 
 ### 2. Environment Setup
-Clone the repository and install dependencies for both backend and frontend:
+Clone the repository and install dependencies:
 
 ```bash
 git clone https://github.com/AbhayBhise/peoplepay360-712.git
@@ -139,7 +133,7 @@ cd ../frontend
 npm install
 ```
 
-### 3. Database Migration & Seeding
+### 3. Database Migration & High-Scale Seeding
 Configure `backend/.env`:
 ```env
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/peoplepay360?schema=public"
@@ -147,11 +141,12 @@ JWT_SECRET="super-secret-enterprise-key-360"
 PORT=4000
 ```
 
-Initialize database tables and seed test data:
+Seed the 250 test users and 3 months of payroll records:
 ```bash
 cd backend
-npx prisma db push --force-reset
-npx ts-node prisma/seed.ts
+npx prisma generate
+npx prisma migrate dev
+npm run prisma:seed
 ```
 
 ### 4. Running Development Servers
@@ -181,7 +176,7 @@ cd backend
 npm run test:e2e
 ```
 
-### 📈 Test Output Matrix:
+### 📈 Test Output Matrix (34/34 Passed):
 ```
 PeoplePay360 E2E smoke test — target: http://localhost:4000/api
 
@@ -239,6 +234,6 @@ Dashboard
 ---
 
 ## 📄 Documentation Index
-- 📑 [Comprehensive Test Suite Specification](file:///f:/PROJECTS/Odoo%20Final%20Round/peoplepay360-712/docs/TEST_CASES.md)
+- 📑 [Team Manual Testing & QA Guide](file:///f:/PROJECTS/Odoo%20Final%20Round/peoplepay360-712/docs/MANUAL_TESTING_GUIDE.md)
 - 📐 [High-Scale System Design & Architecture](file:///f:/PROJECTS/Odoo%20Final%20Round/peoplepay360-712/docs/SYSTEM_DESIGN.md)
 - 📊 [Database Schema & ERD Notes](file:///f:/PROJECTS/Odoo%20Final%20Round/peoplepay360-712/docs/03_DB_DESIGN_NOTES.md)
