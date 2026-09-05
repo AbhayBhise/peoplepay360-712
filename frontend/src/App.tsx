@@ -26,7 +26,10 @@ const AllPayslipsPage = lazy(() => import('./pages/payroll/AllPayslipsPage').the
 const PayslipDetailPage = lazy(() => import('./pages/payroll/PayslipDetailPage').then((m) => ({ default: m.PayslipDetailPage })));
 const SalaryStructuresPage = lazy(() => import('./pages/payroll/SalaryStructuresPage').then((m) => ({ default: m.SalaryStructuresPage })));
 const ReportsPage = lazy(() => import('./pages/reports/ReportsPage').then((m) => ({ default: m.ReportsPage })));
+const ProfilePage = lazy(() => import('./pages/profile/ProfilePage').then((m) => ({ default: m.ProfilePage })));
+const AdminPage = lazy(() => import('./pages/admin/AdminPage').then((m) => ({ default: m.AdminPage })));
 const UsersPage = lazy(() => import('./pages/admin/UsersPage').then((m) => ({ default: m.UsersPage })));
+const SignupPage = lazy(() => import('./pages/auth/SignupPage').then((m) => ({ default: m.SignupPage })));
 
 // Route guard that checks authentication
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -42,6 +45,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   return <>{children}</>;
 };
+
+
 
 // Route guard for public login route
 const PublicOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -119,6 +124,16 @@ export const App: React.FC = () => {
                     }
                   />
 
+                  {/* Public Signup Route */}
+                  <Route
+                    path="/signup"
+                    element={
+                      <PublicOnlyRoute>
+                        <SignupPage />
+                      </PublicOnlyRoute>
+                    }
+                  />
+
                   {/* Protected App Routes */}
                   <Route
                     element={
@@ -141,6 +156,7 @@ export const App: React.FC = () => {
                     <Route path="/payroll/payslips/:id" element={<PayslipDetailPage />} />
                     <Route path="/payroll/salary-structures" element={<RoleProtectedRoute isAllowed={(a) => a.isHRPUPlus()}><SalaryStructuresPage /></RoleProtectedRoute>} />
                     <Route path="/reports" element={<RoleProtectedRoute isAllowed={(a) => a.isHRPUPlus()}><ReportsPage /></RoleProtectedRoute>} />
+                    <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/admin/users" element={<RoleProtectedRoute isAllowed={(a) => a.isAdmin()}><UsersPage /></RoleProtectedRoute>} />
                     <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
                   </Route>

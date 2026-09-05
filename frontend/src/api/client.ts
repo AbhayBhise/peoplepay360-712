@@ -33,6 +33,13 @@ apiClient.interceptors.response.use(
     let errorMessage = 'An unexpected error occurred. Please try again.';
 
     if (error.response) {
+      if (error.response.status === 401) {
+        localStorage.removeItem('peoplepay_token');
+        localStorage.removeItem('peoplepay_user');
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
       const data = error.response.data;
       if (data && typeof data === 'object') {
         if (data.error) {

@@ -54,7 +54,64 @@ export const ReportsPage: React.FC = () => {
   }, []);
 
   const handleExportCSV = () => {
-    success('Report data exported to CSV successfully.');
+    try {
+      const escapeCSV = (val: string | number | undefined | null) => {
+        if (val === undefined || val === null) return '""';
+        const s = String(val).replace(/"/g, '""');
+        return `"${s}"`;
+      };
+
+      let headers: string[] = [];
+      let rows: (string | number)[][] = [];
+      let filename = `peoplepay360_${activeReport}_report_${new Date().toISOString().slice(0, 10)}.csv`;
+
+      if (activeReport === 'payroll') {
+        headers = ['Batch Name', 'Period Start', 'Period End', 'Status', 'Employee Count', 'Total Net (INR)'];
+        rows = payruns.map((pr) => [
+          pr.name || `Payrun #${pr.id}`,
+          pr.period_start,
+          pr.period_end,
+          pr.status.toUpperCase(),
+          pr.employee_count,
+          pr.total_net,
+        ]);
+      } else if (activeReport === 'departments') {
+        headers = ['Department ID', 'Department Name', 'Headcount', 'Total Monthly Salary (INR)'];
+        rows = salaryByDept.map((d) => [
+          d.department_id,
+          d.department_name,
+          d.headcount,
+          d.total_salary,
+        ]);
+      } else {
+        headers = ['Department ID', 'Department Name', 'Parent Department', 'Employee Count'];
+        rows = departments.map((d) => [
+          d.id,
+          d.name,
+          d.parent_department_name || d.parent_department_id || 'None',
+          d.employee_count ?? 0,
+        ]);
+      }
+
+      const csvContent = [
+        headers.map(escapeCSV).join(','),
+        ...rows.map((row) => row.map(escapeCSV).join(',')),
+      ].join('\r\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      success(`Exported ${rows.length} records to ${filename}`);
+    } catch (err: any) {
+      error(err.message || 'Failed to generate CSV export.');
+    }
   };
 
   const handlePrintReport = () => {

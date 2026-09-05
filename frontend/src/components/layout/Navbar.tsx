@@ -13,6 +13,7 @@ import {
   LogOut,
   ChevronDown,
   Layers,
+  User as UserIcon,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -133,29 +134,29 @@ export const Navbar: React.FC = () => {
                   </button>
 
                   {payrollMenuOpen && (
-                    <div className="absolute left-0 mt-2 w-52 rounded-xl shadow-xl bg-white text-slate-800 border border-slate-200 py-1 z-50 animate-fade-in">
+                    <div className="absolute left-0 mt-2 w-52 rounded-xl shadow-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800 py-1 z-50 animate-fade-in">
                       <Link
                         to="/payroll/payruns"
-                        className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600"
+                        className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400"
                       >
-                        <CircleDollarSign className="w-4 h-4 text-indigo-600" />
+                        <CircleDollarSign className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                         <span>Payruns</span>
                       </Link>
                       <Link
                         to="/payroll/payslips"
-                        className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600"
+                        className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400"
                       >
-                        <FileSpreadsheet className="w-4 h-4 text-teal-600" />
+                        <FileSpreadsheet className="w-4 h-4 text-teal-600 dark:text-teal-400" />
                         <span>All Payslips</span>
                       </Link>
                       {isHRPMPlus() && (
                         <>
-                          <div className="h-px bg-slate-100 my-1" />
+                          <div className="h-px bg-slate-100 dark:bg-slate-800 my-1" />
                           <Link
                             to="/payroll/salary-structures"
-                            className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600"
+                            className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400"
                           >
-                            <Layers className="w-4 h-4 text-indigo-600" />
+                            <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                             <span>Salary Structures & Rules</span>
                           </Link>
                         </>
@@ -192,22 +193,32 @@ export const Navbar: React.FC = () => {
               </button>
 
               {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 rounded-xl shadow-2xl bg-white text-slate-800 border border-slate-200 py-1.5 z-50 animate-fade-in">
-                  <div className="px-4 py-2.5 border-b border-slate-100">
-                    <p className="text-xs font-bold text-slate-900 truncate">{user?.name || 'Logged in user'}</p>
-                    <p className="text-2xs text-slate-500 truncate">{user?.email}</p>
+                <div className="absolute right-0 mt-2 w-56 rounded-xl shadow-2xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800 py-1.5 z-50 animate-fade-in">
+                  <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800">
+                    <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user?.name || 'Logged in user'}</p>
+                    <p className="text-2xs text-slate-500 dark:text-slate-400 truncate">{user?.email}</p>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {userRoles.map((r) => (
-                        <span key={r} className="text-2xs bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-semibold border border-indigo-100">
+                        <span key={r} className="text-2xs bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded font-semibold border border-indigo-100 dark:border-indigo-800/60">
                           {r}
                         </span>
                       ))}
                     </div>
                   </div>
 
+                  <Link
+                    to="/profile"
+                    className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400"
+                  >
+                    <UserIcon className="w-3.5 h-3.5" />
+                    <span>My Profile</span>
+                  </Link>
+
+                  <div className="h-px bg-slate-100 dark:bg-slate-800 my-1" />
+
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left flex items-center gap-2 px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 cursor-pointer"
+                    className="w-full text-left flex items-center gap-2 px-4 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     <span>Sign out</span>

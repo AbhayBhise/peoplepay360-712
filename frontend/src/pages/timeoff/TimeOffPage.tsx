@@ -77,13 +77,17 @@ export const TimeOffPage: React.FC = () => {
   // Compute live remaining balance for selected employee & type in modal
   const selectedTypeObj = types.find((t) => String(t.id) === String(reqTypeId));
   const activeAllocForSelected = allocations.find(
-    (a) => String(a.employee_id) === String(reqEmpId) && String(a.type_id) === String(reqTypeId) && a.status === 'validate'
+    (a) => {
+      const aEmpId = a.employee_id || (a as any).employeeId;
+      const aTypeId = a.type_id || (a as any).typeId;
+      return String(aEmpId) === String(reqEmpId) && String(aTypeId) === String(reqTypeId) && a.status === 'validate';
+    }
   );
 
   const liveRemainingBalance = activeAllocForSelected
     ? (activeAllocForSelected.remaining !== undefined
-        ? activeAllocForSelected.remaining
-        : activeAllocForSelected.allocated - (activeAllocForSelected.taken || 0))
+        ? Number(activeAllocForSelected.remaining)
+        : Number(activeAllocForSelected.allocated) - (Number(activeAllocForSelected.taken) || 0))
     : 0;
 
   // Compute estimated duration in days
@@ -101,19 +105,24 @@ export const TimeOffPage: React.FC = () => {
   const isInsufficient = selectedTypeObj?.requires_allocation && estimatedDays > liveRemainingBalance;
 
   // Build quota summary cards from real allocations (validate status, current user or all)
+  const currentEmpId = user?.employee_id || (user as any)?.employeeId;
   const myAllocations = allocations.filter((a) => {
-    if (!isHRMPlus() && user?.employee_id) {
-      return String(a.employee_id) === String(user.employee_id) && a.status === 'validate';
+    if (!isHRMPlus() && currentEmpId) {
+      const aEmpId = a.employee_id || (a as any).employeeId;
+      return String(aEmpId) === String(currentEmpId) && a.status === 'validate';
     }
     return a.status === 'validate';
   });
 
   // Aggregate by type: sum allocated & taken across employees (for HR+) or show per type for employee
   const quotaByType = types.slice(0, 3).map((t) => {
-    const relevant = myAllocations.filter((a) => String(a.type_id) === String(t.id));
-    const totalAllocated = relevant.reduce((s, a) => s + (a.allocated || 0), 0);
-    const totalTaken = relevant.reduce((s, a) => s + (a.taken || 0), 0);
-    const totalRemaining = relevant.reduce((s, a) => s + (a.remaining ?? (a.allocated - (a.taken || 0))), 0);
+    const relevant = myAllocations.filter((a) => {
+      const aTypeId = a.type_id || (a as any).typeId;
+      return String(aTypeId) === String(t.id);
+    });
+    const totalAllocated = relevant.reduce((s, a) => s + (Number(a.allocated) || 0), 0);
+    const totalTaken = relevant.reduce((s, a) => s + (Number(a.taken) || 0), 0);
+    const totalRemaining = relevant.reduce((s, a) => s + (a.remaining !== undefined ? Number(a.remaining) : (Number(a.allocated) - (Number(a.taken) || 0))), 0);
     return {
       type: t,
       allocated: totalAllocated,
@@ -366,19 +375,23 @@ export const TimeOffPage: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {requests.map((r) => {
-                    const emp = employees.find((e) => String(e.id) === String(r.employee_id));
-                    const tObj = types.find((t) => String(t.id) === String(r.type_id));
+                    const empId = r.employee_id || (r as any).employeeId;
+                    const typeId = r.type_id || (r as any).typeId;
+                    const emp = employees.find((e) => String(e.id) === String(empId));
+                    const tObj = types.find((t) => String(t.id) === String(typeId));
+                    const empDisplayName = r.employee_name || (r as any).employeeName || emp?.name || (empId ? `Employee #${empId}` : 'Employee');
+                    const typeDisplayName = r.type_name || (r as any).typeName || tObj?.name || (typeId ? `Type #${typeId}` : 'Leave Type');
 
                     return (
                       <tr key={r.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="py-3.5 px-4">
                           <div className="font-bold text-slate-900 dark:text-white text-sm">
-                            {r.employee_name || emp?.name || `Employee #${r.employee_id}`}
+                            {empDisplayName}
                           </div>
                           {r.reason && <div className="text-2xs text-slate-500 dark:text-slate-400 italic mt-0.5">"{r.reason}"</div>}
                         </td>
                         <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-200">
-                          {r.type_name || tObj?.name || `Type #${r.type_id}`}
+                          {typeDisplayName}
                         </td>
                         <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 font-medium">
                           {r.date_from} → {r.date_to}
@@ -451,16 +464,20 @@ export const TimeOffPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {allocations.map((a) => {
-                  const emp = employees.find((e) => String(e.id) === String(a.employee_id));
-                  const tObj = types.find((t) => String(t.id) === String(a.type_id));
-                  const remaining = a.remaining !== undefined ? a.remaining : a.allocated - (a.taken || 0);
+                  const empId = a.employee_id || (a as any).employeeId;
+                  const typeId = a.type_id || (a as any).typeId;
+                  const emp = employees.find((e) => String(e.id) === String(empId));
+                  const tObj = types.find((t) => String(t.id) === String(typeId));
+                  const remaining = a.remaining !== undefined ? a.remaining : (Number(a.allocated) - (Number(a.taken) || 0));
+                  const empDisplayName = a.employee_name || (a as any).employeeName || emp?.name || (empId ? `Employee #${empId}` : 'Employee');
+                  const typeDisplayName = a.type_name || (a as any).typeName || tObj?.name || (typeId ? `Type #${typeId}` : 'Leave Type');
 
                   return (
                     <tr key={a.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                       <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white text-sm">
-                        {a.employee_name || emp?.name || `Employee #${a.employee_id}`}
+                        {empDisplayName}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-medium">{a.type_name || tObj?.name || `Type #${a.type_id}`}</td>
+                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-medium">{typeDisplayName}</td>
                       <td className="py-3.5 px-4 font-financial font-semibold text-slate-900 dark:text-white">{a.allocated} days</td>
                       <td className="py-3.5 px-4 font-financial text-slate-500 dark:text-slate-400">{a.taken || 0} days</td>
                       <td className="py-3.5 px-4 font-financial font-extrabold text-teal-800 dark:text-teal-300 text-sm">

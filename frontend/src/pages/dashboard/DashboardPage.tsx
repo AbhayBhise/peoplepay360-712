@@ -56,12 +56,7 @@ export const DashboardPage: React.FC = () => {
     return 'EMPLOYEE';
   };
 
-  const [activeRoleView, setActiveRoleView] = useState<DashboardRoleView>(getInitialRoleView);
-
-  // Update active view when user changes
-  useEffect(() => {
-    setActiveRoleView(getInitialRoleView());
-  }, [user]);
+  const activeRoleView = getInitialRoleView();
 
   const loadDashboard = async () => {
     setLoading(true);

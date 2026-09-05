@@ -87,7 +87,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           <Button
             variant="primary"
             size="sm"
-            onClick={() => navigate('/system/users')}
+            onClick={() => navigate('/employees')}
             className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs cursor-pointer shadow-lg shadow-indigo-600/30"
             icon={<Users className="w-4 h-4 text-white" />}
           >
