@@ -17,6 +17,7 @@ import { PayrunDetailPage } from './pages/payroll/PayrunDetailPage';
 import { AllPayslipsPage } from './pages/payroll/AllPayslipsPage';
 import { PayslipDetailPage } from './pages/payroll/PayslipDetailPage';
 import { SalaryStructuresPage } from './pages/payroll/SalaryStructuresPage';
+import { ReportsPage } from './pages/reports/ReportsPage';
 import { Spinner } from './components/common/Spinner';
 
 // Route guard that checks authentication
@@ -25,8 +26,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Spinner label="Verifying session..." size="lg" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
+        <Spinner label="Authenticating session..." size="lg" />
       </div>
     );
   }
@@ -44,7 +45,7 @@ const PublicOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
         <Spinner label="Loading..." size="lg" />
       </div>
     );
@@ -96,6 +97,7 @@ export const App: React.FC = () => {
               <Route path="payroll/payslips" element={<AllPayslipsPage />} />
               <Route path="payroll/payslips/:id" element={<PayslipDetailPage />} />
               <Route path="payroll/salary-structures" element={<SalaryStructuresPage />} />
+              <Route path="reports" element={<ReportsPage />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
           </Routes>

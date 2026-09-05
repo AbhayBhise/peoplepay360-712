@@ -3,26 +3,42 @@
 @layer base {
   :root {
     --primary: #714B67;
-    --primary-hover: #5d3b54;
-    --primary-light: #f5eff3;
+    --primary-hover: #5a3b52;
+    --primary-light: #fbf7fa;
+    --primary-subtle: #f3ebf1;
+    --primary-border: #e3d2e0;
+
     --secondary: #008784;
     --secondary-hover: #00706d;
-    --secondary-light: #e6f6f5;
+    --secondary-light: #eef9f8;
+    --secondary-border: #bfe8e5;
+
+    --accent: #2563eb;
+    --accent-light: #eff6ff;
+
     --bg-main: #f8fafc;
     --surface: #ffffff;
-    --border-color: #e2e8f0;
-    --text-main: #1e293b;
+    --surface-elevated: #ffffff;
+    --border-subtle: #f1f5f9;
+    --border-base: #e2e8f0;
+    --border-strong: #cbd5e1;
+
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
     --text-muted: #64748b;
+    --text-dim: #94a3b8;
   }
 
   body {
     margin: 0;
     padding: 0;
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background-color: var(--bg-main);
-    color: var(--text-main);
+    color: var(--text-primary);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.011em;
   }
 
   #root {
@@ -37,28 +53,67 @@
   }
 }
 
-/* Custom Scrollbar */
+/* Custom Minimal Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 4px;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
-/* Custom animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+/* Financial Monospace & Typography Utilities */
+.font-financial {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum", "cv02", "cv03", "cv04", "cv11";
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.2s ease-out forwards;
+/* Linear/Stripe style subtle elevation and borders */
+.surface-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.02);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.surface-card:hover {
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+}
+
+.surface-elevated {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+}
+
+/* Micro-animations */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.985) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-command {
+  animation: fadeInScale 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pulseSubtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 2s infinite ease-in-out;
 }

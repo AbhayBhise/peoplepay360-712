@@ -1,5 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, LogIn, LogOut, AlertTriangle, AlertCircle, CheckCircle2, Edit, Plus } from 'lucide-react';
+import {
+  Clock,
+  LogIn,
+  LogOut,
+  AlertTriangle,
+  AlertCircle,
+  CheckCircle2,
+  Edit,
+  Plus,
+  Filter,
+  ShieldCheck,
+  Search,
+  ArrowRight,
+} from 'lucide-react';
 import { attendanceApi } from '../../api/attendance';
 import { employeesApi } from '../../api/employees';
 import { Attendance, Employee } from '../../types';
@@ -18,12 +31,13 @@ export const AttendancePage: React.FC = () => {
   const [attendanceLogs, setAttendanceLogs] = useState<Attendance[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterMode, setFilterMode] = useState<'all' | 'exceptions'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Quick punch modal
   const [isPunchModalOpen, setIsPunchModalOpen] = useState(false);
   const [punchEmpId, setPunchEmpId] = useState<number | ''>('');
   const [punchCheckInTime, setPunchCheckInTime] = useState('');
-  const [punchCheckOutTime, setPunchCheckOutTime] = useState('');
   const [punching, setPunching] = useState(false);
 
   // Correction modal (HRM+)
@@ -59,7 +73,6 @@ export const AttendancePage: React.FC = () => {
     const currentIso = new Date().toISOString().slice(0, 16);
     setPunchEmpId(user?.employee_id ? Number(user.employee_id) : (employees[0]?.id || ''));
     setPunchCheckInTime(currentIso);
-    setPunchCheckOutTime('');
     setIsPunchModalOpen(true);
   };
 
@@ -130,53 +143,156 @@ export const AttendancePage: React.FC = () => {
     }
   };
 
+  // Metrics
+  const totalPunches = attendanceLogs.length;
+  const missingCheckoutsCount = attendanceLogs.filter(
+    (l) => !l.check_out || l.exception === 'missing_checkout'
+  ).length;
+  const lateArrivalsCount = attendanceLogs.filter((l) => l.exception === 'late').length;
+  const normalPunchesCount = totalPunches - (missingCheckoutsCount + lateArrivalsCount);
+
+  const filteredLogs = attendanceLogs.filter((log) => {
+    const isException = !log.check_out || log.exception === 'missing_checkout' || log.exception === 'late';
+    if (filterMode === 'exceptions' && !isException) return false;
+
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (log.employee_name && log.employee_name.toLowerCase().includes(q)) ||
+      String(log.employee_id).includes(q)
+    );
+  });
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
             <Clock className="w-6 h-6 text-[#714B67]" />
-            <span>Attendance & Worked Hours</span>
+            <span>Attendance & Worked Hours Monitoring</span>
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Log time punches, auto-calculate worked hours, and monitor attendance exceptions
+            Real-time punch logging, automated worked hours calculation, and exception triage
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <Button variant="primary" icon={<LogIn className="w-4 h-4" />} onClick={handleOpenPunch}>
-            Record Check-In
+            Record Check-In Punch
           </Button>
         </div>
       </div>
 
-      {/* Attendance Logs Table */}
+      {/* OPERATIONAL METRICS RIBBON */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-2xs font-bold text-slate-400 uppercase tracking-wider">Total Punches</span>
+            <CheckCircle2 className="w-4 h-4 text-slate-400" />
+          </div>
+          <div className="text-2xl font-black font-financial text-slate-900 mt-2">{totalPunches}</div>
+          <div className="text-2xs text-slate-500 mt-0.5">Recorded shift logs</div>
+        </div>
+
+        <div className="p-4 bg-white rounded-2xl border border-rose-200 bg-rose-50/30 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-2xs font-bold text-rose-800 uppercase tracking-wider">Missing Check-Out</span>
+            <AlertCircle className="w-4 h-4 text-rose-600" />
+          </div>
+          <div className="text-2xl font-black font-financial text-rose-950 mt-2">{missingCheckoutsCount}</div>
+          <div className="text-2xs text-rose-700 font-semibold mt-0.5">Requires check-out / fix</div>
+        </div>
+
+        <div className="p-4 bg-white rounded-2xl border border-amber-200 bg-amber-50/30 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-2xs font-bold text-amber-800 uppercase tracking-wider">Late Arrivals</span>
+            <AlertTriangle className="w-4 h-4 text-amber-600" />
+          </div>
+          <div className="text-2xl font-black font-financial text-amber-950 mt-2">{lateArrivalsCount}</div>
+          <div className="text-2xs text-amber-700 font-semibold mt-0.5">Logged past shift start</div>
+        </div>
+
+        <div className="p-4 bg-white rounded-2xl border border-emerald-200 bg-emerald-50/30 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-2xs font-bold text-emerald-800 uppercase tracking-wider">Normal Shifts</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          </div>
+          <div className="text-2xl font-black font-financial text-emerald-950 mt-2">{normalPunchesCount}</div>
+          <div className="text-2xs text-emerald-700 font-semibold mt-0.5">On-time & completed</div>
+        </div>
+      </div>
+
+      {/* FILTER TABS & SEARCH BAR */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* Toggle between All vs Exceptions */}
+        <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl">
+          <button
+            onClick={() => setFilterMode('all')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              filterMode === 'all'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-500 hover:text-slate-900'
+            }`}
+          >
+            All Logs ({attendanceLogs.length})
+          </button>
+          <button
+            onClick={() => setFilterMode('exceptions')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              filterMode === 'exceptions'
+                ? 'bg-rose-600 text-white shadow-xs'
+                : 'text-rose-700 hover:bg-rose-50'
+            }`}
+          >
+            <AlertCircle className="w-3.5 h-3.5" />
+            <span>Exceptions Only ({missingCheckoutsCount + lateArrivalsCount})</span>
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className="relative w-full sm:w-72">
+          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by employee name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-[#714B67]"
+          />
+        </div>
+      </div>
+
+      {/* Logs Table */}
       {loading ? (
         <Spinner label="Loading attendance logs..." />
-      ) : attendanceLogs.length === 0 ? (
+      ) : filteredLogs.length === 0 ? (
         <EmptyState
-          title="No Attendance Logs"
-          description="There are no attendance punch logs recorded for the selected period."
-          actionLabel="Record Check-In"
+          title="No Attendance Logs Found"
+          description={
+            filterMode === 'exceptions'
+              ? 'Great news! There are zero active attendance exceptions in the system.'
+              : 'No attendance logs have been recorded yet.'
+          }
+          actionLabel="Record First Punch"
           onAction={handleOpenPunch}
         />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider">
                 <tr>
-                  <th className="py-3 px-4">Employee</th>
-                  <th className="py-3 px-4">Check-In</th>
-                  <th className="py-3 px-4">Check-Out</th>
-                  <th className="py-3 px-4">Worked Hours</th>
-                  <th className="py-3 px-4">Attendance Health</th>
-                  <th className="py-3 px-4 text-right">Action</th>
+                  <th className="py-3.5 px-4">Employee</th>
+                  <th className="py-3.5 px-4">Check-In</th>
+                  <th className="py-3.5 px-4">Check-Out</th>
+                  <th className="py-3.5 px-4">Worked Duration</th>
+                  <th className="py-3.5 px-4">Exception Triage Status</th>
+                  <th className="py-3.5 px-4 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {attendanceLogs.map((log) => {
+                {filteredLogs.map((log) => {
                   const emp = employees.find((e) => e.id === log.employee_id);
                   const isMissingCheckout = !log.check_out || log.exception === 'missing_checkout';
                   const isLate = log.exception === 'late';
@@ -185,25 +301,29 @@ export const AttendancePage: React.FC = () => {
                     <tr
                       key={log.id}
                       className={`hover:bg-slate-50/80 transition-colors ${
-                        isMissingCheckout ? 'bg-rose-50/20' : isLate ? 'bg-amber-50/20' : ''
+                        isMissingCheckout ? 'bg-rose-50/30' : isLate ? 'bg-amber-50/30' : ''
                       }`}
                     >
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-slate-900">
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-slate-900 text-sm">
                           {log.employee_name || emp?.name || `Employee #${log.employee_id}`}
                         </div>
-                        <div className="text-2xs text-slate-400">Punch ID: #{log.id}</div>
+                        <div className="text-2xs text-slate-400 font-mono">Log #{log.id}</div>
                       </td>
-                      <td className="py-3 px-4 font-mono text-slate-700">{log.check_in}</td>
-                      <td className="py-3 px-4 font-mono text-slate-700">
+                      <td className="py-3.5 px-4 font-mono font-medium text-slate-800">{log.check_in}</td>
+                      <td className="py-3.5 px-4 font-mono font-medium text-slate-800">
                         {log.check_out || (
-                          <span className="text-rose-500 font-medium italic">Pending Check-Out</span>
+                          <span className="text-rose-600 font-bold italic bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                            Check-Out Pending
+                          </span>
                         )}
                       </td>
-                      <td className="py-3 px-4 font-mono font-bold text-slate-900">
-                        {log.worked_hours !== undefined ? `${Number(log.worked_hours).toFixed(1)} hrs` : '—'}
+                      <td className="py-3.5 px-4 font-financial font-extrabold text-slate-900 text-sm">
+                        {log.worked_hours !== undefined && log.worked_hours > 0
+                          ? `${Number(log.worked_hours).toFixed(1)} hrs`
+                          : '—'}
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-4">
                         {isMissingCheckout ? (
                           <Badge variant="danger" icon={<AlertCircle className="w-3.5 h-3.5 text-rose-600" />}>
                             Missing Check-Out
@@ -214,11 +334,11 @@ export const AttendancePage: React.FC = () => {
                           </Badge>
                         ) : (
                           <Badge variant="active" icon={<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}>
-                            Normal
+                            Normal Shift
                           </Badge>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           {!log.check_out && (
                             <Button
@@ -233,8 +353,8 @@ export const AttendancePage: React.FC = () => {
                           {isHRMPlus() && (
                             <button
                               onClick={() => handleOpenCorrection(log)}
-                              className="p-1 text-slate-400 hover:text-[#714B67] hover:bg-purple-50 rounded cursor-pointer"
-                              title="HR Correction"
+                              className="p-1.5 text-slate-400 hover:text-[#714B67] hover:bg-purple-50 rounded-lg transition-colors cursor-pointer"
+                              title="HR Adjustment"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
@@ -255,7 +375,7 @@ export const AttendancePage: React.FC = () => {
         isOpen={isPunchModalOpen}
         onClose={() => setIsPunchModalOpen(false)}
         title="Record Attendance Check-In"
-        description="Punches will automatically calculate worked hours on check-out"
+        description="Punches will automatically calculate worked hours upon check-out"
       >
         <form onSubmit={handlePunchSubmit} className="space-y-4">
           <Select
@@ -290,12 +410,12 @@ export const AttendancePage: React.FC = () => {
       <Modal
         isOpen={!!editingLog}
         onClose={() => setEditingLog(null)}
-        title="Attendance Correction"
-        description="HR adjustment for punch timestamps (server will recompute worked hours)"
+        title="HR Attendance Adjustment"
+        description="Adjust punch timestamps (server will recalculate worked hours)"
       >
         <form onSubmit={handleCorrectionSubmit} className="space-y-4">
           <Input
-            label="Corrected Check-In"
+            label="Adjusted Check-In"
             type="datetime-local"
             value={corrCheckIn}
             onChange={(e) => setCorrCheckIn(e.target.value)}
@@ -303,7 +423,7 @@ export const AttendancePage: React.FC = () => {
           />
 
           <Input
-            label="Corrected Check-Out"
+            label="Adjusted Check-Out"
             type="datetime-local"
             value={corrCheckOut}
             onChange={(e) => setCorrCheckOut(e.target.value)}
@@ -314,7 +434,7 @@ export const AttendancePage: React.FC = () => {
               Cancel
             </Button>
             <Button type="submit" variant="primary" isLoading={corrSubmitting}>
-              Save Correction
+              Save Adjustment
             </Button>
           </div>
         </form>
