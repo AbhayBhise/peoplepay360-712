@@ -7,6 +7,17 @@ description: Database engineer role file for PeoplePay360 — schema, migrations
 
 Read `docs/00_PROJECT_BRIEF.md` and `docs/01_DATABASE_SCHEMA.md` first — that file is your schema, implement it as-is unless you flag a change to the Architect.
 
+> **Status update:** the backend already exists on `feat/backend-employee-crud` (Node/Express/TypeScript), and it already has a working, typechecked Prisma implementation of this schema at `backend/prisma/schema.prisma` — UUID primary keys, `payslip_lines` added, the salary-rule unique-sequence constraint, decimal money types. **`backend/prisma/schema.prisma` is now the canonical live schema, not this markdown file.** Your job is not to write a competing schema — it's to review that file against this doc, harden it with a real migration + raw-SQL constraints Prisma can't express natively, and expand the seed data. If you already drafted a standalone `.sql` schema before reading this: don't apply it directly — treat it as a design-notes document and cherry-pick the specific improvements listed below into the existing Prisma schema instead. Save your original draft under `dev resources/` or a new `docs/03_DB_DESIGN_NOTES.md` so the good ideas in it aren't lost, but the running code stays on one schema.
+>
+> **Specific upgrades to pull from a from-scratch SQL draft into `backend/prisma/schema.prisma`, if you wrote one:**
+> - The contract-overlap **exclusion constraint** (`EXCLUDE USING gist` with `btree_gist`) is strictly better than the app-level check currently in `employee`/contract services — add it via a raw-SQL block in the Prisma migration (Prisma migrations can carry hand-written SQL alongside the generated DDL).
+> - A partial **unique index** preventing the same user holding the same role twice while both are active (`user_roles`) — worth adding.
+> - The **maker-checker check** on `payruns` (`computed_by <> validated_by`) is a nice touch — add it.
+> - `attendance.corrected_by`, `audit_log.ip_address` — fine additions, add the columns to the Prisma schema.
+> - **Do not** switch primary keys from UUID to `BIGSERIAL`/integer — the backend code, validation, and API contracts are already written and tested against string/UUID ids; changing the PK type now ripples into every existing file for no functional benefit with a 24-hour clock running.
+> - **Do not** implement the fine-grained `role_permissions(module, action, scope)` permission-resolution engine as the live enforcement mechanism. It's a reasonable design, but it requires a permission-lookup service and scope-based row filtering (`own`/`department`/`all`) that doesn't exist yet, and the problem statement's actual RBAC requirement is fully satisfied by the 5 named roles already enforced in `backend/src/middleware/auth.ts` (`requireRole(...)`). Keep `roles`/`permissions`/`role_permissions` tables as reference data (useful later for an Admin "what can this role do" screen) but don't block current modules on wiring real enforcement through them.
+> - Raw SQL is fine **inside a Prisma migration file** for things Prisma can't express (exclusion constraints, generated columns) — that's consistent with the security rule (no hand-written string-formatted queries at the *application* layer), migrations aren't the same risk surface.
+
 ## Mission
 
 PostgreSQL schema that makes bad data **impossible to insert**, not just discouraged. Judges specifically evaluate database design — constraints belong in the schema, not only in application code.
