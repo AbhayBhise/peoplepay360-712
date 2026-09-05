@@ -141,7 +141,15 @@ export async function computePayrun(auth: AuthPayload, payrunId: string) {
       },
     });
 
-    const amounts: Record<string, number> = {};
+    // Contract-derived values usable as identifiers in any rule's formula, the same way an
+    // earlier rule's own code (BASIC, HRA, ...) becomes usable once computed. Without this,
+    // there is no way for a formula to express "basic = contract wage" at all (found by
+    // Disha's compute smoke test against seed data — see docs/roles/ARCHITECT.md's
+    // base-amount resolution convention note).
+    const amounts: Record<string, number> = {
+      WAGE: Number(contract.wage),
+      WORKED_DAYS: workedDays,
+    };
     const lines: { ruleId: string; category: typeof rules[number]["category"]; name: string; amount: number }[] = [];
 
     for (const rule of rules) {
