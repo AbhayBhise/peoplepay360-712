@@ -141,7 +141,7 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({
       items: [
         {
           label: 'User Management',
-          path: '/admin',
+          path: '/admin/users',
           icon: <ShieldCheck className="w-4 h-4" />,
           visible: hasRole('Admin'),
         },

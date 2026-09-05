@@ -26,6 +26,7 @@ const SalaryStructuresPage = lazy(() => import('./pages/payroll/SalaryStructures
 const ReportsPage = lazy(() => import('./pages/reports/ReportsPage').then((m) => ({ default: m.ReportsPage })));
 const ProfilePage = lazy(() => import('./pages/profile/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 const AdminPage = lazy(() => import('./pages/admin/AdminPage').then((m) => ({ default: m.AdminPage })));
+const UsersPage = lazy(() => import('./pages/admin/UsersPage').then((m) => ({ default: m.UsersPage })));
 const SignupPage = lazy(() => import('./pages/auth/SignupPage').then((m) => ({ default: m.SignupPage })));
 
 // Route guard that checks authentication
@@ -38,6 +39,25 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// Route guard for role-protected views (e.g. Admin only)
+const RoleProtectedRoute: React.FC<{ role: string | string[]; children: React.ReactNode }> = ({ role, children }) => {
+  const { isAuthenticated, isLoading, hasRole } = useAuth();
+
+  if (isLoading) {
+    return <RouteFallbackLoader />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!hasRole(role as any)) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
@@ -113,7 +133,22 @@ export const App: React.FC = () => {
                     <Route path="/payroll/salary-structures" element={<SalaryStructuresPage />} />
                     <Route path="/reports" element={<ReportsPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/admin" element={<AdminPage />} />
+                    <Route
+                      path="/admin/users"
+                      element={
+                        <RoleProtectedRoute role="Admin">
+                          <UsersPage />
+                        </RoleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin"
+                      element={
+                        <RoleProtectedRoute role="Admin">
+                          <UsersPage />
+                        </RoleProtectedRoute>
+                      }
+                    />
                   </Route>
 
                   {/* Catch-all fallback */}

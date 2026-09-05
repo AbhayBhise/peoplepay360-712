@@ -13,55 +13,9 @@ import {
   Clock,
   CalendarDays,
   CircleDollarSign,
-  ArrowRight,
   ChevronRight,
   Wifi,
 } from 'lucide-react';
-
-// Demo accounts — credentials are predefined. Clicking one populates the form
-// AND calls the real POST /api/auth/login. No client-side auth bypass.
-const DEMO_ACCOUNTS = [
-  {
-    label: 'Employee',
-    sublabel: 'Self-service hub',
-    email: 'employee.demo@peoplepay360.dev',
-    password: 'Employee@123',
-    color: 'from-teal-500 to-emerald-600',
-    dot: 'bg-teal-400',
-  },
-  {
-    label: 'HR Manager',
-    sublabel: 'Workforce ops',
-    email: 'hr.manager@peoplepay360.dev',
-    password: 'Manager@123',
-    color: 'from-indigo-500 to-violet-600',
-    dot: 'bg-indigo-400',
-  },
-  {
-    label: 'Payroll User',
-    sublabel: 'Payrun processing',
-    email: 'payroll.user@peoplepay360.dev',
-    password: 'Payroll@123',
-    color: 'from-amber-500 to-orange-600',
-    dot: 'bg-amber-400',
-  },
-  {
-    label: 'Payroll Manager',
-    sublabel: 'Salary structures',
-    email: 'payroll.manager@peoplepay360.dev',
-    password: 'Payroll@123',
-    color: 'from-rose-500 to-pink-600',
-    dot: 'bg-rose-400',
-  },
-  {
-    label: 'Administrator',
-    sublabel: 'Full system access',
-    email: 'admin@peoplepay360.dev',
-    password: 'Admin@123',
-    color: 'from-slate-500 to-slate-700',
-    dot: 'bg-slate-400',
-  },
-];
 
 const WORKFLOW_STEPS = [
   { icon: Users, label: 'Employees', sub: 'Hire & onboard' },
@@ -74,7 +28,6 @@ export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [activeDemo, setActiveDemo] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [errorType, setErrorType] = useState<'credentials' | 'network' | 'validation' | null>(null);
 
@@ -103,7 +56,6 @@ export const LoginPage: React.FC = () => {
         setErrorType('credentials');
         setErrorMessage(err.message || 'Sign in failed. Please try again.');
       }
-      setActiveDemo(null);
     } finally {
       setLoading(false);
     }
@@ -122,15 +74,6 @@ export const LoginPage: React.FC = () => {
       return;
     }
     await handleLogin(email, password);
-  };
-
-  // Demo: populate form AND call the real login API immediately
-  const handleDemoLogin = async (acc: typeof DEMO_ACCOUNTS[0]) => {
-    setActiveDemo(acc.label);
-    setEmail(acc.email);
-    setPassword(acc.password);
-    setErrorMessage(null);
-    await handleLogin(acc.email, acc.password);
   };
 
   return (
@@ -296,7 +239,7 @@ export const LoginPage: React.FC = () => {
               type="submit"
               variant="primary"
               className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 font-semibold text-sm shadow-lg shadow-indigo-500/20 mt-2"
-              isLoading={loading && !activeDemo}
+              isLoading={loading}
               icon={<ShieldCheck className="w-4 h-4" />}
             >
               Sign In to Workspace
@@ -310,52 +253,6 @@ export const LoginPage: React.FC = () => {
               </Link>
             </p>
           </form>
-
-          {/* Divider */}
-          <div className="relative my-7">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-800" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="bg-slate-950 lg:bg-slate-900/50 px-3 text-xs text-slate-500 font-semibold tracking-wider uppercase">
-                Demo Access
-              </span>
-            </div>
-          </div>
-
-          {/* Demo accounts — each calls the real POST /api/auth/login */}
-          <div className="space-y-2">
-            <p className="text-xs text-slate-500 mb-3 leading-relaxed">
-              Predefined demo accounts for evaluation. Selecting one populates credentials and calls the real authentication API — no client-side bypass.
-            </p>
-            <div className="grid grid-cols-1 gap-1.5">
-              {DEMO_ACCOUNTS.map((acc) => {
-                const isActive = activeDemo === acc.label && loading;
-                return (
-                  <button
-                    key={acc.label}
-                    type="button"
-                    onClick={() => handleDemoLogin(acc)}
-                    disabled={loading}
-                    className="flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800/80 hover:border-slate-700 transition-all duration-150 text-left group disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${acc.dot} ${isActive ? 'animate-pulse' : ''}`} />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">
-                        {acc.label}
-                      </div>
-                      <div className="text-2xs text-slate-500 truncate">{acc.sublabel} · {acc.email}</div>
-                    </div>
-                    {isActive ? (
-                      <span className="text-2xs text-slate-400 font-mono shrink-0">signing in…</span>
-                    ) : (
-                      <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-400 shrink-0 transition-colors" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </div>
       </div>
     </div>
