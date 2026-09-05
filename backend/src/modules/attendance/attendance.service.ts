@@ -23,10 +23,13 @@ function assertSelfOrHrmPlus(auth: AuthPayload, employeeId: string) {
   }
 }
 
-function withException<T extends { checkOut: Date | null }>(rows: T[]) {
+// docs/02_API_CONTRACTS.md section 5: exception is missing_checkout|late|none —
+// missing_checkout takes priority since it's the more actionable of the two.
+function withException<T extends { checkOut: Date | null; status: string }>(rows: T[]) {
   return rows.map((r) => ({
     ...r,
-    exception: r.checkOut === null ? ("missing_checkout" as const) : ("none" as const),
+    exception:
+      r.checkOut === null ? ("missing_checkout" as const) : r.status === "late" ? ("late" as const) : ("none" as const),
   }));
 }
 

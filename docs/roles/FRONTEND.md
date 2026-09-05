@@ -7,9 +7,43 @@ description: Frontend engineer role file for PeoplePay360 — navigation, forms,
 
 Read `docs/00_PROJECT_BRIEF.md` first. Every screen below maps directly to a section of the original problem statement (`dev resources/PeoplePay360 HR & Payroll.pdf`) — don't simplify away the specific interaction patterns it calls out, judges compare against it.
 
+## Roles & permissions — ground truth for Navigation-layer RBAC
+
+`00_PROJECT_BRIEF.md` section 2 gives the plain-English RBAC matrix. This section is the verified, mechanical version — pulled directly from every `*.routes.ts` file's actual `requireRole(...)` calls (not from the docs, which can drift out of sync with the code). If this table and the brief ever disagree, trust this one and flag the brief for an update.
+
+**How to gate the UI:** `POST /api/auth/login` and `GET /api/auth/me` return `roles: string[]` — an array of role *names* (e.g. `["HR_MANAGER"]`), pulled from `user_roles → roles.name`. That array is the only thing to gate on.
+
+Do **not** build UI logic against the `roles`/`permissions`/`role_permissions` tables in `backend/prisma/schema.prisma`. They exist in the schema as a generic `(module, action, scope)` permission engine, but nothing in the backend reads them — not login, not any route. They're reference data for a future fine-grained system, deliberately not wired up yet (see `docs/03_DB_DESIGN_NOTES.md`, "Deliberately deferred"). If any part of the current frontend queries or assumes those tables drive access, that's the source of drift — replace it with the flat role-array check below.
+
+Roles stack upward — checking "is one of my roles in this set" is the actual backend pattern, mirror it in the frontend rather than special-casing each role name:
+- `HRM_PLUS` = `HR_MANAGER`, `HR_PAYROLL_USER`, `HR_PAYROLL_MANAGER`, `ADMIN`
+- `HRPU_PLUS` = `HR_PAYROLL_USER`, `HR_PAYROLL_MANAGER`, `ADMIN`
+- `HRPM_PLUS` = `HR_PAYROLL_MANAGER`, `ADMIN`
+
+| Module | Employee (E) | HR Manager (HRM) | HR Payroll User (HRPU) | HR Payroll Manager (HRPM) | Admin (A) |
+|---|---|---|---|---|---|
+| Departments | view | view + create/edit/delete | (inherits HRM) | (inherits HRM) | full |
+| Employees | view **self only** | view all + create/edit | (inherits HRM) | (inherits HRM) | full + **delete** |
+| Contracts | view **self only** | view all + create/edit | (inherits HRM) | (inherits HRM) | full + **delete** |
+| Working Schedules | view | view + create/edit/delete | (inherits HRM) | (inherits HRM) | full |
+| Attendance | view/check-in-out **self** | view all + **correct past records** | (inherits HRM) | (inherits HRM) | full |
+| Time Off Types | view | view + create/edit | (inherits HRM) | (inherits HRM) | full |
+| Time Off Allocations | — | create + **approve** | (inherits HRM) | (inherits HRM) | full |
+| Time Off Requests | create + view self | view all + **approve/refuse** | (inherits HRM) | (inherits HRM) | full |
+| Salary Structures/Rules | — | — | **read-only** | full CRUD | full |
+| Payrun (preview/create/read/compute/send) | — | — | full | (inherits HRPU) | full |
+| Payrun validate / mark-paid | — | — | ✗ | ✓ **only** | full |
+| Payslips | view **self only** | — | view all | (inherits HRPU) | full |
+| Dashboard (all 5 endpoints) | — | ✓ | (inherits HRM) | (inherits HRM) | full |
+
+Two mechanics that don't show up as a simple role check, so the UI has to know them explicitly:
+- **"self only" rows are not route-level restrictions.** The route itself has no role requirement — an Employee can legally call `GET /api/employees`, `GET /api/contracts`, `GET /api/attendance`, `GET /api/payslips`. The backend service layer silently filters the result to `employeeId == auth.employeeId`. The frontend can't detect this from a 403; design these screens as "shows your own records" for Employee role, not "hidden/disabled."
+- **Delete is Admin-only wherever it exists** (Employees, Contracts) — HR Manager can create/edit but never gets a delete action, even though HR Manager can do everything else on those resources.
+- **Payrun validate/mark-paid is the one maker-checker gap**: an HR Payroll Manager who computed a payrun themselves still gets a 403 trying to validate it — the "Validate" button should be disabled (with an explanatory tooltip) when `payrun.computedBy === currentUser.id`, not just gated by role, or the user will hit a confusing rejection after clicking through.
+
 ## Navigation & screens to build
 
-- **Top nav**: Employees, Contracts, Attendance, Time Off, Payroll, Reports — visibility per role (Employee sees a reduced set; see RBAC matrix in the brief). This is Navigation-layer RBAC — hide what a role can't use, but never rely on hiding alone (backend still enforces).
+- **Top nav**: Employees, Contracts, Attendance, Time Off, Payroll, Reports — visibility per role (Employee sees a reduced set; see the "Roles & permissions" table above). This is Navigation-layer RBAC — hide what a role can't use, but never rely on hiding alone (backend still enforces).
 - **Employees**: Kanban + List views, both opening the same unified **Employee Form** (the operational hub). Form shows identity, role, department, manager, schedule, active status, and **smart buttons** with live counts: Contracts (N), Attendance (N), Time Off (N), Payslips (N) — each opens a filtered list of that employee's records.
 - **Contracts**: list view highlights the active contract clearly (badge/color, not just a status column); form captures duration, department, position, wage, salary structure.
 - **Working Schedule**: list shows name/type/weekly hours (computed, read-only); form defines Day/Start/End/Break rows and shows the auto-computed weekly total live as rows change.

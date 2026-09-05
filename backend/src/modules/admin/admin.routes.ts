@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authenticate, requireRole } from "../../middleware/auth";
 import * as adminUserController from "./adminUser.controller";
+import * as auditLogController from "./auditLog.controller";
 
 export const adminRouter = Router();
 
@@ -13,3 +14,5 @@ adminRouter.post("/users", adminUserController.create);
 adminRouter.put("/users/:id/roles", adminUserController.updateRoles);
 adminRouter.post("/users/:id/deactivate", adminUserController.deactivate);
 adminRouter.post("/users/:id/reactivate", adminUserController.reactivate);
+
+adminRouter.get("/audit-logs", auditLogController.list);
