@@ -75,6 +75,7 @@ model UserRole {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("user_roles")
 }
 
@@ -113,6 +114,7 @@ model Department {
   employees        Employee[]   @relation("EmployeeDepartment")
   contracts        Contract[]
 
+  @@index([parentDepartmentId])
   @@map("departments")
 }
 
@@ -164,6 +166,8 @@ model Employee {
   timeOffRequests    TimeOffRequest[]
   payslips           Payslip[]
 
+  @@index([departmentId])
+  @@index([managerId])
   @@map("employees")
 }
 
@@ -192,6 +196,9 @@ model Contract {
   salaryStructure SalaryStructure? @relation(fields: [salaryStructureId], references: [id])
   payslips       Payslip[]
 
+  @@index([employeeId])
+  @@index([departmentId])
+  @@index([salaryStructureId])
   @@map("contracts")
 }
 
@@ -214,6 +221,7 @@ model Attendance {
 
   employee Employee @relation(fields: [employeeId], references: [id])
 
+  @@index([employeeId])
   @@map("attendance")
 }
 
@@ -251,6 +259,7 @@ model TimeOffAllocation {
   employee Employee    @relation(fields: [employeeId], references: [id])
   type     TimeOffType @relation(fields: [typeId], references: [id])
 
+  @@index([employeeId])
   @@map("time_off_allocations")
 }
 
@@ -272,6 +281,7 @@ model TimeOffRequest {
   employee Employee    @relation(fields: [employeeId], references: [id])
   type     TimeOffType @relation(fields: [typeId], references: [id])
 
+  @@index([employeeId])
   @@map("time_off_requests")
 }
 
@@ -345,6 +355,7 @@ model Payrun {
   validatedByUser User?           @relation("PayrunValidatedBy", fields: [validatedBy], references: [id])
   payslips        Payslip[]
 
+  @@index([structureId])
   @@map("payruns")
 }
 
@@ -375,6 +386,8 @@ model Payslip {
   lines    PayslipLine[]
 
   @@unique([payrunId, employeeId])
+  @@index([payrunId])
+  @@index([employeeId])
   @@map("payslips")
 }
 
