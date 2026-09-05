@@ -2,6 +2,7 @@ import { prisma } from "../../prisma";
 import { ApiError } from "../../utils/ApiError";
 import { AuthPayload, isHrmPlus } from "../../middleware/auth";
 import { generatePayslipPdf } from "./payslipPdf";
+import { PaginationParams, paginatedResult } from "../../utils/pagination";
 
 // Named consistently, reused by both listPayslips and getPayslip so the list view and
 // detail view can never drift into showing different data for the same fields again —
@@ -14,20 +15,37 @@ const payslipInclude = {
   contract: { include: { salaryStructure: true } },
 } as const;
 
-export function listPayslips(auth: AuthPayload, filters: { payrunId?: string; employeeId?: string }) {
+// Pagination is opt-in — see employee.service.ts for the same pattern and why.
+export async function listPayslips(
+  auth: AuthPayload,
+  filters: { payrunId?: string; employeeId?: string },
+  pagination?: PaginationParams
+) {
   const visibilityFilter = isHrmPlus(auth.roles)
     ? {}
     : { employeeId: auth.employeeId ?? "__no_self_employee__" };
 
-  return prisma.payslip.findMany({
-    where: {
-      ...visibilityFilter,
-      payrunId: filters.payrunId || undefined,
-      employeeId: filters.employeeId || undefined,
-    },
-    orderBy: { createdAt: "desc" },
-    include: payslipInclude,
-  });
+  const where = {
+    ...visibilityFilter,
+    payrunId: filters.payrunId || undefined,
+    employeeId: filters.employeeId || undefined,
+  };
+
+  if (!pagination) {
+    return prisma.payslip.findMany({ where, orderBy: { createdAt: "desc" }, include: payslipInclude });
+  }
+
+  const [rows, total] = await Promise.all([
+    prisma.payslip.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: pagination.skip,
+      take: pagination.take,
+      include: payslipInclude,
+    }),
+    prisma.payslip.count({ where }),
+  ]);
+  return paginatedResult(rows, total, pagination);
 }
 
 export async function getPayslip(auth: AuthPayload, id: string) {

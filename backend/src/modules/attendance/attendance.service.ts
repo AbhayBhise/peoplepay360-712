@@ -47,13 +47,25 @@ export async function listAttendance(
       filters.dateFrom || filters.dateTo ? { gte: filters.dateFrom, lte: filters.dateTo } : undefined,
   };
 
+  // Every list endpoint that shows a name (not just an employeeId) has to include the
+  // relation explicitly — Prisma never joins it for you. Missing here is exactly what
+  // produced "Employee #undefined" on the Attendance screen: the row existed, the
+  // employee's name was simply never fetched.
+  const employeeSelect = { employee: { select: { id: true, name: true } } } as const;
+
   if (!pagination) {
-    const rows = await prisma.attendance.findMany({ where, orderBy: { checkIn: "desc" } });
+    const rows = await prisma.attendance.findMany({ where, orderBy: { checkIn: "desc" }, include: employeeSelect });
     return withException(rows);
   }
 
   const [rows, total] = await Promise.all([
-    prisma.attendance.findMany({ where, orderBy: { checkIn: "desc" }, skip: pagination.skip, take: pagination.take }),
+    prisma.attendance.findMany({
+      where,
+      orderBy: { checkIn: "desc" },
+      skip: pagination.skip,
+      take: pagination.take,
+      include: employeeSelect,
+    }),
     prisma.attendance.count({ where }),
   ]);
   return paginatedResult(withException(rows), total, pagination);

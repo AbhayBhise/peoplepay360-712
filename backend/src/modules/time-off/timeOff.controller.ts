@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { ok } from "../../utils/response";
 import { ApiError } from "../../utils/ApiError";
+import { parsePaginationIfRequested } from "../../utils/pagination";
 import * as typeService from "./timeOffType.service";
 import * as allocationService from "./timeOffAllocation.service";
 import * as requestService from "./timeOffRequest.service";
@@ -30,11 +31,15 @@ export const updateType = asyncHandler(async (req: Request, res: Response) => {
 
 // ---- Allocations ----
 export const listAllocations = asyncHandler(async (req: Request, res: Response) => {
-  const rows = await allocationService.listAllocations(req.auth!, {
-    employeeId: typeof req.query.employee_id === "string" ? req.query.employee_id : undefined,
-    typeId: typeof req.query.type_id === "string" ? req.query.type_id : undefined,
-    status: typeof req.query.status === "string" ? req.query.status : undefined,
-  });
+  const rows = await allocationService.listAllocations(
+    req.auth!,
+    {
+      employeeId: typeof req.query.employee_id === "string" ? req.query.employee_id : undefined,
+      typeId: typeof req.query.type_id === "string" ? req.query.type_id : undefined,
+      status: typeof req.query.status === "string" ? req.query.status : undefined,
+    },
+    parsePaginationIfRequested(req)
+  );
   return ok(res, rows);
 });
 export const createAllocation = asyncHandler(async (req: Request, res: Response) => {
@@ -47,10 +52,14 @@ export const approveAllocation = asyncHandler(async (req: Request, res: Response
 
 // ---- Requests ----
 export const listRequests = asyncHandler(async (req: Request, res: Response) => {
-  const rows = await requestService.listRequests(req.auth!, {
-    employeeId: typeof req.query.employee_id === "string" ? req.query.employee_id : undefined,
-    status: typeof req.query.status === "string" ? req.query.status : undefined,
-  });
+  const rows = await requestService.listRequests(
+    req.auth!,
+    {
+      employeeId: typeof req.query.employee_id === "string" ? req.query.employee_id : undefined,
+      status: typeof req.query.status === "string" ? req.query.status : undefined,
+    },
+    parsePaginationIfRequested(req)
+  );
   return ok(res, rows);
 });
 export const getBalance = asyncHandler(async (req: Request, res: Response) => {

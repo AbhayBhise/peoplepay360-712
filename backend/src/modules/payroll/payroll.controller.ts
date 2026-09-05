@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { ok } from "../../utils/response";
+import { parsePaginationIfRequested } from "../../utils/pagination";
 import * as structureService from "./salaryStructure.service";
 import * as payrunService from "./payrun.service";
 import * as payslipService from "./payslip.service";
@@ -78,10 +79,14 @@ export const sendPayslips = asyncHandler(async (req: Request, res: Response) => 
 
 // ---- Payslips ----
 export const listPayslips = asyncHandler(async (req: Request, res: Response) => {
-  const rows = await payslipService.listPayslips(req.auth!, {
-    payrunId: typeof req.query.payrun_id === "string" ? req.query.payrun_id : undefined,
-    employeeId: typeof req.query.employee_id === "string" ? req.query.employee_id : undefined,
-  });
+  const rows = await payslipService.listPayslips(
+    req.auth!,
+    {
+      payrunId: typeof req.query.payrun_id === "string" ? req.query.payrun_id : undefined,
+      employeeId: typeof req.query.employee_id === "string" ? req.query.employee_id : undefined,
+    },
+    parsePaginationIfRequested(req)
+  );
   return ok(res, rows);
 });
 export const getPayslip = asyncHandler(async (req: Request, res: Response) => {

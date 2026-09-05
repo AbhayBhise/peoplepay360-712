@@ -75,13 +75,28 @@ export async function listContracts(
     status: (filters.status as "draft" | "active" | "expired" | "cancelled") || undefined,
   };
 
+  // List view has to show whose contract it is and what department/structure it's
+  // under (docs/02_API_CONTRACTS.md section 3) — without this include, every row
+  // renders "Employee #undefined" the same way Attendance and Payslips did.
+  const relations = {
+    employee: { select: { id: true, name: true } },
+    department: { select: { id: true, name: true } },
+    salaryStructure: { select: { id: true, name: true } },
+  } as const;
+
   if (!pagination) {
-    const rows = await prisma.contract.findMany({ where, orderBy: { startDate: "desc" } });
+    const rows = await prisma.contract.findMany({ where, orderBy: { startDate: "desc" }, include: relations });
     return withActiveFlag(rows);
   }
 
   const [rows, total] = await Promise.all([
-    prisma.contract.findMany({ where, orderBy: { startDate: "desc" }, skip: pagination.skip, take: pagination.take }),
+    prisma.contract.findMany({
+      where,
+      orderBy: { startDate: "desc" },
+      skip: pagination.skip,
+      take: pagination.take,
+      include: relations,
+    }),
     prisma.contract.count({ where }),
   ]);
   return paginatedResult(withActiveFlag(rows), total, pagination);

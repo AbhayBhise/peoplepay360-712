@@ -46,7 +46,3 @@ export const attendanceOverview = asyncHandler(async (req: Request, res: Respons
 export const alerts = asyncHandler(async (req: Request, res: Response) => {
   return ok(res, await dashboardService.getAlerts(parseFilters(req)));
 });
-
-export const me = asyncHandler(async (req: Request, res: Response) => {
-  return ok(res, await dashboardService.getMyDashboard(req.auth!.userId, req.auth!.employeeId));
-});

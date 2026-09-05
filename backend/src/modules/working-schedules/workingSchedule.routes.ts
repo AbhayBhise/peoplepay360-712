@@ -6,9 +6,9 @@ export const workingScheduleRouter = Router();
 
 workingScheduleRouter.use(authenticate);
 
-// Read: any authenticated user (docs/02_API_CONTRACTS.md section 4)
-workingScheduleRouter.get("/", workingScheduleController.list);
-workingScheduleRouter.get("/:id", workingScheduleController.getById);
+// Read: HRM+ (tightened from open authenticated)
+workingScheduleRouter.get("/", requireRole(...HRM_PLUS), workingScheduleController.list);
+workingScheduleRouter.get("/:id", requireRole(...HRM_PLUS), workingScheduleController.getById);
 
 // Write: HRM+
 workingScheduleRouter.post("/", requireRole(...HRM_PLUS), workingScheduleController.create);

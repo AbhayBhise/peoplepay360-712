@@ -16,6 +16,15 @@ const changePasswordSchema = z.object({
   newPassword: passwordSchema,
 });
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email({ message: "must be a valid email address" }),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1, { message: "is required" }),
+  newPassword: passwordSchema,
+});
+
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const body = loginSchema.parse(req.body);
   const result = await authService.login(body.email, body.password);
@@ -40,4 +49,16 @@ export const changePassword = asyncHandler(async (req: Request, res: Response) =
 // needed if we wanted to invalidate a token before its natural expiry.
 export const logout = asyncHandler(async (_req: Request, res: Response) => {
   return ok(res, { message: "Logged out successfully" });
+});
+
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+  const body = forgotPasswordSchema.parse(req.body);
+  await authService.forgotPassword(body.email);
+  return ok(res, { message: "If that email exists, a password reset link has been sent" });
+});
+
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  const body = resetPasswordSchema.parse(req.body);
+  await authService.resetPassword(body.token, body.newPassword);
+  return ok(res, { message: "Password reset successfully" });
 });

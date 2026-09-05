@@ -4,6 +4,7 @@ import { ApiError } from "../../utils/ApiError";
 import { AuthPayload, isHrmPlus } from "../../middleware/auth";
 import { createRequestSchema } from "./timeOff.validation";
 import { getUsableAllocations } from "./timeOffAllocation.service";
+import { PaginationParams, paginatedResult } from "../../utils/pagination";
 
 type CreateInput = z.infer<typeof createRequestSchema>;
 
@@ -27,19 +28,41 @@ function assertSelfOrHrmPlus(auth: AuthPayload, employeeId: string) {
   }
 }
 
-export function listRequests(auth: AuthPayload, filters: { employeeId?: string; status?: string }) {
+// Pagination is opt-in — see employee.service.ts for the same pattern and why.
+export async function listRequests(
+  auth: AuthPayload,
+  filters: { employeeId?: string; status?: string },
+  pagination?: PaginationParams
+) {
   const visibilityFilter = isHrmPlus(auth.roles)
     ? {}
     : { employeeId: auth.employeeId ?? "__no_self_employee__" };
 
-  return prisma.timeOffRequest.findMany({
-    where: {
-      ...visibilityFilter,
-      employeeId: filters.employeeId || undefined,
-      status: (filters.status as "draft" | "validate" | "refused") || undefined,
-    },
-    orderBy: { dateFrom: "desc" },
-  });
+  const where = {
+    ...visibilityFilter,
+    employeeId: filters.employeeId || undefined,
+    status: (filters.status as "draft" | "validate" | "refused") || undefined,
+  };
+  const relations = {
+    employee: { select: { id: true, name: true } },
+    type: { select: { id: true, name: true } },
+  } as const;
+
+  if (!pagination) {
+    return prisma.timeOffRequest.findMany({ where, orderBy: { dateFrom: "desc" }, include: relations });
+  }
+
+  const [rows, total] = await Promise.all([
+    prisma.timeOffRequest.findMany({
+      where,
+      orderBy: { dateFrom: "desc" },
+      skip: pagination.skip,
+      take: pagination.take,
+      include: relations,
+    }),
+    prisma.timeOffRequest.count({ where }),
+  ]);
+  return paginatedResult(rows, total, pagination);
 }
 
 // Real-time remaining-balance lookup backing the frontend's "show balance before submit"

@@ -133,88 +133,8 @@ export const DashboardPage: React.FC = () => {
   const userName = user?.name || user?.email?.split('@')[0] || 'Team Member';
   const primaryRole = user?.roles?.[0] || 'Employee';
 
-  // Can the user switch dashboard perspectives for review? (Admins or multi-role users)
-  const canSwitchPerspectives = isHRMPlus();
-
   return (
     <div className="space-y-6 animate-fade-in text-slate-800 dark:text-slate-100">
-      
-      {/* Perspective Switcher for Administrative/Managerial Evaluation */}
-      {canSwitchPerspectives && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-100/90 dark:bg-slate-900/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-xs shadow-2xs">
-          <div className="flex items-center gap-2">
-            <span className="text-2xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Role Workspace:
-            </span>
-            <span className="font-bold text-slate-900 dark:text-white">
-              {activeRoleView.replace(/_/g, ' ')}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button
-              onClick={() => setActiveRoleView('EMPLOYEE')}
-              className={`px-3 py-1 rounded-xl text-2xs font-bold transition-all cursor-pointer ${
-                activeRoleView === 'EMPLOYEE'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-              }`}
-            >
-              Employee
-            </button>
-
-            <button
-              onClick={() => setActiveRoleView('HR_MANAGER')}
-              className={`px-3 py-1 rounded-xl text-2xs font-bold transition-all cursor-pointer ${
-                activeRoleView === 'HR_MANAGER'
-                  ? 'bg-teal-600 text-white shadow-xs'
-                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-              }`}
-            >
-              HR Manager
-            </button>
-
-            {isHRPUPlus() && (
-              <button
-                onClick={() => setActiveRoleView('HR_PAYROLL_USER')}
-                className={`px-3 py-1 rounded-xl text-2xs font-bold transition-all cursor-pointer ${
-                  activeRoleView === 'HR_PAYROLL_USER'
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                }`}
-              >
-                Payroll Prep
-              </button>
-            )}
-
-            {isHRPMPlus() && (
-              <button
-                onClick={() => setActiveRoleView('HR_PAYROLL_MANAGER')}
-                className={`px-3 py-1 rounded-xl text-2xs font-bold transition-all cursor-pointer ${
-                  activeRoleView === 'HR_PAYROLL_MANAGER'
-                    ? 'bg-emerald-700 text-white shadow-xs'
-                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                }`}
-              >
-                Payroll Control
-              </button>
-            )}
-
-            {isAdmin() && (
-              <button
-                onClick={() => setActiveRoleView('ADMIN')}
-                className={`px-3 py-1 rounded-xl text-2xs font-bold transition-all cursor-pointer ${
-                  activeRoleView === 'ADMIN'
-                    ? 'bg-rose-600 text-white shadow-xs'
-                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                }`}
-              >
-                Admin Center
-              </button>
-            )}
-          </div>
-        </div>
-      )}
 
       {loading ? (
         <Spinner label="Aggregating live command center data..." />

@@ -3,6 +3,7 @@ import { prisma } from "../../prisma";
 import { ApiError } from "../../utils/ApiError";
 import { AuthPayload, isHrmPlus } from "../../middleware/auth";
 import { createAllocationSchema } from "./timeOff.validation";
+import { PaginationParams, paginatedResult } from "../../utils/pagination";
 
 type CreateInput = z.infer<typeof createAllocationSchema>;
 
@@ -12,25 +13,45 @@ function withRemaining<T extends { allocated: unknown; taken: unknown }>(allocat
   return { ...allocation, remaining: Math.round((allocated - taken) * 100) / 100 };
 }
 
-export function listAllocations(
+// Pagination is opt-in — see employee.service.ts for the same pattern and why.
+export async function listAllocations(
   auth: AuthPayload,
-  filters: { employeeId?: string; typeId?: string; status?: string }
+  filters: { employeeId?: string; typeId?: string; status?: string },
+  pagination?: PaginationParams
 ) {
   const visibilityFilter = isHrmPlus(auth.roles)
     ? {}
     : { employeeId: auth.employeeId ?? "__no_self_employee__" };
 
-  return prisma.timeOffAllocation
-    .findMany({
-      where: {
-        ...visibilityFilter,
-        employeeId: filters.employeeId || undefined,
-        typeId: filters.typeId || undefined,
-        status: (filters.status as "draft" | "validate" | "refused") || undefined,
-      },
+  const where = {
+    ...visibilityFilter,
+    employeeId: filters.employeeId || undefined,
+    typeId: filters.typeId || undefined,
+    status: (filters.status as "draft" | "validate" | "refused") || undefined,
+  };
+  // Employee/type names, not just ids — same "Employee #undefined" pattern as
+  // Attendance, Contracts, and Payslips before this pass.
+  const relations = {
+    employee: { select: { id: true, name: true } },
+    type: { select: { id: true, name: true } },
+  } as const;
+
+  if (!pagination) {
+    const rows = await prisma.timeOffAllocation.findMany({ where, orderBy: { validFrom: "desc" }, include: relations });
+    return rows.map(withRemaining);
+  }
+
+  const [rows, total] = await Promise.all([
+    prisma.timeOffAllocation.findMany({
+      where,
       orderBy: { validFrom: "desc" },
-    })
-    .then((rows) => rows.map(withRemaining));
+      skip: pagination.skip,
+      take: pagination.take,
+      include: relations,
+    }),
+    prisma.timeOffAllocation.count({ where }),
+  ]);
+  return paginatedResult(rows.map(withRemaining), total, pagination);
 }
 
 export async function createAllocation(input: CreateInput) {

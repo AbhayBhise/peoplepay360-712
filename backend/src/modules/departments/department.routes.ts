@@ -6,9 +6,9 @@ export const departmentRouter = Router();
 
 departmentRouter.use(authenticate);
 
-// Read: any authenticated user (docs/02_API_CONTRACTS.md section 1)
-departmentRouter.get("/", departmentController.list);
-departmentRouter.get("/:id", departmentController.getById);
+// Read: HRM+ (tightened from open authenticated)
+departmentRouter.get("/", requireRole(...HRM_PLUS), departmentController.list);
+departmentRouter.get("/:id", requireRole(...HRM_PLUS), departmentController.getById);
 
 // Write: HRM+
 departmentRouter.post("/", requireRole(...HRM_PLUS), departmentController.create);

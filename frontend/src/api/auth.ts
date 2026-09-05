@@ -34,32 +34,10 @@ function normalizeUser(raw: any): User {
 
 export const authApi = {
   login: async (credentials: { email: string; password: string }): Promise<LoginResponse> => {
-    try {
-      const result = await apiRequest<{ user: any; token: string }>(
-        apiClient.post('/api/auth/login', credentials)
-      );
-      return { user: normalizeUser(result.user), token: result.token };
-    } catch (err: any) {
-      // Offline / Demo Fallback
-      const normalizedEmail = credentials.email.trim().toLowerCase();
-      if (MOCK_USERS[normalizedEmail]) {
-        return MOCK_USERS[normalizedEmail];
-      }
-
-      // Default fallback for any custom email during demo
-      if (credentials.email && credentials.password) {
-        return {
-          user: {
-            id: '99',
-            email: credentials.email,
-            name: credentials.email.split('@')[0].toUpperCase(),
-            roles: ['Admin'],
-          },
-          token: 'demo-fallback-jwt-token-99',
-        };
-      }
-      throw err;
-    }
+    const result = await apiRequest<{ user: any; token: string }>(
+      apiClient.post('/api/auth/login', credentials)
+    );
+    return { user: normalizeUser(result.user), token: result.token };
   },
 
   logout: async (): Promise<{ message?: string }> => {
@@ -68,6 +46,14 @@ export const authApi = {
     } catch {
       return { message: 'Logged out successfully' };
     }
+  },
+
+  forgotPassword: async (email: string): Promise<{ message?: string }> => {
+    return await apiRequest(apiClient.post('/api/auth/forgot-password', { email }));
+  },
+
+  resetPassword: async (token: string, newPassword: string): Promise<{ message?: string }> => {
+    return await apiRequest(apiClient.post('/api/auth/reset-password', { token, newPassword }));
   },
 
   getMe: async (): Promise<User> => {

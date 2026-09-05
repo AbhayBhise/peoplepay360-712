@@ -7,9 +7,16 @@ type CreateInput = z.infer<typeof createDepartmentSchema>;
 type UpdateInput = z.infer<typeof updateDepartmentSchema>;
 
 export function listDepartments(parentId?: string) {
+  // No pagination here — departments are a small, bounded reference list, never
+  // thousands of rows — but the parent/head names still need the same include every
+  // other list endpoint needed to avoid showing a raw id instead of a name.
   return prisma.department.findMany({
     where: parentId ? { parentDepartmentId: parentId } : undefined,
     orderBy: { name: "asc" },
+    include: {
+      parentDepartment: { select: { id: true, name: true } },
+      headEmployee: { select: { id: true, name: true } },
+    },
   });
 }
 

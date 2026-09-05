@@ -1,27 +1,24 @@
 import { Request } from "express";
-import { prisma } from "../prisma";
+import { auditWriteBuffer } from "./writeBuffer";
 
-// docs/01_DATABASE_SCHEMA.md defines audit_log for exactly this — an accountability trail
-// for who changed what in an HR/payroll system — but nothing was writing to it. Wired into
-// the most sensitive mutations: Employee, Contract, and Payrun state transitions.
+// High-throughput audit logging queue. Buffers incoming requests up to count threshold
+// and flushes gathered records in a single bulk database query to handle high concurrency.
 export async function recordAudit(
   req: Request,
   params: { module: string; action: string; recordId?: string; before?: unknown; after?: unknown }
 ) {
   try {
-    await prisma.auditLog.create({
-      data: {
-        userId: req.auth?.userId,
-        module: params.module,
-        action: params.action,
-        recordId: params.recordId,
-        beforeValue: params.before === undefined ? undefined : (params.before as object),
-        afterValue: params.after === undefined ? undefined : (params.after as object),
-        ipAddress: req.ip,
-      },
+    auditWriteBuffer.enqueue({
+      userId: req.auth?.userId,
+      module: params.module,
+      action: params.action,
+      recordId: params.recordId,
+      beforeValue: params.before === undefined ? null : (params.before as object),
+      afterValue: params.after === undefined ? null : (params.after as object),
+      ipAddress: req.ip,
     });
   } catch (err) {
-    // Audit logging must never break the actual request it's observing.
-    console.error("audit log write failed:", err);
+    console.error("audit log write buffer error:", err);
   }
 }
+

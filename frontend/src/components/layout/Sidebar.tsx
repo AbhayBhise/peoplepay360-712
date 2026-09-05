@@ -130,6 +130,17 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({
         },
       ],
     },
+    {
+      title: 'Administration',
+      items: [
+        {
+          label: 'User Management',
+          path: '/admin/users',
+          icon: <ShieldCheck className="w-4 h-4" />,
+          visible: user?.roles?.includes('Admin') ?? false,
+        },
+      ],
+    },
   ];
 
   const primaryRole = user?.roles?.[0] || 'User';

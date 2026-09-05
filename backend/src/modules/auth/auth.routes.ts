@@ -9,3 +9,5 @@ authRouter.post("/login", loginRateLimit, authController.login);
 authRouter.get("/me", authenticate, authController.me);
 authRouter.post("/logout", authenticate, authController.logout);
 authRouter.post("/change-password", authenticate, accountSecurityRateLimit, authController.changePassword);
+authRouter.post("/forgot-password", accountSecurityRateLimit, authController.forgotPassword);
+authRouter.post("/reset-password", accountSecurityRateLimit, authController.resetPassword);

@@ -1,18 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { authApi } from '../../api/auth';
 import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
-import { Lock, Mail, ShieldCheck } from 'lucide-react';
+import { Mail, ArrowLeft, ShieldCheck } from 'lucide-react';
 
-export const LoginPage: React.FC = () => {
+export const ForgotPasswordPage: React.FC = () => {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const { login } = useAuth();
   const { success } = useToast();
   const navigate = useNavigate();
 
@@ -20,18 +18,18 @@ export const LoginPage: React.FC = () => {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!email || !password) {
-      setErrorMessage('Please enter both email and password.');
+    if (!email) {
+      setErrorMessage('Please enter your email address.');
       return;
     }
 
     setLoading(true);
     try {
-      const user = await login(email, password);
-      success(`Welcome back, ${user.name || user.email}!`, 'Signed In Successfully');
-      navigate('/dashboard');
+      await authApi.forgotPassword(email);
+      success('If that email exists, a password reset link has been sent.', 'Email Sent');
+      navigate('/login');
     } catch (err: any) {
-      setErrorMessage(err.message || 'Login failed. Please check your credentials.');
+      setErrorMessage(err.message || 'Failed to send reset link. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -40,7 +38,6 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-indigo-950 flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <div className="max-w-md w-full animate-fade-in my-auto">
-        {/* Brand Header */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-linear-to-tr from-indigo-600 to-teal-500 text-white shadow-xl mb-3 border border-white/20">
             <span className="font-extrabold text-2xl tracking-tighter">P</span>
@@ -49,16 +46,15 @@ export const LoginPage: React.FC = () => {
             People<span className="text-teal-400">Pay360</span>
           </h1>
           <p className="text-xs sm:text-sm text-indigo-200/90 mt-1 font-medium">
-            Integrated HR, Attendance & Payroll Platform
+            Password Recovery
           </p>
         </div>
 
-        {/* Login Card */}
         <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl shadow-2xl p-6 sm:p-8 border border-white/40 dark:border-slate-800">
           <div className="mb-6">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Sign in to your account</h2>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Forgot Password</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Enter authorized workforce credentials to access PeoplePay360
+              Enter your corporate email address to receive a reset link.
             </p>
           </div>
 
@@ -80,25 +76,6 @@ export const LoginPage: React.FC = () => {
               required
             />
 
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Password
-                </label>
-                <Link to="/forgot-password" className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
-                  Forgot password?
-                </Link>
-              </div>
-              <Input
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                icon={<Lock className="w-4 h-4" />}
-                required
-              />
-            </div>
-
             <Button
               type="submit"
               variant="primary"
@@ -106,13 +83,17 @@ export const LoginPage: React.FC = () => {
               isLoading={loading}
               icon={<ShieldCheck className="w-4 h-4" />}
             >
-              Sign In to Workspace
+              Send Reset Link
             </Button>
           </form>
+
+          <div className="mt-6 text-center">
+            <Link to="/login" className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline flex items-center justify-center gap-1">
+              <ArrowLeft className="w-4 h-4" /> Back to Login
+            </Link>
+          </div>
         </div>
       </div>
     </div>
   );
 };
-
-
