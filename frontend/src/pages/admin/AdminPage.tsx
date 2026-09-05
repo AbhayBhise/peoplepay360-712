@@ -325,7 +325,7 @@ export const AdminPage: React.FC = () => {
     try {
       const [usersData, empData] = await Promise.all([
         adminApi.listUsers(),
-        employeesApi.getAll(),
+        employeesApi.getEmployees(),
       ]);
       setUsers(usersData);
       setEmployees(empData);
