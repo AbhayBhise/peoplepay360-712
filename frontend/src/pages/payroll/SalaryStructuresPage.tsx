@@ -161,11 +161,11 @@ export const SalaryStructuresPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <Layers className="w-6 h-6 text-indigo-600" />
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <Layers className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
             <span>Salary Structures & Sequenced Rules</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Configure salary formulas and strict execution sequences (Basic → Allowances → Deductions → Gross → Net)
           </p>
         </div>
@@ -198,7 +198,7 @@ export const SalaryStructuresPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Structures Selector List */}
           <div className="lg:col-span-4 space-y-2">
-            <div className="text-2xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+            <div className="text-2xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
               Salary Structures ({structures.length})
             </div>
             <div className="space-y-2">
@@ -210,16 +210,16 @@ export const SalaryStructuresPage: React.FC = () => {
                     onClick={() => setSelectedStructure(s)}
                     className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                       isSelected
-                        ? 'bg-indigo-50/80 border-indigo-600 shadow-xs'
-                        : 'bg-white border-slate-200 hover:border-slate-300'
+                        ? 'bg-indigo-50/80 dark:bg-indigo-950/60 border-indigo-600 dark:border-indigo-500 shadow-xs'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                     }`}
                   >
                     <div>
-                      <div className="font-bold text-slate-900 text-sm">{s.name}</div>
-                      <div className="text-2xs text-slate-500 mt-0.5">Structure ID: #{s.id}</div>
+                      <div className="font-bold text-slate-900 dark:text-white text-sm">{s.name}</div>
+                      <div className="text-2xs text-slate-500 dark:text-slate-400 mt-0.5">Structure ID: #{s.id}</div>
                     </div>
                     <ChevronRight
-                      className={`w-4 h-4 ${isSelected ? 'text-indigo-600' : 'text-slate-300'}`}
+                      className={`w-4 h-4 ${isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-300 dark:text-slate-600'}`}
                     />
                   </div>
                 );
@@ -229,12 +229,12 @@ export const SalaryStructuresPage: React.FC = () => {
 
           {/* Rules in Selected Structure */}
           <div className="lg:col-span-8">
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900">{selectedStructure?.name}</h3>
-                  <p className="text-xs text-slate-500">
-                    Rules execute in strict <span className="font-semibold text-indigo-900">Sequence order</span> from lowest to highest.
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{selectedStructure?.name}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Rules execute in strict <span className="font-semibold text-indigo-900 dark:text-indigo-300">Sequence order</span> from lowest to highest.
                   </p>
                 </div>
                 {isHRPMPlus() && (
@@ -259,9 +259,9 @@ export const SalaryStructuresPage: React.FC = () => {
                   onAction={handleOpenCreateRule}
                 />
               ) : (
-                <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider">
+                    <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
                       <tr>
                         <th className="py-2.5 px-3">Seq</th>
                         <th className="py-2.5 px-3">Rule Name</th>
@@ -271,31 +271,31 @@ export const SalaryStructuresPage: React.FC = () => {
                         <th className="py-2.5 px-3 text-right">Value</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {rules.map((r) => (
-                        <tr key={r.id} className="hover:bg-slate-50/80">
-                          <td className="py-2.5 px-3 font-mono font-bold text-indigo-600">
+                        <tr key={r.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
+                          <td className="py-2.5 px-3 font-mono font-bold text-indigo-600 dark:text-indigo-400">
                             #{r.sequence}
                           </td>
-                          <td className="py-2.5 px-3 font-bold text-slate-800">{r.name}</td>
-                          <td className="py-2.5 px-3 font-mono text-indigo-900 text-2xs">{r.code}</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-800 dark:text-slate-200">{r.name}</td>
+                          <td className="py-2.5 px-3 font-mono text-indigo-900 dark:text-indigo-300 text-2xs">{r.code}</td>
                           <td className="py-2.5 px-3">
                             <span
                               className={`px-2 py-0.5 rounded text-2xs font-semibold ${
                                 r.category === 'Deduction'
-                                  ? 'bg-rose-100 text-rose-800'
+                                  ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300'
                                   : r.category === 'Allowance'
-                                  ? 'bg-teal-100 text-teal-800'
+                                  ? 'bg-teal-100 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300'
                                   : r.category === 'Basic'
-                                  ? 'bg-indigo-100 text-indigo-700'
-                                  : 'bg-emerald-100 text-emerald-900'
+                                  ? 'bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300'
+                                  : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-300'
                               }`}
                             >
                               {r.category}
                             </span>
                           </td>
-                          <td className="py-2.5 px-3 text-slate-600 capitalize">{r.computation_method}</td>
-                          <td className="py-2.5 px-3 text-right font-mono font-semibold">
+                          <td className="py-2.5 px-3 text-slate-600 dark:text-slate-300 capitalize">{r.computation_method}</td>
+                          <td className="py-2.5 px-3 text-right font-mono font-semibold text-slate-900 dark:text-slate-100">
                             {r.computation_method === 'fixed'
                               ? formatCurrency(r.fixed_amount ?? 0)
                               : r.computation_method === 'percentage'
@@ -338,12 +338,12 @@ export const SalaryStructuresPage: React.FC = () => {
               onChange={(e) => setStructActive(e.target.checked)}
               className="rounded text-indigo-600 focus:ring-indigo-500"
             />
-            <label htmlFor="structActive" className="text-xs font-semibold text-slate-700">
+            <label htmlFor="structActive" className="text-xs font-semibold text-slate-700 dark:text-slate-200">
               Active Structure (Available for contract assignment)
             </label>
           </div>
 
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
             <Button variant="outline" size="sm" onClick={() => setIsStructModalOpen(false)}>
               Cancel
             </Button>
@@ -444,7 +444,7 @@ export const SalaryStructuresPage: React.FC = () => {
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button type="button" variant="outline" onClick={() => setIsRuleModalOpen(false)} disabled={submittingRule}>
               Cancel
             </Button>

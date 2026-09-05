@@ -4,19 +4,15 @@ import {
   Plus,
   CheckCircle2,
   XCircle,
-  AlertCircle,
   Clock,
   ShieldAlert,
-  Sparkles,
-  Layers,
-  ArrowRight,
+  Calendar
 } from 'lucide-react';
 import { timeOffApi } from '../../api/timeoff';
 import { employeesApi } from '../../api/employees';
-import { TimeOffType, TimeOffAllocation, TimeOffRequest, Employee } from '../../types';
-import { Button } from '../../components/common/Button';
+import { TimeOffRequest, TimeOffAllocation, TimeOffType, Employee } from '../../types';
 import { Badge } from '../../components/common/Badge';
-import { Card } from '../../components/common/Card';
+import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
@@ -35,8 +31,8 @@ export const TimeOffPage: React.FC = () => {
 
   // New Request Modal state
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
-  const [reqEmpId, setReqEmpId] = useState<number | ''>('');
-  const [reqTypeId, setReqTypeId] = useState<number | ''>('');
+  const [reqEmpId, setReqEmpId] = useState<string>('');
+  const [reqTypeId, setReqTypeId] = useState<string>('');
   const [reqDateFrom, setReqDateFrom] = useState('');
   const [reqDateTo, setReqDateTo] = useState('');
   const [reqReason, setReqReason] = useState('');
@@ -44,8 +40,8 @@ export const TimeOffPage: React.FC = () => {
 
   // New Allocation Modal state (HRM)
   const [isAllocModalOpen, setIsAllocModalOpen] = useState(false);
-  const [allocEmpId, setAllocEmpId] = useState<number | ''>('');
-  const [allocTypeId, setAllocTypeId] = useState<number | ''>('');
+  const [allocEmpId, setAllocEmpId] = useState<string>('');
+  const [allocTypeId, setAllocTypeId] = useState<string>('');
   const [allocDays, setAllocDays] = useState<number | ''>(10);
   const [allocFrom, setAllocFrom] = useState(new Date().getFullYear() + '-01-01');
   const [allocTo, setAllocTo] = useState(new Date().getFullYear() + '-12-31');
@@ -79,9 +75,9 @@ export const TimeOffPage: React.FC = () => {
   }, []);
 
   // Compute live remaining balance for selected employee & type in modal
-  const selectedTypeObj = types.find((t) => t.id === Number(reqTypeId));
+  const selectedTypeObj = types.find((t) => String(t.id) === String(reqTypeId));
   const activeAllocForSelected = allocations.find(
-    (a) => a.employee_id === Number(reqEmpId) && a.type_id === Number(reqTypeId) && a.status === 'validate'
+    (a) => String(a.employee_id) === String(reqEmpId) && String(a.type_id) === String(reqTypeId) && a.status === 'validate'
   );
 
   const liveRemainingBalance = activeAllocForSelected
@@ -105,8 +101,10 @@ export const TimeOffPage: React.FC = () => {
   const isInsufficient = selectedTypeObj?.requires_allocation && estimatedDays > liveRemainingBalance;
 
   const handleOpenRequest = () => {
-    setReqEmpId(user?.employee_id ? Number(user.employee_id) : (employees[0]?.id || ''));
-    setReqTypeId(types[0]?.id || 1);
+    const defaultEmpId = user?.employee_id ? String(user.employee_id) : (employees[0]?.id ? String(employees[0].id) : '');
+    const defaultTypeId = types[0]?.id ? String(types[0].id) : '';
+    setReqEmpId(defaultEmpId);
+    setReqTypeId(defaultTypeId);
     const today = new Date().toISOString().split('T')[0];
     setReqDateFrom(today);
     setReqDateTo(today);
@@ -115,8 +113,8 @@ export const TimeOffPage: React.FC = () => {
   };
 
   const handleOpenAlloc = () => {
-    setAllocEmpId(employees[0]?.id || '');
-    setAllocTypeId(types[0]?.id || '');
+    setAllocEmpId(employees[0]?.id ? String(employees[0].id) : '');
+    setAllocTypeId(types[0]?.id ? String(types[0].id) : '');
     setAllocDays(10);
     setIsAllocModalOpen(true);
   };
@@ -141,8 +139,8 @@ export const TimeOffPage: React.FC = () => {
     setSubmittingReq(true);
     try {
       await timeOffApi.createRequest({
-        employee_id: Number(reqEmpId),
-        type_id: Number(reqTypeId),
+        employee_id: reqEmpId,
+        type_id: reqTypeId,
         date_from: reqDateFrom,
         date_to: reqDateTo,
         reason: reqReason,
@@ -158,17 +156,17 @@ export const TimeOffPage: React.FC = () => {
     }
   };
 
-  const handleApproveRequest = async (id: number) => {
+  const handleApproveRequest = async (id: string | number) => {
     try {
       await timeOffApi.approveRequest(id);
-      success('Leave request approved and balance automatically deducted.');
+      success('Leave request approved.');
       loadData();
     } catch (err: any) {
       error(err.message || 'Failed to approve request.');
     }
   };
 
-  const handleRefuseRequest = async (id: number) => {
+  const handleRefuseRequest = async (id: string | number) => {
     try {
       await timeOffApi.refuseRequest(id);
       success('Leave request refused.');
@@ -178,7 +176,7 @@ export const TimeOffPage: React.FC = () => {
     }
   };
 
-  const handleApproveAlloc = async (id: number) => {
+  const handleApproveAlloc = async (id: string | number) => {
     try {
       await timeOffApi.approveAllocation(id);
       success('Leave quota allocation validated.');
@@ -198,8 +196,8 @@ export const TimeOffPage: React.FC = () => {
     setSubmittingAlloc(true);
     try {
       await timeOffApi.createAllocation({
-        employee_id: Number(allocEmpId),
-        type_id: Number(allocTypeId),
+        employee_id: allocEmpId,
+        type_id: allocTypeId,
         allocated: Number(allocDays),
         valid_from: allocFrom,
         valid_to: allocTo,
@@ -216,15 +214,15 @@ export const TimeOffPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in text-slate-800 dark:text-slate-100">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <CalendarDays className="w-6 h-6 text-indigo-600" />
+          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <CalendarDays className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
             <span>Time Off & Leave Balance Experience</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Submit leave requests with real-time balance checks, review quota allocations, and process approvals
           </p>
         </div>
@@ -243,64 +241,64 @@ export const TimeOffPage: React.FC = () => {
 
       {/* VISUAL QUOTA BALANCE METERS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-900">Paid Annual Leave</span>
-            <span className="px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 text-2xs font-bold font-mono">
+            <span className="text-xs font-bold text-slate-900 dark:text-white">Paid Annual Leave</span>
+            <span className="px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 text-2xs font-bold font-mono border border-teal-200 dark:border-teal-800/60">
               16 / 20 Days Left
             </span>
           </div>
-          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-            <div className="bg-teal-600 h-full rounded-full" style={{ width: '80%' }} />
+          <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+            <div className="bg-teal-600 dark:bg-teal-500 h-full rounded-full" style={{ width: '80%' }} />
           </div>
-          <div className="flex items-center justify-between text-2xs text-slate-500">
+          <div className="flex items-center justify-between text-2xs text-slate-500 dark:text-slate-400">
             <span>Taken: 4 days</span>
-            <span className="font-bold text-teal-800">Remaining: 16 days</span>
+            <span className="font-bold text-teal-800 dark:text-teal-300">Remaining: 16 days</span>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-900">Sick Leave</span>
-            <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-2xs font-bold font-mono">
+            <span className="text-xs font-bold text-slate-900 dark:text-white">Sick Leave</span>
+            <span className="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 text-2xs font-bold font-mono border border-indigo-200 dark:border-indigo-800/60">
               8 / 10 Days Left
             </span>
           </div>
-          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-            <div className="bg-indigo-600 h-full rounded-full" style={{ width: '80%' }} />
+          <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+            <div className="bg-indigo-600 dark:bg-indigo-500 h-full rounded-full" style={{ width: '80%' }} />
           </div>
-          <div className="flex items-center justify-between text-2xs text-slate-500">
+          <div className="flex items-center justify-between text-2xs text-slate-500 dark:text-slate-400">
             <span>Taken: 2 days</span>
-            <span className="font-bold text-indigo-900">Remaining: 8 days</span>
+            <span className="font-bold text-indigo-900 dark:text-indigo-300">Remaining: 8 days</span>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-900">Compensatory Off</span>
-            <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-2xs font-bold font-mono">
+            <span className="text-xs font-bold text-slate-900 dark:text-white">Compensatory Off</span>
+            <span className="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 text-2xs font-bold font-mono border border-amber-200 dark:border-amber-800/60">
               16 Hours Left
             </span>
           </div>
-          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+          <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
             <div className="bg-amber-500 h-full rounded-full" style={{ width: '100%' }} />
           </div>
-          <div className="flex items-center justify-between text-2xs text-slate-500">
+          <div className="flex items-center justify-between text-2xs text-slate-500 dark:text-slate-400">
             <span>Earned from Overtime</span>
-            <span className="font-bold text-amber-800">Available: 16 hrs</span>
+            <span className="font-bold text-amber-800 dark:text-amber-300">Available: 16 hrs</span>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-slate-200">
+      <div className="border-b border-slate-200 dark:border-slate-800">
         <div className="flex space-x-6">
           <button
             onClick={() => setActiveTab('requests')}
             className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
               activeTab === 'requests'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             Leave Requests ({requests.length})
@@ -309,8 +307,8 @@ export const TimeOffPage: React.FC = () => {
             onClick={() => setActiveTab('allocations')}
             className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
               activeTab === 'allocations'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             Allocations & Quotas ({allocations.length})
@@ -319,8 +317,8 @@ export const TimeOffPage: React.FC = () => {
             onClick={() => setActiveTab('types')}
             className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
               activeTab === 'types'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             Leave Types ({types.length})
@@ -341,10 +339,10 @@ export const TimeOffPage: React.FC = () => {
             onAction={handleOpenRequest}
           />
         ) : (
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider">
+                <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
                   <tr>
                     <th className="py-3.5 px-4">Employee</th>
                     <th className="py-3.5 px-4">Leave Type</th>
@@ -354,26 +352,26 @@ export const TimeOffPage: React.FC = () => {
                     {isHRMPlus() && <th className="py-3.5 px-4 text-right">Approval Decision</th>}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {requests.map((r) => {
-                    const emp = employees.find((e) => e.id === r.employee_id);
-                    const tObj = types.find((t) => t.id === r.type_id);
+                    const emp = employees.find((e) => String(e.id) === String(r.employee_id));
+                    const tObj = types.find((t) => String(t.id) === String(r.type_id));
 
                     return (
-                      <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
+                      <tr key={r.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="py-3.5 px-4">
-                          <div className="font-bold text-slate-900 text-sm">
+                          <div className="font-bold text-slate-900 dark:text-white text-sm">
                             {r.employee_name || emp?.name || `Employee #${r.employee_id}`}
                           </div>
-                          {r.reason && <div className="text-2xs text-slate-500 italic mt-0.5">"{r.reason}"</div>}
+                          {r.reason && <div className="text-2xs text-slate-500 dark:text-slate-400 italic mt-0.5">"{r.reason}"</div>}
                         </td>
-                        <td className="py-3.5 px-4 font-bold text-slate-800">
+                        <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-200">
                           {r.type_name || tObj?.name || `Type #${r.type_id}`}
                         </td>
-                        <td className="py-3.5 px-4 text-slate-600 font-medium">
+                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 font-medium">
                           {r.date_from} → {r.date_to}
                         </td>
-                        <td className="py-3.5 px-4 font-financial font-extrabold text-slate-900 text-sm">
+                        <td className="py-3.5 px-4 font-financial font-extrabold text-slate-900 dark:text-white text-sm">
                           {r.duration || '—'} {tObj?.unit || 'days'}
                         </td>
                         <td className="py-3.5 px-4">
@@ -425,10 +423,10 @@ export const TimeOffPage: React.FC = () => {
         )
       ) : activeTab === 'allocations' ? (
         /* TAB 2: ALLOCATIONS */
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider">
+              <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
                 <tr>
                   <th className="py-3.5 px-4">Employee</th>
                   <th className="py-3.5 px-4">Leave Type</th>
@@ -439,21 +437,21 @@ export const TimeOffPage: React.FC = () => {
                   {isHRMPlus() && <th className="py-3.5 px-4 text-right">Action</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {allocations.map((a) => {
-                  const emp = employees.find((e) => e.id === a.employee_id);
-                  const tObj = types.find((t) => t.id === a.type_id);
+                  const emp = employees.find((e) => String(e.id) === String(a.employee_id));
+                  const tObj = types.find((t) => String(t.id) === String(a.type_id));
                   const remaining = a.remaining !== undefined ? a.remaining : a.allocated - (a.taken || 0);
 
                   return (
-                    <tr key={a.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3.5 px-4 font-bold text-slate-900 text-sm">
+                    <tr key={a.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white text-sm">
                         {a.employee_name || emp?.name || `Employee #${a.employee_id}`}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-700 font-medium">{a.type_name || tObj?.name || `Type #${a.type_id}`}</td>
-                      <td className="py-3.5 px-4 font-financial font-semibold">{a.allocated} days</td>
-                      <td className="py-3.5 px-4 font-financial text-slate-500">{a.taken || 0} days</td>
-                      <td className="py-3.5 px-4 font-financial font-extrabold text-teal-800 text-sm">
+                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-medium">{a.type_name || tObj?.name || `Type #${a.type_id}`}</td>
+                      <td className="py-3.5 px-4 font-financial font-semibold text-slate-900 dark:text-white">{a.allocated} days</td>
+                      <td className="py-3.5 px-4 font-financial text-slate-500 dark:text-slate-400">{a.taken || 0} days</td>
+                      <td className="py-3.5 px-4 font-financial font-extrabold text-teal-800 dark:text-teal-300 text-sm">
                         {remaining} days
                       </td>
                       <td className="py-3.5 px-4">
@@ -485,14 +483,14 @@ export const TimeOffPage: React.FC = () => {
         /* TAB 3: LEAVE TYPES */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {types.map((t) => (
-            <div key={t.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
+            <div key={t.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-xs">
               <div className="flex items-center justify-between gap-2 mb-2">
-                <h3 className="font-bold text-slate-900 text-sm">{t.name}</h3>
-                <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-2xs font-bold border border-indigo-100 uppercase">
+                <h3 className="font-bold text-slate-900 dark:text-white text-sm">{t.name}</h3>
+                <span className="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 text-2xs font-bold border border-indigo-100 dark:border-indigo-800/60 uppercase">
                   {t.unit}
                 </span>
               </div>
-              <p className="text-2xs text-slate-500 mt-1">
+              <p className="text-2xs text-slate-500 dark:text-slate-400 mt-1">
                 {t.requires_allocation ? 'Requires approved quota allocation' : 'Open / Unallocated leave'}
               </p>
             </div>
@@ -513,18 +511,18 @@ export const TimeOffPage: React.FC = () => {
             <Select
               label="Employee"
               value={reqEmpId}
-              onChange={(e) => setReqEmpId(Number(e.target.value))}
+              onChange={(e) => setReqEmpId(e.target.value)}
               placeholder="Select Employee..."
-              options={employees.map((e) => ({ value: e.id, label: `${e.name} (${e.job_position})` }))}
+              options={employees.map((e) => ({ value: String(e.id), label: `${e.name} (${e.job_position})` }))}
               required
             />
 
             <Select
               label="Leave Type"
               value={reqTypeId}
-              onChange={(e) => setReqTypeId(Number(e.target.value))}
+              onChange={(e) => setReqTypeId(e.target.value)}
               placeholder="Select Type..."
-              options={types.map((t) => ({ value: t.id, label: `${t.name} (${t.unit})` }))}
+              options={types.map((t) => ({ value: String(t.id), label: `${t.name} (${t.unit})` }))}
               required
             />
           </div>
@@ -533,16 +531,16 @@ export const TimeOffPage: React.FC = () => {
           <div
             className={`p-4 rounded-2xl border text-xs transition-all space-y-2 ${
               isInsufficient
-                ? 'bg-rose-50 border-rose-200 text-rose-950'
-                : 'bg-teal-50/80 border-teal-200 text-teal-950'
+                ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/60 text-rose-950 dark:text-rose-200'
+                : 'bg-teal-50/80 dark:bg-teal-950/40 border-teal-200 dark:border-teal-800/60 text-teal-950 dark:text-teal-200'
             }`}
           >
             <div className="flex items-center justify-between font-bold">
               <span className="flex items-center gap-1.5">
                 {isInsufficient ? (
-                  <ShieldAlert className="w-4 h-4 text-rose-600" />
+                  <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400" />
                 ) : (
-                  <CheckCircle2 className="w-4 h-4 text-teal-600" />
+                  <CheckCircle2 className="w-4 h-4 text-teal-600 dark:text-teal-400" />
                 )}
                 <span>Real-Time Balance Projection</span>
               </span>
@@ -551,7 +549,7 @@ export const TimeOffPage: React.FC = () => {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-teal-200/60 text-2xs">
+            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-teal-200/60 dark:border-teal-800/40 text-2xs">
               <div>
                 <span className="opacity-75 block">Current Available:</span>
                 <strong className="text-xs font-financial">{liveRemainingBalance} Days</strong>
@@ -560,7 +558,7 @@ export const TimeOffPage: React.FC = () => {
                 <span className="opacity-75 block">Projected Remaining:</span>
                 <strong
                   className={`text-xs font-financial font-bold ${
-                    isInsufficient ? 'text-rose-700' : 'text-teal-800'
+                    isInsufficient ? 'text-rose-700 dark:text-rose-300' : 'text-teal-800 dark:text-teal-300'
                   }`}
                 >
                   {isInsufficient ? 'Insufficient Quota' : `${projectedRemaining} Days Remaining`}
@@ -594,7 +592,7 @@ export const TimeOffPage: React.FC = () => {
             onChange={(e) => setReqReason(e.target.value)}
           />
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button type="button" variant="outline" onClick={() => setIsRequestModalOpen(false)} disabled={submittingReq}>
               Cancel
             </Button>
@@ -616,18 +614,18 @@ export const TimeOffPage: React.FC = () => {
           <Select
             label="Employee"
             value={allocEmpId}
-            onChange={(e) => setAllocEmpId(Number(e.target.value))}
+            onChange={(e) => setAllocEmpId(e.target.value)}
             placeholder="Select Employee..."
-            options={employees.map((e) => ({ value: e.id, label: `${e.name} (${e.job_position})` }))}
+            options={employees.map((e) => ({ value: String(e.id), label: `${e.name} (${e.job_position})` }))}
             required
           />
 
           <Select
             label="Leave Type"
             value={allocTypeId}
-            onChange={(e) => setAllocTypeId(Number(e.target.value))}
+            onChange={(e) => setAllocTypeId(e.target.value)}
             placeholder="Select Type..."
-            options={types.map((t) => ({ value: t.id, label: t.name }))}
+            options={types.map((t) => ({ value: String(t.id), label: t.name }))}
             required
           />
 
@@ -635,7 +633,7 @@ export const TimeOffPage: React.FC = () => {
             label="Allocated Days"
             type="number"
             value={allocDays}
-            onChange={(e) => setAllocDays(Number(e.target.value))}
+            onChange={(e) => setAllocDays(e.target.value ? Number(e.target.value) : '')}
             required
           />
 
@@ -656,7 +654,7 @@ export const TimeOffPage: React.FC = () => {
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button type="button" variant="outline" onClick={() => setIsAllocModalOpen(false)} disabled={submittingAlloc}>
               Cancel
             </Button>
@@ -669,3 +667,5 @@ export const TimeOffPage: React.FC = () => {
     </div>
   );
 };
+
+export default TimeOffPage;

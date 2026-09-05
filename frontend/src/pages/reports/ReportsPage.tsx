@@ -66,11 +66,11 @@ export const ReportsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-indigo-600" />
+          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <BarChart3 className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
             <span>Workforce & Financial Analytics Reports</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Audit-ready reporting on payroll expenditures, department headcount allocations, and attendance metrics
           </p>
         </div>
@@ -86,14 +86,14 @@ export const ReportsPage: React.FC = () => {
       </div>
 
       {/* Report Selector Tabs */}
-      <div className="border-b border-slate-200">
+      <div className="border-b border-slate-200 dark:border-slate-800">
         <div className="flex space-x-6">
           <button
             onClick={() => setActiveReport('payroll')}
             className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
               activeReport === 'payroll'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             Payroll Summary Report
@@ -102,8 +102,8 @@ export const ReportsPage: React.FC = () => {
             onClick={() => setActiveReport('departments')}
             className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
               activeReport === 'departments'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             Department Salary Allocation
@@ -116,17 +116,17 @@ export const ReportsPage: React.FC = () => {
         <Spinner label="Generating analytical report..." />
       ) : activeReport === 'payroll' ? (
         /* REPORT 1: PAYROLL SUMMARY */
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200">
               Historical Payrun Disbursal Log
             </h3>
-            <span className="text-2xs font-mono text-slate-400">Total Runs: {payruns.length}</span>
+            <span className="text-2xs font-mono text-slate-400 dark:text-slate-500">Total Runs: {payruns.length}</span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider">
+              <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
                 <tr>
                   <th className="py-3.5 px-4">Payrun Batch</th>
                   <th className="py-3.5 px-4">Period</th>
@@ -135,13 +135,13 @@ export const ReportsPage: React.FC = () => {
                   <th className="py-3.5 px-4">Final Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {payruns.map((pr) => (
-                  <tr key={pr.id} className="hover:bg-slate-50/80">
-                    <td className="py-3.5 px-4 font-bold text-slate-900">{pr.name || `Batch #${pr.id}`}</td>
-                    <td className="py-3.5 px-4 text-slate-600">{pr.period_start} → {pr.period_end}</td>
-                    <td className="py-3.5 px-4 font-financial font-medium text-slate-800">{pr.employee_count ?? 3} Employees</td>
-                    <td className="py-3.5 px-4 font-financial font-extrabold text-emerald-800 text-sm">
+                  <tr key={pr.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
+                    <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">{pr.name || `Batch #${pr.id}`}</td>
+                    <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">{pr.period_start} → {pr.period_end}</td>
+                    <td className="py-3.5 px-4 font-financial font-medium text-slate-800 dark:text-slate-200">{pr.employee_count ?? 3} Employees</td>
+                    <td className="py-3.5 px-4 font-financial font-extrabold text-emerald-800 dark:text-emerald-300 text-sm">
                       {formatCurrency(pr.total_net ?? 18900)}
                     </td>
                     <td className="py-3.5 px-4">
@@ -157,16 +157,16 @@ export const ReportsPage: React.FC = () => {
         </div>
       ) : (
         /* REPORT 2: DEPARTMENT SALARY ALLOCATION */
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
-          <div className="p-4 border-b border-slate-100">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200">
               Departmental Cost & Workforce Breakdown
             </h3>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider">
+              <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
                 <tr>
                   <th className="py-3.5 px-4">Department Unit</th>
                   <th className="py-3.5 px-4">Active Staff</th>
@@ -174,17 +174,17 @@ export const ReportsPage: React.FC = () => {
                   <th className="py-3.5 px-4">Average Wage</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {salaryByDept.map((dept) => {
                   const avg = dept.headcount > 0 ? Math.round(dept.total_salary / dept.headcount) : 0;
                   return (
-                    <tr key={dept.department_id} className="hover:bg-slate-50/80">
-                      <td className="py-3.5 px-4 font-bold text-slate-900">{dept.department_name}</td>
-                      <td className="py-3.5 px-4 font-financial font-semibold text-slate-800">{dept.headcount} Staff</td>
-                      <td className="py-3.5 px-4 font-financial font-extrabold text-slate-900">
+                    <tr key={dept.department_id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">{dept.department_name}</td>
+                      <td className="py-3.5 px-4 font-financial font-semibold text-slate-800 dark:text-slate-200">{dept.headcount} Staff</td>
+                      <td className="py-3.5 px-4 font-financial font-extrabold text-slate-900 dark:text-white">
                         {formatCurrency(dept.total_salary)}
                       </td>
-                      <td className="py-3.5 px-4 font-financial font-medium text-teal-800">
+                      <td className="py-3.5 px-4 font-financial font-medium text-teal-800 dark:text-teal-300">
                         {formatCurrency(avg)} / mo
                       </td>
                     </tr>

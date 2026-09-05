@@ -50,7 +50,7 @@ export const authApi = {
       if (credentials.email && credentials.password) {
         return {
           user: {
-            id: 99,
+            id: '99',
             email: credentials.email,
             name: credentials.email.split('@')[0].toUpperCase(),
             roles: ['Admin'],

@@ -131,11 +131,11 @@ export const WorkingSchedulesPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <CalendarCheck className="w-6 h-6 text-indigo-600" />
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <CalendarCheck className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
             <span>Working Schedules</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Configure shift calendars, daily working hours, and weekly standard duration
           </p>
         </div>
@@ -160,25 +160,25 @@ export const WorkingSchedulesPage: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {schedules.map((s) => (
-            <div key={s.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between">
+            <div key={s.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <h3 className="font-bold text-slate-900 text-base">{s.name}</h3>
-                  <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-2xs font-bold border border-indigo-100">
+                  <h3 className="font-bold text-slate-900 dark:text-white text-base">{s.name}</h3>
+                  <span className="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-2xs font-bold border border-indigo-100 dark:border-indigo-800">
                     {s.type}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 text-slate-600 text-xs mt-3">
-                  <Clock className="w-4 h-4 text-teal-600" />
+                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 text-xs mt-3">
+                  <Clock className="w-4 h-4 text-teal-600 dark:text-teal-400" />
                   <span>
                     Auto-computed weekly hours:{' '}
-                    <strong className="text-slate-900 font-bold">{s.weekly_hours} hrs/week</strong>
+                    <strong className="text-slate-900 dark:text-white font-bold">{s.weekly_hours} hrs/week</strong>
                   </span>
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-100 text-2xs text-slate-400">
+              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-2xs text-slate-400 dark:text-slate-500">
                 Schedule ID: #{s.id}
               </div>
             </div>
@@ -219,13 +219,13 @@ export const WorkingSchedulesPage: React.FC = () => {
           {/* Schedule Lines */}
           <div className="space-y-2 pt-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                 Daily Shift Lines
               </label>
               <button
                 type="button"
                 onClick={handleAddDay}
-                className="text-xs font-semibold text-indigo-600 hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Add Day
@@ -236,15 +236,15 @@ export const WorkingSchedulesPage: React.FC = () => {
               {lines.map((line, idx) => (
                 <div
                   key={idx}
-                  className="grid grid-cols-12 gap-2 items-center p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs"
+                  className="grid grid-cols-12 gap-2 items-center p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs"
                 >
-                  <div className="col-span-3 font-semibold text-slate-800">{line.day}</div>
+                  <div className="col-span-3 font-semibold text-slate-800 dark:text-slate-200">{line.day}</div>
                   <div className="col-span-3">
                     <input
                       type="time"
                       value={line.start_time}
                       onChange={(e) => handleUpdateLine(idx, 'start_time', e.target.value)}
-                      className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-2xs"
+                      className="w-full px-2 py-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded text-2xs"
                       required
                     />
                   </div>
@@ -253,7 +253,7 @@ export const WorkingSchedulesPage: React.FC = () => {
                       type="time"
                       value={line.end_time}
                       onChange={(e) => handleUpdateLine(idx, 'end_time', e.target.value)}
-                      className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-2xs"
+                      className="w-full px-2 py-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded text-2xs"
                       required
                     />
                   </div>
@@ -263,7 +263,7 @@ export const WorkingSchedulesPage: React.FC = () => {
                       placeholder="Break (m)"
                       value={line.break}
                       onChange={(e) => handleUpdateLine(idx, 'break', Number(e.target.value))}
-                      className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-2xs"
+                      className="w-full px-2 py-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded text-2xs"
                       title="Break in minutes"
                     />
                   </div>
@@ -271,7 +271,7 @@ export const WorkingSchedulesPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleRemoveLine(idx)}
-                      className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
+                      className="text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 p-1 cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -281,16 +281,16 @@ export const WorkingSchedulesPage: React.FC = () => {
             </div>
 
             {/* Live Computed Total Badge */}
-            <div className="p-3 rounded-xl bg-teal-50 border border-teal-200 text-xs flex items-center justify-between text-teal-900 font-medium">
+            <div className="p-3 rounded-xl bg-teal-50 dark:bg-teal-950/50 border border-teal-200 dark:border-teal-800 text-xs flex items-center justify-between text-teal-900 dark:text-teal-200 font-medium">
               <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-teal-600" />
+                <CheckCircle2 className="w-4 h-4 text-teal-600 dark:text-teal-400" />
                 Live Calculated Weekly Total:
               </span>
               <span className="font-bold font-mono text-sm">{computeLiveWeeklyHours()} Hours / Week</span>
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={submitting}>
               Cancel
             </Button>

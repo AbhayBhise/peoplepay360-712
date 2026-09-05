@@ -229,10 +229,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       />
 
       {/* Palette Dialog */}
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-10 animate-command">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-10 animate-command">
         {/* Search Bar */}
-        <div className="flex items-center px-4 py-3.5 border-b border-slate-100 bg-slate-50/50">
-          <Search className="w-5 h-5 text-slate-400 mr-3 shrink-0" />
+        <div className="flex items-center px-4 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+          <Search className="w-5 h-5 text-slate-400 dark:text-slate-500 mr-3 shrink-0" />
           <input
             type="text"
             placeholder="Search screens, actions, employees, or payroll tools..."
@@ -242,26 +242,26 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               setSelectedIndex(0);
             }}
             autoFocus
-            className="w-full bg-transparent text-sm text-slate-900 placeholder-slate-400 focus:outline-none"
+            className="w-full bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none"
           />
           {query && (
             <button
               onClick={() => setQuery('')}
-              className="text-slate-400 hover:text-slate-600 p-1 rounded-md text-xs mr-2"
+              className="text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 p-1 rounded-md text-xs mr-2"
             >
               Clear
             </button>
           )}
-          <kbd className="hidden sm:inline-flex items-center px-2 py-0.5 text-2xs font-semibold text-slate-400 bg-slate-200/60 rounded border border-slate-300/60">
+          <kbd className="hidden sm:inline-flex items-center px-2 py-0.5 text-2xs font-semibold text-slate-400 dark:text-slate-400 bg-slate-200/60 dark:bg-slate-800 rounded border border-slate-300/60 dark:border-slate-700">
             ESC
           </kbd>
         </div>
 
         {/* Results List */}
-        <div className="max-h-80 overflow-y-auto p-2 divide-y divide-slate-100/60">
+        <div className="max-h-80 overflow-y-auto p-2 divide-y divide-slate-100/60 dark:divide-slate-800/60">
           {filteredItems.length === 0 ? (
-            <div className="py-12 text-center text-xs text-slate-500">
-              <Search className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+            <div className="py-12 text-center text-xs text-slate-500 dark:text-slate-400">
+              <Search className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
               No commands or screens found matching "{query}"
             </div>
           ) : (
@@ -275,35 +275,35 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     onMouseEnter={() => setSelectedIndex(idx)}
                     className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl cursor-pointer transition-all ${
                       isSelected
-                        ? 'bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-2xs'
-                        : 'hover:bg-slate-50 text-slate-700'
+                        ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 shadow-2xs'
+                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300'
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div
                         className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                          isSelected ? 'bg-white shadow-2xs' : 'bg-slate-100'
+                          isSelected ? 'bg-white dark:bg-slate-800 shadow-2xs' : 'bg-slate-100 dark:bg-slate-800/80'
                         }`}
                       >
                         {item.icon}
                       </div>
                       <div className="min-w-0">
-                        <div className="text-xs font-bold text-slate-900 truncate flex items-center gap-2">
+                        <div className="text-xs font-bold text-slate-900 dark:text-white truncate flex items-center gap-2">
                           <span>{item.title}</span>
-                          <span className="text-2xs font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.2 rounded uppercase">
+                          <span className="text-2xs font-semibold text-slate-400 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 rounded uppercase">
                             {item.category}
                           </span>
                         </div>
                         {item.subtitle && (
-                          <div className="text-2xs text-slate-500 truncate mt-0.5">
+                          <div className="text-2xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
                             {item.subtitle}
                           </div>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 text-2xs text-slate-400 font-medium">
+                    <div className="flex items-center gap-1.5 text-2xs text-slate-400 dark:text-slate-500 font-medium">
                       <span>Jump</span>
-                      <CornerDownLeft className="w-3.5 h-3.5 text-indigo-600" />
+                      <CornerDownLeft className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                     </div>
                   </div>
                 );
@@ -313,14 +313,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-2xs text-slate-500">
+        <div className="px-4 py-2 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-2xs text-slate-500 dark:text-slate-400">
           <div className="flex items-center gap-3">
             <span>Navigation & Actions</span>
             <span>·</span>
-            <span className="text-slate-400">Role: <strong>{user?.roles?.[0] || 'User'}</strong></span>
+            <span className="text-slate-400 dark:text-slate-500">Role: <strong className="text-slate-700 dark:text-slate-300">{user?.roles?.[0] || 'User'}</strong></span>
           </div>
           <div className="flex items-center gap-2">
-            <span>Press <kbd className="font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200 font-semibold text-slate-700">↵</kbd> to execute</span>
+            <span>Press <kbd className="font-mono bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-semibold text-slate-700 dark:text-slate-200">↵</kbd> to execute</span>
           </div>
         </div>
       </div>

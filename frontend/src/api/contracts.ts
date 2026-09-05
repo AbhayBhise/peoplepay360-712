@@ -3,13 +3,13 @@ import { Contract } from '../types';
 import { MOCK_CONTRACTS, MOCK_EMPLOYEES, MOCK_DEPARTMENTS, MOCK_STRUCTURES } from './mockData';
 
 export const contractsApi = {
-  getContracts: async (filters?: { employee_id?: number; status?: string }): Promise<Contract[]> => {
+  getContracts: async (filters?: { employee_id?: number | string; status?: string }): Promise<Contract[]> => {
     try {
       return await apiRequest<Contract[]>(apiClient.get('/api/contracts', { params: filters }));
     } catch {
       let result = [...MOCK_CONTRACTS];
       if (filters?.employee_id) {
-        result = result.filter((c) => c.employee_id === Number(filters.employee_id));
+        result = result.filter((c) => String(c.employee_id) === String(filters.employee_id));
       }
       if (filters?.status) {
         result = result.filter((c) => c.status === filters.status);
@@ -45,14 +45,14 @@ export const contractsApi = {
       const dept = MOCK_DEPARTMENTS.find((d) => String(d.id) === String(data.department_id));
       const struct = MOCK_STRUCTURES.find((s) => String(s.id) === String(data.salary_structure_id));
       const newContract: Contract = {
-        id: MOCK_CONTRACTS.length + 101,
-        employee_id: Number(data.employee_id) || 1,
+        id: String(MOCK_CONTRACTS.length + 101),
+        employee_id: String(data.employee_id || 1),
         employee_name: emp?.name,
-        department_id: Number(data.department_id) || 1,
+        department_id: data.department_id ? String(data.department_id) : '1',
         department_name: dept?.name,
         position: data.position || 'Staff',
         wage: Number(data.wage),
-        salary_structure_id: Number(data.salary_structure_id) || 1,
+        salary_structure_id: data.salary_structure_id ? String(data.salary_structure_id) : '1',
         salary_structure_name: struct?.name,
         start_date: data.start_date,
         end_date: data.end_date,
@@ -64,24 +64,24 @@ export const contractsApi = {
     }
   },
 
-  updateContract: async (id: number, data: Partial<Contract>): Promise<Contract> => {
+  updateContract: async (id: number | string, data: Partial<Contract>): Promise<Contract> => {
     try {
       return await apiRequest<Contract>(apiClient.put(`/api/contracts/${id}`, data));
     } catch {
-      const index = MOCK_CONTRACTS.findIndex((c) => c.id === id);
+      const index = MOCK_CONTRACTS.findIndex((c) => String(c.id) === String(id));
       if (index !== -1) {
         MOCK_CONTRACTS[index] = { ...MOCK_CONTRACTS[index], ...data };
         return MOCK_CONTRACTS[index];
       }
-      return { id, ...data } as Contract;
+      return { id: String(id), ...data } as Contract;
     }
   },
 
-  deleteContract: async (id: number): Promise<{ message?: string }> => {
+  deleteContract: async (id: number | string): Promise<{ message?: string }> => {
     try {
       return await apiRequest(apiClient.delete(`/api/contracts/${id}`));
     } catch {
-      const index = MOCK_CONTRACTS.findIndex((c) => c.id === id);
+      const index = MOCK_CONTRACTS.findIndex((c) => String(c.id) === String(id));
       if (index !== -1) {
         MOCK_CONTRACTS.splice(index, 1);
       }

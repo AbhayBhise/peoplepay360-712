@@ -182,7 +182,7 @@ export const EmployeeDetailPage: React.FC = () => {
       </div>
 
       {/* EMPLOYEE 360 COMMAND BANNER */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
         <div className="bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 p-6 sm:p-8 text-white">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-5">
@@ -226,9 +226,9 @@ export const EmployeeDetailPage: React.FC = () => {
         </div>
 
         {/* SMART BUTTONS BAR WITH LIVE METRICS */}
-        <div className="bg-slate-50/90 border-b border-slate-200 px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-2xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <TrendingUp className="w-3.5 h-3.5 text-indigo-600" />
+        <div className="bg-slate-50/90 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-2xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+            <TrendingUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             Live Operational Modules:
           </div>
 
@@ -239,10 +239,10 @@ export const EmployeeDetailPage: React.FC = () => {
               className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === 'contracts'
                   ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                  : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'
               }`}
             >
-              <FileSpreadsheet className={`w-4 h-4 ${activeTab === 'contracts' ? 'text-indigo-200' : 'text-indigo-600'}`} />
+              <FileSpreadsheet className={`w-4 h-4 ${activeTab === 'contracts' ? 'text-indigo-200' : 'text-indigo-600 dark:text-indigo-400'}`} />
               <div className="text-left leading-tight">
                 <div className="text-2xs uppercase tracking-wider opacity-80">Contracts</div>
                 <div className="text-sm font-bold font-financial">{contractsCount}</div>
@@ -255,10 +255,10 @@ export const EmployeeDetailPage: React.FC = () => {
               className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === 'attendance'
                   ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                  : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'
               }`}
             >
-              <Clock className={`w-4 h-4 ${activeTab === 'attendance' ? 'text-teal-200' : 'text-teal-600'}`} />
+              <Clock className={`w-4 h-4 ${activeTab === 'attendance' ? 'text-teal-200' : 'text-teal-600 dark:text-teal-400'}`} />
               <div className="text-left leading-tight">
                 <div className="text-2xs uppercase tracking-wider opacity-80">Attendance</div>
                 <div className="text-sm font-bold font-financial">{attendanceCount}</div>
@@ -271,10 +271,10 @@ export const EmployeeDetailPage: React.FC = () => {
               className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === 'timeoff'
                   ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                  : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'
               }`}
             >
-              <CalendarDays className={`w-4 h-4 ${activeTab === 'timeoff' ? 'text-amber-200' : 'text-amber-600'}`} />
+              <CalendarDays className={`w-4 h-4 ${activeTab === 'timeoff' ? 'text-amber-200' : 'text-amber-600 dark:text-amber-400'}`} />
               <div className="text-left leading-tight">
                 <div className="text-2xs uppercase tracking-wider opacity-80">Time Off</div>
                 <div className="text-sm font-bold font-financial">{timeOffCount}</div>
@@ -287,10 +287,10 @@ export const EmployeeDetailPage: React.FC = () => {
               className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === 'payslips'
                   ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                  : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'
               }`}
             >
-              <CircleDollarSign className={`w-4 h-4 ${activeTab === 'payslips' ? 'text-emerald-200' : 'text-emerald-600'}`} />
+              <CircleDollarSign className={`w-4 h-4 ${activeTab === 'payslips' ? 'text-emerald-200' : 'text-emerald-600 dark:text-emerald-400'}`} />
               <div className="text-left leading-tight">
                 <div className="text-2xs uppercase tracking-wider opacity-80">Payslips</div>
                 <div className="text-sm font-bold font-financial">{payslipsCount}</div>
@@ -300,14 +300,14 @@ export const EmployeeDetailPage: React.FC = () => {
         </div>
 
         {/* Tab Navigation Ribbon */}
-        <div className="px-6 pt-4 border-b border-slate-200">
+        <div className="px-6 pt-4 border-b border-slate-200 dark:border-slate-800">
           <div className="flex space-x-6">
             <button
               onClick={() => setActiveTab('overview')}
               className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
                 activeTab === 'overview'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               360 Overview
@@ -316,8 +316,8 @@ export const EmployeeDetailPage: React.FC = () => {
               onClick={() => setActiveTab('contracts')}
               className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
                 activeTab === 'contracts'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               Contracts ({contractsCount})
@@ -326,8 +326,8 @@ export const EmployeeDetailPage: React.FC = () => {
               onClick={() => setActiveTab('attendance')}
               className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
                 activeTab === 'attendance'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               Attendance ({attendanceCount})
@@ -336,8 +336,8 @@ export const EmployeeDetailPage: React.FC = () => {
               onClick={() => setActiveTab('timeoff')}
               className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
                 activeTab === 'timeoff'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               Time Off ({timeOffCount})
@@ -346,8 +346,8 @@ export const EmployeeDetailPage: React.FC = () => {
               onClick={() => setActiveTab('payslips')}
               className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
                 activeTab === 'payslips'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               Payslips ({payslipsCount})
@@ -362,21 +362,21 @@ export const EmployeeDetailPage: React.FC = () => {
             <div className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Left Card: Organizational Architecture */}
-                <div className="bg-slate-50/70 rounded-2xl border border-slate-200/80 p-6 space-y-4">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-indigo-600" />
+                <div className="bg-slate-50/70 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 space-y-4">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                     <span>Organizational Placement</span>
                   </h3>
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
-                      <span className="text-slate-400 block uppercase text-2xs font-semibold">Department</span>
-                      <span className="font-bold text-slate-900 text-sm mt-0.5 block">
+                      <span className="text-slate-400 dark:text-slate-500 block uppercase text-2xs font-semibold">Department</span>
+                      <span className="font-bold text-slate-900 dark:text-white text-sm mt-0.5 block">
                         {employee.department_name || `Dept #${employee.department_id || 'N/A'}`}
                       </span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block uppercase text-2xs font-semibold">Reporting Manager</span>
-                      <span className="font-bold text-slate-900 text-sm mt-0.5 block">
+                      <span className="text-slate-400 dark:text-slate-500 block uppercase text-2xs font-semibold">Reporting Manager</span>
+                      <span className="font-bold text-slate-900 dark:text-white text-sm mt-0.5 block">
                         {employee.manager_name || (employee.manager_id ? `Manager #${employee.manager_id}` : 'None (Top Executive)')}
                       </span>
                     </div>
@@ -384,21 +384,21 @@ export const EmployeeDetailPage: React.FC = () => {
                 </div>
 
                 {/* Right Card: Work Schedule */}
-                <div className="bg-slate-50/70 rounded-2xl border border-slate-200/80 p-6 space-y-4">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-teal-600" />
+                <div className="bg-slate-50/70 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 space-y-4">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-teal-600 dark:text-teal-400" />
                     <span>Shift & Calendar Schedule</span>
                   </h3>
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
-                      <span className="text-slate-400 block uppercase text-2xs font-semibold">Schedule Plan</span>
-                      <span className="font-bold text-slate-900 text-sm mt-0.5 block">
+                      <span className="text-slate-400 dark:text-slate-500 block uppercase text-2xs font-semibold">Schedule Plan</span>
+                      <span className="font-bold text-slate-900 dark:text-white text-sm mt-0.5 block">
                         {employee.working_schedule_name || 'Standard 40h (Mon-Fri)'}
                       </span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block uppercase text-2xs font-semibold">Weekly Hours</span>
-                      <span className="font-bold text-teal-700 text-sm mt-0.5 font-financial block">
+                      <span className="text-slate-400 dark:text-slate-500 block uppercase text-2xs font-semibold">Weekly Hours</span>
+                      <span className="font-bold text-teal-700 dark:text-teal-300 text-sm mt-0.5 font-financial block">
                         40.0 Hours / Week
                       </span>
                     </div>
@@ -408,32 +408,32 @@ export const EmployeeDetailPage: React.FC = () => {
 
               {/* EMPLOYEE OPERATIONAL TIMELINE */}
               <div className="space-y-4 pt-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                  <History className="w-4 h-4 text-indigo-600" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                  <History className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                   <span>Workforce Lifecycle Timeline</span>
                 </h3>
 
-                <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+                <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-700">
                   <div className="relative">
-                    <span className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-indigo-600 ring-4 ring-indigo-100" />
-                    <div className="text-xs font-bold text-slate-900">Active Contract Coverage</div>
-                    <p className="text-2xs text-slate-500">
+                    <span className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-indigo-600 ring-4 ring-indigo-100 dark:ring-indigo-950" />
+                    <div className="text-xs font-bold text-slate-900 dark:text-white">Active Contract Coverage</div>
+                    <p className="text-2xs text-slate-500 dark:text-slate-400">
                       Contract active for current period under {employee.department_name || 'assigned department'}.
                     </p>
                   </div>
 
                   <div className="relative">
-                    <span className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-teal-600 ring-4 ring-teal-100" />
-                    <div className="text-xs font-bold text-slate-900">Attendance Compliance</div>
-                    <p className="text-2xs text-slate-500">
+                    <span className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-teal-600 ring-4 ring-teal-100 dark:ring-teal-950" />
+                    <div className="text-xs font-bold text-slate-900 dark:text-white">Attendance Compliance</div>
+                    <p className="text-2xs text-slate-500 dark:text-slate-400">
                       {attendanceCount} punch logs logged with real-time worked hours computation.
                     </p>
                   </div>
 
                   <div className="relative">
-                    <span className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-emerald-600 ring-4 ring-emerald-100" />
-                    <div className="text-xs font-bold text-slate-900">Payroll Integration Ready</div>
-                    <p className="text-2xs text-slate-500">
+                    <span className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-emerald-600 ring-4 ring-emerald-100 dark:ring-emerald-950" />
+                    <div className="text-xs font-bold text-slate-900 dark:text-white">Payroll Integration Ready</div>
+                    <p className="text-2xs text-slate-500 dark:text-slate-400">
                       Eligible for automated payrun batches and sequenced salary rule execution.
                     </p>
                   </div>
@@ -455,9 +455,9 @@ export const EmployeeDetailPage: React.FC = () => {
                   onAction={() => navigate('/contracts')}
                 />
               ) : (
-                <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider">
+                    <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
                       <tr>
                         <th className="py-3 px-4">Position</th>
                         <th className="py-3 px-4">Monthly Wage</th>
@@ -466,13 +466,13 @@ export const EmployeeDetailPage: React.FC = () => {
                         <th className="py-3 px-4">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {contracts.map((c) => (
-                        <tr key={c.id} className="hover:bg-slate-50/80">
-                          <td className="py-3 px-4 font-bold text-slate-900">{c.position}</td>
-                          <td className="py-3 px-4 font-financial font-extrabold text-slate-900">{formatCurrency(c.wage)}</td>
-                          <td className="py-3 px-4 text-indigo-900 font-semibold">{c.salary_structure_name || `Structure #${c.salary_structure_id}`}</td>
-                          <td className="py-3 px-4 text-slate-600">
+                        <tr key={c.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
+                          <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">{c.position}</td>
+                          <td className="py-3 px-4 font-financial font-extrabold text-slate-900 dark:text-white">{formatCurrency(c.wage)}</td>
+                          <td className="py-3 px-4 text-indigo-900 dark:text-indigo-300 font-semibold">{c.salary_structure_name || `Structure #${c.salary_structure_id}`}</td>
+                          <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
                             {c.start_date} {c.end_date ? `to ${c.end_date}` : '→ Permanent'}
                           </td>
                           <td className="py-3 px-4">
@@ -502,9 +502,9 @@ export const EmployeeDetailPage: React.FC = () => {
                   onAction={() => navigate('/attendance')}
                 />
               ) : (
-                <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider">
+                    <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
                       <tr>
                         <th className="py-3 px-4">Check In</th>
                         <th className="py-3 px-4">Check Out</th>
@@ -512,12 +512,12 @@ export const EmployeeDetailPage: React.FC = () => {
                         <th className="py-3 px-4">Attendance Exception Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {attendance.map((a) => (
-                        <tr key={a.id} className="hover:bg-slate-50/80">
-                          <td className="py-3 px-4 font-mono font-medium text-slate-800">{a.check_in}</td>
-                          <td className="py-3 px-4 font-mono font-medium text-slate-800">{a.check_out || '—'}</td>
-                          <td className="py-3 px-4 font-financial font-extrabold text-slate-900">
+                        <tr key={a.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
+                          <td className="py-3 px-4 font-mono font-medium text-slate-800 dark:text-slate-200">{a.check_in}</td>
+                          <td className="py-3 px-4 font-mono font-medium text-slate-800 dark:text-slate-200">{a.check_out || '—'}</td>
+                          <td className="py-3 px-4 font-financial font-extrabold text-slate-900 dark:text-white">
                             {a.worked_hours !== undefined ? `${a.worked_hours}h` : '—'}
                           </td>
                           <td className="py-3 px-4">
@@ -553,9 +553,9 @@ export const EmployeeDetailPage: React.FC = () => {
                   onAction={() => navigate('/time-off')}
                 />
               ) : (
-                <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider">
+                    <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
                       <tr>
                         <th className="py-3 px-4">Leave Type</th>
                         <th className="py-3 px-4">Dates</th>
@@ -563,12 +563,12 @@ export const EmployeeDetailPage: React.FC = () => {
                         <th className="py-3 px-4">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {timeOff.map((t) => (
-                        <tr key={t.id} className="hover:bg-slate-50/80">
-                          <td className="py-3 px-4 font-bold text-slate-900">{t.type_name || `Type #${t.type_id}`}</td>
-                          <td className="py-3 px-4 text-slate-600">{t.date_from} → {t.date_to}</td>
-                          <td className="py-3 px-4 font-financial font-extrabold text-slate-900">{t.duration || '—'} Days</td>
+                        <tr key={t.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
+                          <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">{t.type_name || `Type #${t.type_id}`}</td>
+                          <td className="py-3 px-4 text-slate-600 dark:text-slate-300">{t.date_from} → {t.date_to}</td>
+                          <td className="py-3 px-4 font-financial font-extrabold text-slate-900 dark:text-white">{t.duration || '—'} Days</td>
                           <td className="py-3 px-4">
                             <Badge
                               variant={
@@ -604,9 +604,9 @@ export const EmployeeDetailPage: React.FC = () => {
                   onAction={() => navigate('/payroll/payruns')}
                 />
               ) : (
-                <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider">
+                    <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
                       <tr>
                         <th className="py-3 px-4">Payslip ID</th>
                         <th className="py-3 px-4">Worked Days</th>
@@ -616,13 +616,13 @@ export const EmployeeDetailPage: React.FC = () => {
                         <th className="py-3 px-4 text-right">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {payslips.map((p) => (
-                        <tr key={p.id} className="hover:bg-slate-50/80">
-                          <td className="py-3 px-4 font-mono font-bold text-indigo-600">#{p.id}</td>
-                          <td className="py-3 px-4">{p.worked_days ?? '—'}</td>
-                          <td className="py-3 px-4 font-financial font-semibold">{p.basic !== undefined ? formatCurrency(p.basic) : '—'}</td>
-                          <td className="py-3 px-4 font-financial font-extrabold text-emerald-800 text-sm">
+                        <tr key={p.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
+                          <td className="py-3 px-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">#{p.id}</td>
+                          <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{p.worked_days ?? '—'}</td>
+                          <td className="py-3 px-4 font-financial font-semibold text-slate-800 dark:text-slate-200">{p.basic !== undefined ? formatCurrency(p.basic) : '—'}</td>
+                          <td className="py-3 px-4 font-financial font-extrabold text-emerald-800 dark:text-emerald-300 text-sm">
                             {p.net !== undefined ? formatCurrency(p.net) : '—'}
                           </td>
                           <td className="py-3 px-4">
@@ -643,7 +643,7 @@ export const EmployeeDetailPage: React.FC = () => {
                           <td className="py-3 px-4 text-right">
                             <Link
                               to={`/payroll/payslips/${p.id}`}
-                              className="text-xs font-bold text-indigo-600 hover:underline"
+                              className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
                             >
                               View Breakdown →
                             </Link>

@@ -46,7 +46,7 @@ export const EmployeesPage: React.FC = () => {
     try {
       const [empList, deptList] = await Promise.all([
         employeesApi.getEmployees({
-          department_id: selectedDept ? Number(selectedDept) : undefined,
+          department_id: selectedDept || undefined,
           status: selectedStatus || undefined,
           search: searchQuery || undefined,
         }),

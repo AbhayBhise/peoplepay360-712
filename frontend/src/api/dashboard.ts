@@ -11,7 +11,7 @@ import { MOCK_EMPLOYEES, MOCK_CONTRACTS, MOCK_REQUESTS, MOCK_ATTENDANCE } from '
 export interface DashboardFilters {
   period_start?: string;
   period_end?: string;
-  department_id?: number;
+  department_id?: string | number;
   employee_type?: string;
 }
 
@@ -94,8 +94,8 @@ export const dashboardApi = {
           { typeName: 'Sick Leave', dateFrom: '2026-07-22', dateTo: '2026-07-22', duration: 1, status: 'validate' },
         ],
         recentPayslips: [
-          { id: 501, net: 64800, status: 'paid', createdAt: '2026-08-31' },
-          { id: 488, net: 64800, status: 'paid', createdAt: '2026-07-31' },
+          { id: '501', net: 64800, status: 'paid', createdAt: '2026-08-31' },
+          { id: '488', net: 64800, status: 'paid', createdAt: '2026-07-31' },
         ],
       };
     }
@@ -128,10 +128,10 @@ export const dashboardApi = {
       return mapSalaryByDepartment(raw);
     } catch {
       return [
-        { department_id: 3, department_name: 'Engineering & Product', headcount: 2, total_salary: 11800 },
-        { department_id: 2, department_name: 'Human Resources', headcount: 1, total_salary: 8500 },
-        { department_id: 4, department_name: 'Finance & Payroll', headcount: 2, total_salary: 12600 },
-        { department_id: 5, department_name: 'Sales & Customer Success', headcount: 1, total_salary: 6000 },
+        { department_id: '3', department_name: 'Engineering & Product', headcount: 2, total_salary: 11800 },
+        { department_id: '2', department_name: 'Human Resources', headcount: 1, total_salary: 8500 },
+        { department_id: '4', department_name: 'Finance & Payroll', headcount: 2, total_salary: 12600 },
+        { department_id: '5', department_name: 'Sales & Customer Success', headcount: 1, total_salary: 6000 },
       ];
     }
   },

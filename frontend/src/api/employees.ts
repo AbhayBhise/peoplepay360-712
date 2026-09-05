@@ -10,7 +10,7 @@ import {
 } from './mockData';
 
 export interface EmployeeFilters {
-  department_id?: number;
+  department_id?: string | number;
   status?: string;
   search?: string;
 }
@@ -19,16 +19,16 @@ export interface EmployeeFilters {
 // flat snake_case shape the frontend types/components expect. Map once here.
 function normalizeEmployee(raw: any): Employee {
   return {
-    id: raw.id,
+    id: String(raw.id),
     name: raw.name,
     email: raw.email,
-    department_id: raw.departmentId ?? raw.department?.id,
+    department_id: raw.departmentId ? String(raw.departmentId) : (raw.department?.id ? String(raw.department.id) : undefined),
     department_name: raw.department?.name,
-    manager_id: raw.managerId ?? raw.manager?.id ?? null,
+    manager_id: raw.managerId ? String(raw.managerId) : (raw.manager?.id ? String(raw.manager.id) : null),
     manager_name: raw.manager?.name,
-    job_position: raw.jobPosition ?? raw.job_position,
-    status: raw.status,
-    working_schedule_id: raw.workingScheduleId ?? raw.workingSchedule?.id,
+    job_position: raw.jobPosition ?? raw.job_position ?? 'Staff',
+    status: raw.status || 'active',
+    working_schedule_id: raw.workingScheduleId ? String(raw.workingScheduleId) : (raw.workingSchedule?.id ? String(raw.workingSchedule.id) : undefined),
     working_schedule_name: raw.workingSchedule?.name,
     contracts_count: raw.contractsCount,
     contractsCount: raw.contractsCount,
@@ -49,7 +49,7 @@ export const employeesApi = {
     } catch {
       let result = [...MOCK_EMPLOYEES];
       if (filters?.department_id) {
-        result = result.filter((e) => e.department_id === Number(filters.department_id));
+        result = result.filter((e) => String(e.department_id) === String(filters.department_id));
       }
       if (filters?.status) {
         result = result.filter((e) => e.status === filters.status);
@@ -72,10 +72,10 @@ export const employeesApi = {
       const raw = await apiRequest<any>(apiClient.get(`/api/employees/${id}`));
       return normalizeEmployee(raw);
     } catch {
-      const emp = MOCK_EMPLOYEES.find((e) => e.id === Number(id));
+      const emp = MOCK_EMPLOYEES.find((e) => String(e.id) === String(id));
       if (emp) return emp;
       return {
-        id: Number(id),
+        id: String(id),
         name: `Employee #${id}`,
         job_position: 'Staff Member',
         status: 'active',
@@ -110,15 +110,15 @@ export const employeesApi = {
       const dept = MOCK_DEPARTMENTS.find((d) => String(d.id) === String(data.department_id));
       const mgr = MOCK_EMPLOYEES.find((e) => String(e.id) === String(data.manager_id));
       const newEmp: Employee = {
-        id: MOCK_EMPLOYEES.length + 1,
+        id: String(MOCK_EMPLOYEES.length + 1),
         name: data.name,
-        department_id: Number(data.department_id) || 1,
+        department_id: data.department_id ? String(data.department_id) : '1',
         department_name: dept?.name || `Dept #${data.department_id}`,
-        manager_id: data.manager_id ? Number(data.manager_id) : null,
+        manager_id: data.manager_id ? String(data.manager_id) : null,
         manager_name: mgr?.name,
         job_position: data.job_position || 'Staff',
         status: data.status,
-        working_schedule_id: Number(data.working_schedule_id) || 1,
+        working_schedule_id: data.working_schedule_id ? String(data.working_schedule_id) : '1',
         contracts_count: 0,
         attendance_count: 0,
         time_off_count: 0,
@@ -157,7 +157,7 @@ export const employeesApi = {
         MOCK_EMPLOYEES[index] = { ...MOCK_EMPLOYEES[index], ...data } as any;
         return MOCK_EMPLOYEES[index];
       }
-      return { id: Number(id) || 1, name: 'Updated Employee', job_position: 'Staff', status: 'active', ...data } as any;
+      return { id: String(id), name: 'Updated Employee', job_position: 'Staff', status: 'active', ...data } as any;
     }
   },
 
@@ -165,7 +165,7 @@ export const employeesApi = {
     try {
       return await apiRequest(apiClient.delete(`/api/employees/${id}`));
     } catch {
-      const index = MOCK_EMPLOYEES.findIndex((e) => e.id === Number(id));
+      const index = MOCK_EMPLOYEES.findIndex((e) => String(e.id) === String(id));
       if (index !== -1) {
         MOCK_EMPLOYEES[index].status = 'inactive';
       }
@@ -178,7 +178,7 @@ export const employeesApi = {
     try {
       return await apiRequest<Contract[]>(apiClient.get(`/api/employees/${id}/contracts`));
     } catch {
-      return MOCK_CONTRACTS.filter((c) => c.employee_id === Number(id));
+      return MOCK_CONTRACTS.filter((c) => String(c.employee_id) === String(id));
     }
   },
 
@@ -186,7 +186,7 @@ export const employeesApi = {
     try {
       return await apiRequest<Attendance[]>(apiClient.get(`/api/employees/${id}/attendance`));
     } catch {
-      return MOCK_ATTENDANCE.filter((a) => a.employee_id === Number(id));
+      return MOCK_ATTENDANCE.filter((a) => String(a.employee_id) === String(id));
     }
   },
 
@@ -194,7 +194,7 @@ export const employeesApi = {
     try {
       return await apiRequest<TimeOffRequest[]>(apiClient.get(`/api/employees/${id}/time-off`));
     } catch {
-      return MOCK_REQUESTS.filter((r) => r.employee_id === Number(id));
+      return MOCK_REQUESTS.filter((r) => String(r.employee_id) === String(id));
     }
   },
 
@@ -205,7 +205,7 @@ export const employeesApi = {
       const list: PayslipSummary[] = [];
       MOCK_PAYRUNS.forEach((pr) => {
         pr.payslips?.forEach((ps) => {
-          if (ps.employee_id === Number(id)) {
+          if (String(ps.employee_id) === String(id)) {
             list.push(ps);
           }
         });

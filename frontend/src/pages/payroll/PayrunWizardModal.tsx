@@ -155,15 +155,15 @@ export const PayrunWizardModal: React.FC<PayrunWizardModalProps> = ({
     >
       {/* 2-STEP PROGRESS STEPPER */}
       <div className="mb-6">
-        <div className="flex items-center justify-between text-xs font-bold text-slate-500 mb-2">
-          <span className={step === 1 ? 'text-indigo-600 font-extrabold' : 'text-slate-400'}>
+        <div className="flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">
+          <span className={step === 1 ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'text-slate-400 dark:text-slate-500'}>
             Step 1: Structure & Period
           </span>
-          <span className={step === 2 ? 'text-indigo-600 font-extrabold' : 'text-slate-400'}>
+          <span className={step === 2 ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'text-slate-400 dark:text-slate-500'}>
             Step 2: Employee Selection & Batch Creation ({selectedEmpIds.length} Selected)
           </span>
         </div>
-        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden flex">
+        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden flex">
           <div
             className={`h-full transition-all duration-300 ${
               step === 1 ? 'w-1/2 bg-indigo-600' : 'w-full bg-indigo-600'
@@ -203,18 +203,18 @@ export const PayrunWizardModal: React.FC<PayrunWizardModalProps> = ({
             />
           </div>
 
-          <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 text-xs text-indigo-950 flex items-start gap-3">
-            <Users className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+          <div className="p-4 bg-indigo-50 dark:bg-indigo-950/60 rounded-2xl border border-indigo-100 dark:border-indigo-800 text-xs text-indigo-950 dark:text-indigo-200 flex items-start gap-3">
+            <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
             <div>
               <strong className="font-bold">Live Server-Side Contract Verification:</strong>
-              <div className="text-2xs text-indigo-800 mt-0.5">
+              <div className="text-2xs text-indigo-800 dark:text-indigo-300 mt-0.5">
                 Continuing will verify active contracts covering {periodStart} to {periodEnd} assigned to{' '}
                 <strong>{selectedStructureObj?.name || 'this structure'}</strong>.
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
@@ -229,27 +229,27 @@ export const PayrunWizardModal: React.FC<PayrunWizardModalProps> = ({
       {step === 2 && (
         <div className="space-y-4 animate-fade-in">
           {/* Summary Banner */}
-          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs flex flex-wrap items-center justify-between gap-2">
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs flex flex-wrap items-center justify-between gap-2">
             <div>
-              <span className="text-slate-500">Structure:</span>{' '}
-              <strong className="text-slate-900">{selectedStructureObj?.name}</strong>
+              <span className="text-slate-500 dark:text-slate-400">Structure:</span>{' '}
+              <strong className="text-slate-900 dark:text-white">{selectedStructureObj?.name}</strong>
             </div>
             <div>
-              <span className="text-slate-500">Period:</span>{' '}
-              <strong className="text-slate-900">{periodStart} to {periodEnd}</strong>
+              <span className="text-slate-500 dark:text-slate-400">Period:</span>{' '}
+              <strong className="text-slate-900 dark:text-white">{periodStart} to {periodEnd}</strong>
             </div>
             <div>
-              <span className="text-slate-500">Selected:</span>{' '}
-              <strong className="text-indigo-600 font-bold">{selectedEmpIds.length} / {eligibleEmployees.length}</strong>
+              <span className="text-slate-500 dark:text-slate-400">Selected:</span>{' '}
+              <strong className="text-indigo-600 dark:text-indigo-400 font-bold">{selectedEmpIds.length} / {eligibleEmployees.length}</strong>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                 Eligible Employee Cohort ({eligibleEmployees.length} Identified)
               </h4>
-              <p className="text-2xs text-slate-500">
+              <p className="text-2xs text-slate-500 dark:text-slate-400">
                 Explicitly select employees to include in this payrun calculation batch.
               </p>
             </div>
@@ -258,7 +258,7 @@ export const PayrunWizardModal: React.FC<PayrunWizardModalProps> = ({
               <button
                 type="button"
                 onClick={handleSelectAllExplicitly}
-                className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer"
+                className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
               >
                 {selectedEmpIds.length === eligibleEmployees.length ? 'Deselect All' : 'Select All'}
               </button>
@@ -267,33 +267,33 @@ export const PayrunWizardModal: React.FC<PayrunWizardModalProps> = ({
 
           {/* Search Box */}
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400 dark:text-slate-500" />
             <input
               type="text"
               placeholder="Search eligible employees..."
               value={empSearch}
               onChange={(e) => setEmpSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+              className="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
             />
           </div>
 
           {filteredEligible.length === 0 ? (
-            <div className="p-8 bg-slate-50 rounded-2xl border border-slate-200 text-center text-xs text-slate-600">
+            <div className="p-8 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-center text-xs text-slate-600 dark:text-slate-400">
               <ShieldAlert className="w-6 h-6 text-amber-500 mx-auto mb-2" />
-              <div className="font-bold text-slate-800">No Eligible Employees Found</div>
-              <p className="text-2xs text-slate-500 mt-1">
+              <div className="font-bold text-slate-800 dark:text-slate-200">No Eligible Employees Found</div>
+              <p className="text-2xs text-slate-500 dark:text-slate-400 mt-1">
                 No active contracts match structure "{selectedStructureObj?.name}" for dates {periodStart} to {periodEnd}.
               </p>
             </div>
           ) : (
-            <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 border border-slate-200 rounded-2xl bg-white shadow-2xs">
+            <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 shadow-2xs">
               {filteredEligible.map((emp) => {
                 const isSelected = selectedEmpIds.includes(emp.id);
                 return (
                   <label
                     key={emp.id}
                     className={`flex items-center justify-between p-3.5 cursor-pointer transition-colors ${
-                      isSelected ? 'bg-indigo-50/70' : 'hover:bg-slate-50'
+                      isSelected ? 'bg-indigo-50/70 dark:bg-indigo-950/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -304,14 +304,14 @@ export const PayrunWizardModal: React.FC<PayrunWizardModalProps> = ({
                         className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-600"
                       />
                       <div>
-                        <div className="text-xs font-bold text-slate-900">{emp.name}</div>
-                        <div className="text-2xs text-slate-500">
+                        <div className="text-xs font-bold text-slate-900 dark:text-white">{emp.name}</div>
+                        <div className="text-2xs text-slate-500 dark:text-slate-400">
                           {emp.job_position} · {emp.department_name || `Dept #${emp.department_id}`}
                         </div>
                       </div>
                     </div>
                     {emp.wage && (
-                      <span className="text-2xs font-mono font-bold text-slate-500">
+                      <span className="text-2xs font-mono font-bold text-slate-500 dark:text-slate-400">
                         {formatCurrency(emp.wage)} / mo
                       </span>
                     )}
@@ -321,7 +321,7 @@ export const PayrunWizardModal: React.FC<PayrunWizardModalProps> = ({
             </div>
           )}
 
-          <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button
               type="button"
               variant="outline"

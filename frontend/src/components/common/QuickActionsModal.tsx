@@ -71,18 +71,18 @@ export const QuickActionsModal: React.FC<QuickActionsModalProps> = ({
               onClose();
               onSelectAction(act.key);
             }}
-            className="p-4 rounded-xl border border-slate-200 hover:border-indigo-500/50 hover:bg-indigo-50/40 transition-all cursor-pointer group flex flex-col justify-between shadow-2xs"
+            className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/30 transition-all cursor-pointer group flex flex-col justify-between shadow-2xs"
           >
             <div>
-              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+              <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                 {act.icon}
               </div>
-              <h4 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+              <h4 className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                 {act.title}
               </h4>
-              <p className="text-2xs text-slate-500 mt-1 leading-snug">{act.description}</p>
+              <p className="text-2xs text-slate-500 dark:text-slate-400 mt-1 leading-snug">{act.description}</p>
             </div>
-            <div className="mt-3 flex items-center gap-1 text-2xs font-semibold text-indigo-600">
+            <div className="mt-3 flex items-center gap-1 text-2xs font-semibold text-indigo-600 dark:text-indigo-400">
               <span>Open Action</span>
               <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
             </div>

@@ -33,11 +33,11 @@ export const Button: React.FC<ButtonProps> = ({
     secondary:
       'bg-slate-900 hover:bg-slate-800 text-white shadow-xs focus:ring-slate-700/50 active:scale-[0.98]',
     outline:
-      'border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs focus:ring-slate-400 active:scale-[0.98]',
+      'border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 shadow-2xs focus:ring-slate-400 dark:focus:ring-slate-600 active:scale-[0.98]',
     danger:
       'bg-rose-600 hover:bg-rose-700 text-white shadow-xs focus:ring-rose-500/50 active:scale-[0.98]',
     ghost:
-      'text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus:ring-slate-300',
+      'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white focus:ring-slate-300 dark:focus:ring-slate-700',
     success:
       'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs focus:ring-emerald-500/50 active:scale-[0.98]',
   };

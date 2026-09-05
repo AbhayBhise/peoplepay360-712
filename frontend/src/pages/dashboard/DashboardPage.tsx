@@ -75,7 +75,7 @@ export const DashboardPage: React.FC = () => {
         const filters = {
           period_start: periodStart || undefined,
           period_end: periodEnd || undefined,
-          department_id: departmentId ? Number(departmentId) : undefined,
+          department_id: departmentId || undefined,
           employee_type: employeeType || undefined,
         };
 
@@ -97,7 +97,7 @@ export const DashboardPage: React.FC = () => {
         const filters = {
           period_start: periodStart || undefined,
           period_end: periodEnd || undefined,
-          department_id: departmentId ? Number(departmentId) : undefined,
+          department_id: departmentId || undefined,
           employee_type: employeeType || undefined,
         };
 

@@ -23,11 +23,11 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
   employeeToEdit,
 }) => {
   const [name, setName] = useState('');
-  const [departmentId, setDepartmentId] = useState<number | ''>('');
-  const [managerId, setManagerId] = useState<number | ''>('');
+  const [departmentId, setDepartmentId] = useState<string>('');
+  const [managerId, setManagerId] = useState<string>('');
   const [jobPosition, setJobPosition] = useState('');
   const [status, setStatus] = useState<'active' | 'inactive'>('active');
-  const [workingScheduleId, setWorkingScheduleId] = useState<number | ''>('');
+  const [workingScheduleId, setWorkingScheduleId] = useState<string>('');
 
   const [departments, setDepartments] = useState<Department[]>([]);
   const [potentialManagers, setPotentialManagers] = useState<Employee[]>([]);
@@ -41,11 +41,11 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
     if (isOpen) {
       if (employeeToEdit) {
         setName(employeeToEdit.name || '');
-        setDepartmentId(employeeToEdit.department_id || '');
-        setManagerId(employeeToEdit.manager_id || '');
+        setDepartmentId(employeeToEdit.department_id ? String(employeeToEdit.department_id) : '');
+        setManagerId(employeeToEdit.manager_id ? String(employeeToEdit.manager_id) : '');
         setJobPosition(employeeToEdit.job_position || '');
         setStatus(employeeToEdit.status || 'active');
-        setWorkingScheduleId(employeeToEdit.working_schedule_id || '');
+        setWorkingScheduleId(employeeToEdit.working_schedule_id ? String(employeeToEdit.working_schedule_id) : '');
       } else {
         setName('');
         setDepartmentId('');
@@ -67,7 +67,7 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
           setDepartments(deptList || []);
           // Exclude self from manager list
           const filteredManagers = empList.filter(
-            (e) => !employeeToEdit || e.id !== employeeToEdit.id
+            (e) => !employeeToEdit || String(e.id) !== String(employeeToEdit.id)
           );
           setPotentialManagers(filteredManagers);
           setSchedules(schedList || []);
@@ -89,7 +89,7 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
       return;
     }
 
-    if (managerId && employeeToEdit && managerId === employeeToEdit.id) {
+    if (managerId && employeeToEdit && String(managerId) === String(employeeToEdit.id)) {
       error('An employee cannot be their own manager.');
       return;
     }
@@ -98,11 +98,11 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
     try {
       const payload = {
         name,
-        department_id: Number(departmentId),
-        manager_id: managerId ? Number(managerId) : null,
+        department_id: departmentId || undefined,
+        manager_id: managerId || null,
         job_position: jobPosition,
         status,
-        working_schedule_id: workingScheduleId ? Number(workingScheduleId) : undefined,
+        working_schedule_id: workingScheduleId || undefined,
       };
 
       let result: Employee;
@@ -151,9 +151,9 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
           <Select
             label="Department"
             value={departmentId}
-            onChange={(e) => setDepartmentId(Number(e.target.value))}
+            onChange={(e) => setDepartmentId(e.target.value)}
             placeholder="Select Department..."
-            options={departments.map((d) => ({ value: d.id, label: d.name }))}
+            options={departments.map((d) => ({ value: String(d.id), label: d.name }))}
             required
           />
         </div>
@@ -162,10 +162,10 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
           <Select
             label="Manager"
             value={managerId}
-            onChange={(e) => setManagerId(e.target.value ? Number(e.target.value) : '')}
+            onChange={(e) => setManagerId(e.target.value)}
             placeholder="No Manager (Top level)"
             options={potentialManagers.map((m) => ({
-              value: m.id,
+              value: String(m.id),
               label: `${m.name} (${m.job_position})`,
             }))}
           />
@@ -173,10 +173,10 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
           <Select
             label="Working Schedule"
             value={workingScheduleId}
-            onChange={(e) => setWorkingScheduleId(e.target.value ? Number(e.target.value) : '')}
+            onChange={(e) => setWorkingScheduleId(e.target.value)}
             placeholder="Standard Full-Time (40h)"
             options={schedules.map((s) => ({
-              value: s.id,
+              value: String(s.id),
               label: `${s.name} (${s.weekly_hours}h/wk)`,
             }))}
           />
@@ -194,7 +194,7 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
           />
         </div>
 
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
           <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
             Cancel
           </Button>
