@@ -166,7 +166,8 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
             placeholder="No Manager (Top level)"
             options={potentialManagers.map((m) => ({
               value: String(m.id),
-              label: `${m.name} (${m.job_position})`,
+              label: m.name,
+              sublabel: m.job_position,
             }))}
           />
 

@@ -392,6 +392,8 @@ const EditRolesModal: React.FC<EditRolesModalProps> = ({ user, onClose, onUpdate
   );
 };
 
+import { Pagination } from '../../components/common/Pagination';
+
 // ── Main UsersPage Component ──────────────────────────────────────────────────
 export const UsersPage: React.FC = () => {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -403,6 +405,10 @@ export const UsersPage: React.FC = () => {
   const [showProvisionModal, setShowProvisionModal] = useState(false);
   const [editUser, setEditUser] = useState<AdminUser | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const { error: toastError, success } = useToast();
   const { isAdmin } = useAuth();
@@ -598,7 +604,7 @@ export const UsersPage: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredUsers.map((u) => (
+                  filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((u) => (
                     <tr
                       key={u.id}
                       className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors group"
@@ -610,21 +616,19 @@ export const UsersPage: React.FC = () => {
                             {u.email.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
                               <span>{u.email}</span>
                             </div>
-                            <span className="text-2xs font-mono text-slate-400 truncate block max-w-44">
-                              {u.id}
-                            </span>
+                            <div className="text-2xs text-slate-400 font-mono">User ID: #{u.id}</div>
                           </div>
                         </div>
                       </td>
 
                       {/* Linked Employee */}
-                      <td className="py-4 px-5">
+                      <td className="py-4 px-5 font-medium text-slate-700 dark:text-slate-200">
                         {u.employeeName ? (
-                          <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-semibold">
-                            <Link2 className="w-3.5 h-3.5 text-indigo-500" />
+                          <div className="flex items-center gap-1.5">
+                            <Link2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                             <span>{u.employeeName}</span>
                           </div>
                         ) : (
@@ -701,6 +705,17 @@ export const UsersPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(filteredUsers.length / itemsPerPage)}
+            totalItems={filteredUsers.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(size) => {
+              setItemsPerPage(size);
+              setCurrentPage(1);
+            }}
+          />
         </div>
       )}
 

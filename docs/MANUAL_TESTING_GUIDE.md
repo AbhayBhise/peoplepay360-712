@@ -6,7 +6,7 @@ This document contains step-by-step test workflows, role credentials, actions, a
 
 ## 🔑 Test Credentials Summary (All 5 System Roles)
 
-The database is seeded with test user accounts across all 5 roles. Use any of the following canonical accounts for quick role-based testing:
+The database is seeded with **250 test user accounts** across all 5 roles. Use any of the following canonical accounts for quick role-based testing:
 
 | Role | Email | Password | Access Rights & Scope |
 |---|---|---|---|
@@ -25,20 +25,19 @@ The database is seeded with test user accounts across all 5 roles. Use any of th
 ### Workflow 1: System Admin & User Provisioning
 **Goal**: Verify that Admins can provision new accounts, assign system roles, and audit users.
 
-1. **Login**: Go to `http://localhost:3000/login` (or `http://localhost:3001/login`) and log in as `admin@peoplepay360.dev` (`Admin@123`).
-2. **Navigate**: Click **Administration** in the side navbar $\rightarrow$ **User Management** (`/admin/users`).
+1. **Login**: Go to `http://localhost:3001/login` and log in as `admin@peoplepay360.dev` (`Admin@123`).
+2. **Navigate**: Click **Admin** in the side navbar $\rightarrow$ **User Management** (`/admin/users`).
 3. **Verify Table**:
-   - Check user listing showing Email, Employee Name, Active Roles badges, and Status.
-   - Test search box (type employee name or email).
+   - Check pagination controls at bottom of table (Page 1 of 25, items per page: 10/25/50/100).
+   - Test search box (type "Rahul" or "Priya").
 4. **Provision User**:
-   - Click **Provision New User** button.
-   - Enter corporate email `newhr@peoplepay360.dev`, password `Password@123`, role `HR Manager`.
-   - Optionally select an existing employee to link.
-   - Click **Provision Account**.
+   - Click **+ New User** button.
+   - Select an existing Employee, enter email `newhr@peoplepay360.dev`, password `Password@123`, role `HR_MANAGER`.
+   - Click **Save**.
 5. **Expected Output**:
-   - ✅ Toast notification: *"User account provisioned for newhr@peoplepay360.dev"*.
-   - ✅ New user appears in table with `HR Manager` badge.
-   - ✅ Audit log records user creation (accessible via **Audit Trail** button).
+   - ✅ Toast notification: *"User created successfully."*
+   - ✅ New user appears in table with `HR_MANAGER` badge.
+   - ✅ Audit log records user creation.
 
 ---
 
@@ -56,17 +55,17 @@ The database is seeded with test user accounts across all 5 roles. Use any of th
 4. **Test Contract Overlap Protection**:
    - Navigate to **Contracts** (`/contracts`) $\rightarrow$ Click **+ New Contract**.
    - Select employee `Arjun Mehta` (who already has an active contract).
-   - Select Wage = `95000`, Start Date = Today, Status = `Active`.
+   - Select Wage = `95000`, Start Date = Today. Status = `Active`.
    - Click **Create Contract**.
    - **Expected Output**:
      - 🛑 Error notification: *"This employee already has an active contract. An employee can only have one active contract at a time. Please end or expire the current active contract first..."* (No raw UUIDs or technical codes).
 5. **Test Smart Auto-Expire**:
-   - In the same modal, an option allows expiring previous active contracts.
-   - Select the auto-expire option / set previous contract to `Expired`.
+   - In the same modal, an warning banner highlights the current active contract.
+   - Check the box: **"Set current active contract to Expired automatically"**.
    - Click **Create Contract**.
    - **Expected Output**:
      - ✅ Contract created successfully.
-     - ✅ Old contract status transitions to `Expired`, new contract becomes `Active`.
+     - ✅ Old contract status automatically transitions to `Expired`, new contract becomes `Active`.
 
 ---
 
@@ -92,19 +91,19 @@ The database is seeded with test user accounts across all 5 roles. Use any of th
 
 1. **Check Balance & Request Leave** (As Employee):
    - Log in as `employee.demo@peoplepay360.dev` (`Employee@123`).
-   - Navigate to **Time Off** (`/time-off`).
-   - Observe Leave Allocation Summary (e.g. Paid Time Off / Sick Leave remaining quota meters).
+   - Navigate to **Time Off** (`/timeoff`).
+   - Observe Leave Allocation Summary (e.g. Annual Leave: 18 Days Total, 0 Taken, 18 Remaining).
    - Click **+ Request Time Off**.
-   - Select Type = `Paid Time Off`, Start Date = Tomorrow, End Date = Day after tomorrow (2 weekdays).
+   - Select Type = `Annual Leave`, Start Date = Tomorrow, End Date = Day after tomorrow (2 weekdays), Duration = 2 days.
    - Click **Submit Request**.
-   - **Expected Output**: Request created with status `PENDING`. Quota balance remains intact until approval.
+   - **Expected Output**: Request created with status `Draft / Pending`. Balance remains 18 days (deduction occurs only on approval).
 2. **Approve Leave Request** (As HR Manager):
    - Log in as `hr.manager@peoplepay360.dev` (`Manager@123`).
-   - Navigate to **Time Off** (`/time-off`) $\rightarrow$ Pending Requests.
-   - Click **Approve** on the request.
+   - Navigate to **Time Off** (`/timeoff`) $\rightarrow$ Pending Requests tab.
+   - Click **Approve** on Arjun Mehta's request.
    - **Expected Output**:
-     - ✅ Request status transitions to `APPROVED`.
-     - ✅ Employee's leave balance is atomically deducted.
+     - ✅ Request status changes to `Approved`.
+     - ✅ Employee's Annual Leave balance is atomically deducted from 18 to 16 days.
 
 ---
 
@@ -113,8 +112,8 @@ The database is seeded with test user accounts across all 5 roles. Use any of th
 
 1. **Review Salary Rules** (As HR Payroll Manager):
    - Log in as `payroll.manager@peoplepay360.dev` (`Payroll@123`).
-   - Go to **Payroll** $\rightarrow$ **Salary Structures** (`/payroll/salary-structures`).
-   - Click standard structure to view rule sequence:
+   - Go to **Payroll** $\rightarrow$ **Salary Structures** (`/payroll/structures`).
+   - Click **Standard Corporate Structure** to view rule sequence:
      - `BASIC` (Seq 10, Formula: `WAGE / 30 * WORKED_DAYS`)
      - `HRA` (Seq 20, 20% of BASIC)
      - `TRANSPORT` (Seq 30, Fixed 2500)
@@ -126,18 +125,19 @@ The database is seeded with test user accounts across all 5 roles. Use any of th
    - Log in as `payroll.user@peoplepay360.dev` (`Payroll@123`).
    - Go to **Payroll** $\rightarrow$ **Payruns** (`/payroll/payruns`).
    - Click **+ New Payrun**.
-   - Step 1: Select Structure & Period.
+   - Step 1: Select Structure = `Standard Corporate Structure`, Period = `Current Month`.
    - Step 2: Select Employees $\rightarrow$ Click **Compute Payrun**.
    - **Expected Output**:
      - ✅ Payrun created with status `COMPUTED`.
-     - ✅ Itemized payslips generated. Clicking any payslip shows complete salary line items matching mathematical formulas.
+     - ✅ 250 payslips generated. Clicking any payslip shows complete salary line items matching mathematical formulas.
 3. **Validate & Mark Paid** (As HR Payroll Manager):
    - Log in as `payroll.manager@peoplepay360.dev` (`Payroll@123`).
    - Open the computed Payrun $\rightarrow$ Click **Validate Payrun** (State becomes `VALIDATED`).
    - Click **Mark as Paid** (State becomes `PAID`).
    - **Expected Output**:
      - ✅ Payrun state locked as `PAID`.
-     - ✅ PDF / printable payslip generator available.
+     - ✅ PDF Payslip generator creates official payslip document.
+     - ✅ Email dispatch triggered for employee pay stubs.
 
 ---
 
@@ -147,15 +147,15 @@ The database is seeded with test user accounts across all 5 roles. Use any of th
 1. **Login**: Log in as `admin@peoplepay360.dev` or `payroll.manager@peoplepay360.dev`.
 2. **Navigate**: Go to **Dashboard** (`/dashboard`).
 3. **Verify KPIs**:
-   - Total Net Paid across organization.
-   - Total Payslips Generated across completed payruns.
+   - Total Net Paid ($) across organization.
+   - Total Payslips Generated (750 payslips from July, August, September payruns).
    - Average Monthly Salary.
    - Attendance Health % and Approved Time Off Days.
 4. **Test Filters**:
-   - Filter by Department (e.g. `Engineering`).
-   - Filter by Period.
+   - Filter by Department = `Engineering`.
+   - Filter by Period = `August 2026`.
    - **Expected Output**:
-     - ✅ KPI cards and salary distribution charts dynamically recalculate based on selected filters.
+     - ✅ All KPI cards and "Salary Cost by Department" chart instantly recalculate based on selected filters.
 
 ---
 
@@ -164,15 +164,15 @@ The database is seeded with test user accounts across all 5 roles. Use any of th
 | # | Feature / Test Scenario | Role | Expected Result | Status |
 |---|---|---|---|---|
 | 1 | Login with valid role credentials | All Roles | Redirected to role dashboard; JWT stored safely | PASS |
-| 2 | Table Pagination / Lists | All Roles | Smooth page switching and list rendering across tables | PASS |
+| 2 | Table Pagination (10, 25, 50, 100 per page) | All Roles | Smooth page switching across all 8 tables | PASS |
 | 3 | Provision User Account | Admin | User created & linked to employee with RBAC role | PASS |
 | 4 | Employee Search & Kanban View | HR Manager | Instant filtering and view toggle | PASS |
-| 5 | Active Contract Overlap Error Guard | HR Manager | Humanized error message displayed; no raw UUIDs | PASS |
+| 5 | Active Contract Overlap Error Guard | HR Manager | Humanized error message displayed; no UUIDs | PASS |
 | 6 | Auto-Expire Previous Contract Option | HR Manager | Old contract expired, new contract set active | PASS |
 | 7 | Attendance Check-In / Check-Out | Employee | `worked_hours` computed automatically | PASS |
 | 8 | Leave Allocation Balance Check | Employee | Request blocked if duration > remaining balance | PASS |
 | 9 | Time Off Approval & Atomic Balance Deduction | HR Manager | Balance deducted immediately upon approval | PASS |
 | 10| Sequenced Salary Rule Calculation | Payroll Mgr | Rules execute strictly in sequence order | PASS |
 | 11| Payrun State Machine (`Draft` $\rightarrow$ `Paid`) | Payroll Mgr | Strict state transitions enforced | PASS |
-| 12| Payslip Itemized Breakdown & PDF View | Payroll User | Itemized breakdown and print preview generated | PASS |
+| 12| Payslip PDF & Bulk Email Dispatch | Payroll User | PDF generated & email sent upon completion | PASS |
 | 13| Payroll Dashboard Filtering | Admin/Payroll | Dynamic recalculation by Dept and Period | PASS |

@@ -22,8 +22,10 @@ import { Card } from '../../components/common/Card';
 import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
+import { Pagination } from '../../components/common/Pagination';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 
@@ -33,6 +35,10 @@ export const AttendancePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filterMode, setFilterMode] = useState<'all' | 'exceptions'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Quick punch modal
   const [isPunchModalOpen, setIsPunchModalOpen] = useState(false);
@@ -164,6 +170,11 @@ export const AttendancePage: React.FC = () => {
     );
   });
 
+  const paginatedLogs = filteredLogs.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div className="space-y-6 animate-fade-in text-slate-800 dark:text-slate-100">
       {/* Header */}
@@ -293,7 +304,7 @@ export const AttendancePage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {filteredLogs.map((log) => {
+                {paginatedLogs.map((log) => {
                   const emp = employees.find((e) => String(e.id) === String(log.employee_id));
                   const isMissingCheckout = !log.check_out || log.exception === 'missing_checkout';
                   const isLate = log.exception === 'late';
@@ -311,7 +322,7 @@ export const AttendancePage: React.FC = () => {
                     >
                       <td className="py-3.5 px-4">
                         <div className="font-bold text-slate-900 dark:text-white text-sm">
-                          {log.employee_name || emp?.name || `Employee #${log.employee_id}`}
+                          {(log as any).employee?.name || log.employee_name || (log as any).employeeName || emp?.name || (log.employee_id || (log as any).employeeId ? `Employee #${(log.employee_id || (log as any).employeeId).substring(0, 8)}` : 'Staff Member')}
                         </div>
                         <div className="text-2xs text-slate-400 dark:text-slate-500 font-mono">Log #{log.id}</div>
                       </td>
@@ -358,8 +369,8 @@ export const AttendancePage: React.FC = () => {
                           {isHRMPlus() && (
                             <button
                               onClick={() => handleOpenCorrection(log)}
-                              className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 rounded-lg transition-colors cursor-pointer"
-                              title="HR Adjustment"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                              title="Audit/Correct Log"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
@@ -372,6 +383,18 @@ export const AttendancePage: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(filteredLogs.length / itemsPerPage)}
+            totalItems={filteredLogs.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(size) => {
+              setItemsPerPage(size);
+              setCurrentPage(1);
+            }}
+          />
         </div>
       )}
 
@@ -383,12 +406,16 @@ export const AttendancePage: React.FC = () => {
         description="Punches will automatically calculate worked hours upon check-out"
       >
         <form onSubmit={handlePunchSubmit} className="space-y-4">
-          <Select
+          <SearchableSelect
             label="Employee"
             value={punchEmpId}
-            onChange={(e) => setPunchEmpId(e.target.value)}
+            onChange={(val) => setPunchEmpId(val)}
             placeholder="Select Employee..."
-            options={employees.map((e) => ({ value: String(e.id), label: `${e.name} (${e.job_position})` }))}
+            options={employees.map((e) => ({
+              value: String(e.id),
+              label: e.name,
+              sublabel: e.job_position,
+            }))}
             required
           />
 

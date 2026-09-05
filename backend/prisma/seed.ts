@@ -1,10 +1,6 @@
-// Seed data for PeoplePay360. Produces enough departments/employees/contracts/
-// attendance/leave/payroll history for the dashboard charts and both demo
-// scenarios (employee-to-payslip, leave allocation-to-request) to show real
-// numbers, per docs/roles/DATABASE.md.
-//
-// Keeps the 5 system roles and the admin login intact — other modules depend
-// on them (see prior version of this file / docs/roles/DATABASE.md).
+// Seed data for PeoplePay360.
+// Fast, batch-inserted high-fidelity dataset with 250 realistic user accounts
+// split across all 5 RBAC roles with full interconnected HR, Attendance, Time Off, Contracts, and Payroll history.
 import { randomUUID } from "crypto";
 import { PrismaClient, SalaryRuleCategory, ComputationMethod } from "@prisma/client";
 import bcrypt from "bcryptjs";
@@ -18,6 +14,48 @@ const ROLE_NAMES = [
   "HR_PAYROLL_MANAGER",
   "ADMIN",
 ] as const;
+
+// Realistic Indian & International corporate names
+const FIRST_NAMES = [
+  "Rahul", "Priya", "Vikram", "Ananya", "Arjun", "Sneha", "Rohan", "Kavya", "Aditya", "Meera",
+  "Karan", "Divya", "Siddharth", "Ishaan", "Nisha", "Farhan", "Pooja", "Manish", "Ritika", "Tanvi",
+  "Harshit", "Neha", "Amit", "Pallavi", "Yash", "Shweta", "Kunal", "Deepak", "Bhavna", "Sameer",
+  "Monica", "Gaurav", "Ritu", "Aakash", "Swati", "Nikhil", "Prachi", "Mohit", "Tara", "Rajat",
+  "Anjali", "Tarun", "Namrata", "Vivek", "Sagarika", "Varun", "Divyanshu", "Kiran", "Shilpa", "Sanjay",
+  "Aarti", "Alok", "Chitra", "Dinesh", "Ekta", "Girish", "Hemant", "Indu", "Jatin", "Komal",
+  "Lokesh", "Madhav", "Naveen", "Omkar", "Parul", "Qasim", "Rakesh", "Sunita", "Tushar", "Umesh",
+  "Vandana", "Waseem", "Yogesh", "Zainab", "Alexander", "Sarah", "Daniel", "Emily", "Michael", "Jessica"
+];
+
+const LAST_NAMES = [
+  "Sharma", "Verma", "Mehta", "Iyer", "Nair", "Kulkarni", "Deshmukh", "Reddy", "Joshi", "Pillai",
+  "Malhotra", "Menon", "Rao", "Kapoor", "Agarwal", "Sheikh", "Bhatt", "Trivedi", "Chawla", "Shah",
+  "Patel", "Gupta", "Singhania", "Sen", "Chopra", "Roy", "Bajaj", "Soni", "Jain", "Saxena",
+  "Bansal", "Das", "Varma", "Mehra", "Ahuja", "Sundaram", "Goel", "Shrestha", "Aggarwal", "Kaul",
+  "Pandey", "Bose", "Bhatia", "Sinha", "Mazumdar", "Shetty", "Kashyap", "Dutt", "Thakur", "Mishra"
+];
+
+const DEPARTMENTS_DATA = [
+  { key: "engineering", id: "a93d3fa5-0dde-4535-ac6f-dfd74a012b8c", name: "Engineering" },
+  { key: "sales", id: "892eaa08-7cc6-4ad9-80de-de4236026f34", name: "Sales" },
+  { key: "hr", id: "fc2b717a-0ea7-4384-aa0b-3c9161f64d6e", name: "Human Resources" },
+  { key: "finance", id: "7d25a758-c706-47d3-af21-f4663db4c702", name: "Finance & Payroll" },
+  { key: "marketing", id: "da4f7ef6-6910-4cb5-be45-e56e11ccb247", name: "Marketing & Growth" },
+  { key: "product", id: "e512a8bc-1234-4567-890a-bcdef1234567", name: "Product & Design" },
+  { key: "support", id: "f623b9cd-2345-5678-901b-cdef23456789", name: "Customer Success" },
+  { key: "legal", id: "a734caef-3456-6789-012c-defa34567890", name: "Legal & Operations" },
+];
+
+const JOB_TITLES_BY_DEPT: Record<string, string[]> = {
+  engineering: ["Engineering Lead", "Senior Software Engineer", "Full Stack Developer", "Backend Engineer", "Frontend Developer", "DevOps Engineer", "QA Automation Lead", "Data Engineer", "Cloud Architect", "Systems Analyst"],
+  sales: ["VP of Sales", "Enterprise Account Executive", "Sales Operations Manager", "Account Executive", "Business Development Rep", "Pre-Sales Consultant", "Inside Sales Specialist", "Key Account Manager"],
+  hr: ["Chief People Officer", "HR Director", "HR Manager", "Talent Acquisition Lead", "HR Business Partner", "Learning & Development Specialist", "People Operations Executive", "HR Coordinator"],
+  finance: ["VP of Finance", "Payroll Director", "Payroll Manager", "Senior Financial Analyst", "Payroll Specialist", "Accounts Payable Manager", "Senior Accountant", "Tax & Compliance Specialist"],
+  marketing: ["Marketing Director", "Growth Marketing Lead", "Product Marketing Manager", "SEO Specialist", "Content Marketing Manager", "Brand Designer", "Social Media Strategist", "PR Specialist"],
+  product: ["Head of Product", "Senior Product Manager", "UI/UX Design Director", "Product Manager", "Lead Product Designer", "UX Researcher", "Product Analyst"],
+  support: ["Customer Success Director", "Enterprise Support Manager", "Customer Success Manager", "Technical Support Engineer", "Client Relations Specialist"],
+  legal: ["General Counsel", "Legal Operations Manager", "Compliance Officer", "Contracts Administrator", "Operations Specialist"],
+};
 
 function daysAgo(n: number): Date {
   const d = new Date();
@@ -44,12 +82,26 @@ function lastNWeekdays(n: number): Date[] {
   return out.reverse();
 }
 
-function workedHours(checkIn: Date, checkOut: Date): number {
-  return Math.round(((checkOut.getTime() - checkIn.getTime()) / 3_600_000) * 100) / 100;
-}
-
 async function main() {
-  // ---------- Roles (unchanged — other modules depend on these existing) ----------
+  console.log("🚀 Starting PeoplePay360 High-Performance Seeding (250 Users across 5 Roles)...");
+
+  console.log("🧹 Cleaning up existing data...");
+  await prisma.payslipLine.deleteMany({});
+  await prisma.payslip.deleteMany({});
+  await prisma.payrun.deleteMany({});
+  await prisma.timeOffRequest.deleteMany({});
+  await prisma.timeOffAllocation.deleteMany({});
+  await prisma.attendance.deleteMany({});
+  await prisma.contract.deleteMany({});
+  await prisma.auditLog.deleteMany({});
+  await prisma.passwordResetToken.deleteMany({});
+  await prisma.userRole.deleteMany({});
+  await prisma.user.deleteMany({});
+  await prisma.department.updateMany({ data: { headEmployeeId: null, parentDepartmentId: null } });
+  await prisma.employee.updateMany({ data: { managerId: null, departmentId: null, workingScheduleId: null } });
+  await prisma.employee.deleteMany({});
+
+  // ---------- 1. Roles ----------
   const roles: Record<string, string> = {};
   for (const name of ROLE_NAMES) {
     const role = await prisma.role.upsert({
@@ -60,16 +112,13 @@ async function main() {
     roles[name] = role.id;
   }
 
-  // ---------- Working schedule ----------
-  // weeklyHours is computed once here (5 * (9h - 1h break) = 40), the same way a
-  // working-schedule service would recompute it from schedule_lines — never a
-  // manually typed value. See docs/03_DB_DESIGN_NOTES.md for the caveat that no
-  // such service exists yet to enforce this at write time.
+  // ---------- 2. Working Schedule ----------
   const schedule = await prisma.workingSchedule.upsert({
     where: { id: "91350275-25e4-4412-96d2-5c3fb25c5825" },
     update: {},
-    create: { id: "91350275-25e4-4412-96d2-5c3fb25c5825", name: "Standard 9-to-6", type: "full_time", weeklyHours: 40 },
+    create: { id: "91350275-25e4-4412-96d2-5c3fb25c5825", name: "Standard 9-to-6 (40h)", type: "full_time", weeklyHours: 40 },
   });
+
   const scheduleLines = [
     ["monday", "09:00", "18:00"],
     ["tuesday", "09:00", "18:00"],
@@ -77,6 +126,7 @@ async function main() {
     ["thursday", "09:00", "18:00"],
     ["friday", "09:00", "18:00"],
   ] as const;
+
   for (const [day, start, end] of scheduleLines) {
     const lineId = randomUUID();
     await prisma.scheduleLine.upsert({
@@ -93,30 +143,24 @@ async function main() {
     });
   }
 
-  // ---------- Departments ----------
-  const DEPARTMENTS = [
-    { key: "engineering", id: "a93d3fa5-0dde-4535-ac6f-dfd74a012b8c", name: "Engineering" },
-    { key: "sales", id: "892eaa08-7cc6-4ad9-80de-de4236026f34", name: "Sales" },
-    { key: "hr", id: "fc2b717a-0ea7-4384-aa0b-3c9161f64d6e", name: "Human Resources" },
-    { key: "finance", id: "7d25a758-c706-47d3-af21-f4663db4c702", name: "Finance" },
-    { key: "marketing", id: "da4f7ef6-6910-4cb5-be45-e56e11ccb247", name: "Marketing" },
-  ] as const;
-  const dept: Record<string, string> = {};
-  for (const d of DEPARTMENTS) {
+  // ---------- 3. Departments ----------
+  const deptMap: Record<string, string> = {};
+  for (const d of DEPARTMENTS_DATA) {
     const row = await prisma.department.upsert({
       where: { id: d.id },
       update: {},
       create: { id: d.id, name: d.name },
     });
-    dept[d.key] = row.id;
+    deptMap[d.key] = row.id;
   }
 
-  // ---------- Salary structure + rules ----------
+  // ---------- 4. Salary Structure & Rules ----------
   const structure = await prisma.salaryStructure.upsert({
     where: { id: "85c83b49-19fa-4f52-9f1b-6f3917c09025" },
     update: {},
-    create: { id: "85c83b49-19fa-4f52-9f1b-6f3917c09025", name: "Standard Structure", active: true },
+    create: { id: "85c83b49-19fa-4f52-9f1b-6f3917c09025", name: "Standard Corporate Structure", active: true },
   });
+
   const RULES: Array<{
     id: string;
     name: string;
@@ -131,12 +175,13 @@ async function main() {
   }> = [
     { id: "8b6207d0-baef-477a-aec4-9ec4e2d48370", name: "Basic Salary", code: "BASIC", category: "basic", sequence: 10, computationMethod: "formula", formula: "WAGE / 30 * WORKED_DAYS" },
     { id: "21faed5d-b71b-47b8-918d-a6752c987863", name: "House Rent Allowance", code: "HRA", category: "allowance", sequence: 20, computationMethod: "percentage", baseField: "BASIC", percentage: 20 },
-    { id: "75c9c5a5-421a-4c62-bee4-e6f618c0474f", name: "Transport Allowance", code: "TRANSPORT", category: "allowance", sequence: 30, computationMethod: "fixed", fixedAmount: 2000 },
+    { id: "75c9c5a5-421a-4c62-bee4-e6f618c0474f", name: "Transport Allowance", code: "TRANSPORT", category: "allowance", sequence: 30, computationMethod: "fixed", fixedAmount: 2500 },
     { id: "648ef3c2-a42a-41a8-8b9b-d71d32368afc", name: "Gross Salary", code: "GROSS", category: "gross", sequence: 40, computationMethod: "formula", formula: "BASIC+HRA+TRANSPORT" },
     { id: "4be4aac5-e713-462b-97d0-0c37a095785e", name: "Provident Fund", code: "PF", category: "deduction", sequence: 50, computationMethod: "percentage", baseField: "BASIC", percentage: 12 },
     { id: "3705e9ba-df4f-4a62-99ed-0d0a4677359e", name: "Income Tax", code: "TAX", category: "deduction", sequence: 60, computationMethod: "percentage", baseField: "GROSS", percentage: 10 },
     { id: "286aaa90-394f-4c94-b86f-3517339cebe3", name: "Net Salary", code: "NET", category: "net", sequence: 70, computationMethod: "formula", formula: "GROSS-PF-TAX" },
   ];
+
   for (const r of RULES) {
     await prisma.salaryRule.upsert({
       where: { id: r.id },
@@ -145,229 +190,180 @@ async function main() {
     });
   }
 
-  // ---------- Employees ----------
-  // role: which system role (if any) gets a login for this seed employee.
-  const EMPLOYEES = [
-    { id: "75131a57-bc3d-4fca-8e4c-a68932394e4c", name: "System Administrator", deptKey: "hr", job: "Administrator", role: "ADMIN" as const, email: "admin@peoplepay360.dev", password: "Admin@123", noContract: true, noSchedule: true },
-    { id: "20e80ed7-ef86-43bc-93de-03d92adbd425", name: "Rahul Verma", deptKey: "hr", job: "HR Manager", role: "HR_MANAGER" as const, email: "hr.manager@peoplepay360.dev", password: "Manager@123", wage: 65000 },
-    { id: "33c4e540-13e6-4235-b632-1047724983f6", name: "Priya Sharma", deptKey: "finance", job: "Payroll Executive", role: "HR_PAYROLL_USER" as const, email: "payroll.user@peoplepay360.dev", password: "Payroll@123", wage: 60000 },
-    { id: "b9e12e10-5489-4e08-890e-17e9d0b210b3", name: "Ananya Iyer", deptKey: "finance", job: "Payroll Manager", role: "HR_PAYROLL_MANAGER" as const, email: "payroll.manager@peoplepay360.dev", password: "Payroll@123", wage: 90000 },
+  // Pre-hash common passwords for fast seeding
+  const passwordHashes = {
+    admin: await bcrypt.hash("Admin@123", 10),
+    manager: await bcrypt.hash("Manager@123", 10),
+    payroll: await bcrypt.hash("Payroll@123", 10),
+    employee: await bcrypt.hash("Employee@123", 10),
+  };
 
-    { id: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", name: "Vikram Nair", deptKey: "engineering", job: "Engineering Head", wage: 150000 },
-    { id: "ebe1e5a7-3853-4eb1-9ae3-52439def3d30", name: "Arjun Mehta", deptKey: "engineering", job: "Senior Software Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 95000, role: "EMPLOYEE" as const, email: "employee.demo@peoplepay360.dev", password: "Employee@123" },
-    { id: "7e8ada7c-af0c-42b3-a966-4969f57e71ed", name: "Sneha Kulkarni", deptKey: "engineering", job: "Software Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 75000 },
-    { id: "7dd3412f-952b-48bd-ac76-c7225ac19ac3", name: "Rohan Deshmukh", deptKey: "engineering", job: "Software Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 72000 },
-    { id: "1b7e08b3-97e4-4bf1-bf3f-07a0a5dfb39a", name: "Kavya Reddy", deptKey: "engineering", job: "QA Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 68000 },
-    { id: "ed05196f-0631-42c5-8b67-9b505bf288d6", name: "Aditya Joshi", deptKey: "engineering", job: "DevOps Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 82000 },
+  // ---------- 5. Building 250 Employees & Users ----------
+  console.log("Generating 250 employee & user account configurations...");
 
-    { id: "af88a239-b90f-40cc-bb27-6143ddb22a1e", name: "Meera Pillai", deptKey: "sales", job: "Sales Head", wage: 120000 },
-    { id: "0f583e8d-e6f2-4065-945b-5fdbb22daf99", name: "Karan Malhotra", deptKey: "sales", job: "Sales Executive", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 55000 },
-    { id: "59720abe-c997-4767-94ed-437bc34e8c6f", name: "Divya Menon", deptKey: "sales", job: "Sales Executive", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 55000 },
-    { id: "bd31c6e1-2eda-42c1-ba6b-7d742c3f388c", name: "Siddharth Rao", deptKey: "sales", job: "Account Manager", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 62000 },
+  interface EmpSeedSpec {
+    id: string;
+    employeeCode: string;
+    name: string;
+    email: string;
+    role: (typeof ROLE_NAMES)[number];
+    deptKey: string;
+    jobTitle: string;
+    wage: number;
+    passwordHash: string;
+  }
 
-    { id: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", name: "Ishaan Kapoor", deptKey: "marketing", job: "Marketing Head", wage: 110000 },
-    { id: "5f9c33c3-1bba-4f5b-b991-e40a222d90be", name: "Nisha Agarwal", deptKey: "marketing", job: "Marketing Executive", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 52000 },
-    { id: "b072b812-b22d-4bd2-9e5e-05c2bba9a860", name: "Farhan Sheikh", deptKey: "marketing", job: "Content Strategist", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 50000 },
+  const seededEmployees: EmpSeedSpec[] = [];
+  const deptKeys = DEPARTMENTS_DATA.map((d) => d.key);
 
-    { id: "e2b55d93-3ba8-4eaa-982e-b57528cf5167", name: "Pooja Bhatt", deptKey: "finance", job: "Accountant", managerKey: "b9e12e10-5489-4e08-890e-17e9d0b210b3", wage: 58000 },
-    { id: "3acfd31c-65b5-4943-a4b3-faa695ce2fad", name: "Manish Trivedi", deptKey: "finance", job: "Accounts Executive", managerKey: "b9e12e10-5489-4e08-890e-17e9d0b210b3", wage: 48000, status: "inactive" as const },
+  // Core 5 canonical accounts (for direct login testing)
+  seededEmployees.push(
+    { id: "75131a57-bc3d-4fca-8e4c-a68932394e4c", employeeCode: "EMP-0001", name: "System Administrator", email: "admin@peoplepay360.dev", role: "ADMIN", deptKey: "hr", jobTitle: "Chief Technology Officer", wage: 180000, passwordHash: passwordHashes.admin },
+    { id: "20e80ed7-ef86-43bc-93de-03d92adbd425", employeeCode: "EMP-0002", name: "Rahul Verma", email: "hr.manager@peoplepay360.dev", role: "HR_MANAGER", deptKey: "hr", jobTitle: "HR Director", wage: 110000, passwordHash: passwordHashes.manager },
+    { id: "33c4e540-13e6-4235-b632-1047724983f6", employeeCode: "EMP-0003", name: "Priya Sharma", email: "payroll.user@peoplepay360.dev", role: "HR_PAYROLL_USER", deptKey: "finance", jobTitle: "Payroll Specialist", wage: 75000, passwordHash: passwordHashes.payroll },
+    { id: "b9e12e10-5489-4e08-890e-17e9d0b210b3", employeeCode: "EMP-0004", name: "Ananya Iyer", email: "payroll.manager@peoplepay360.dev", role: "HR_PAYROLL_MANAGER", deptKey: "finance", jobTitle: "Payroll Manager", wage: 125000, passwordHash: passwordHashes.payroll },
+    { id: "ebe1e5a7-3853-4eb1-9ae3-52439def3d30", employeeCode: "EMP-0005", name: "Arjun Mehta", email: "employee.demo@peoplepay360.dev", role: "EMPLOYEE", deptKey: "engineering", jobTitle: "Senior Software Engineer", wage: 95000, passwordHash: passwordHashes.employee }
+  );
 
-    { id: "292d8682-8f4d-41eb-84da-20d16693bd7f", name: "Ritika Chawla", deptKey: "hr", job: "HR Executive", managerKey: "20e80ed7-ef86-43bc-93de-03d92adbd425", wage: 50000 },
-
-    // --- Additional Engineering Staff ---
-    { id: "e1000000-0000-4000-8000-000000000001", name: "Tanvi Shah", deptKey: "engineering", job: "Frontend Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 70000 },
-    { id: "e1000000-0000-4000-8000-000000000002", name: "Harshit Patel", deptKey: "engineering", job: "Backend Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 74000 },
-    { id: "e1000000-0000-4000-8000-000000000003", name: "Neha Gupta", deptKey: "engineering", job: "Full Stack Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 80000 },
-    { id: "e1000000-0000-4000-8000-000000000004", name: "Amit Singhania", deptKey: "engineering", job: "Site Reliability Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 85000 },
-    { id: "e1000000-0000-4000-8000-000000000005", name: "Pallavi Sen", deptKey: "engineering", job: "Data Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 78000 },
-    { id: "e1000000-0000-4000-8000-000000000006", name: "Yash Chopra", deptKey: "engineering", job: "Mobile Developer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 72000 },
-    { id: "e1000000-0000-4000-8000-000000000007", name: "Shweta Roy", deptKey: "engineering", job: "Cloud Architect", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 115000 },
-    { id: "e1000000-0000-4000-8000-000000000008", name: "Kunal Bajaj", deptKey: "engineering", job: "Systems Analyst", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 65000 },
-
-    // --- Additional Sales Staff ---
-    { id: "e2000000-0000-4000-8000-000000000001", name: "Deepak Soni", deptKey: "sales", job: "Enterprise Sales Rep", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 68000 },
-    { id: "e2000000-0000-4000-8000-000000000002", name: "Bhavna Jain", deptKey: "sales", job: "Inside Sales Specialist", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 54000 },
-    { id: "e2000000-0000-4000-8000-000000000003", name: "Sameer Saxena", deptKey: "sales", job: "Business Development Rep", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 48000 },
-    { id: "e2000000-0000-4000-8000-000000000004", name: "Monica Sharma", deptKey: "sales", job: "Sales Operations Analyst", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 58000 },
-    { id: "e2000000-0000-4000-8000-000000000005", name: "Gaurav Kapoor", deptKey: "sales", job: "Key Account Director", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 95000 },
-    { id: "e2000000-0000-4000-8000-000000000006", name: "Ritu Bansal", deptKey: "sales", job: "Pre-Sales Consultant", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 75000 },
-
-    // --- Additional Marketing Staff ---
-    { id: "e3000000-0000-4000-8000-000000000001", name: "Aakash Saxena", deptKey: "marketing", job: "Product Marketing Manager", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 82000 },
-    { id: "e3000000-0000-4000-8000-000000000002", name: "Swati Das", deptKey: "marketing", job: "SEO & Growth Specialist", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 54000 },
-    { id: "e3000000-0000-4000-8000-000000000003", name: "Nikhil Varma", deptKey: "marketing", job: "Graphic & Brand Designer", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 52000 },
-    { id: "e3000000-0000-4000-8000-000000000004", name: "Prachi Mehra", deptKey: "marketing", job: "Social Media Lead", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 48000 },
-    { id: "e3000000-0000-4000-8000-000000000005", name: "Mohit Ahuja", deptKey: "marketing", job: "Email Marketing Specialist", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 46000 },
-    { id: "e3000000-0000-4000-8000-000000000006", name: "Tara Sundaram", deptKey: "marketing", job: "PR & Communications Manager", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 78000 },
-
-    // --- Additional Finance Staff ---
-    { id: "e4000000-0000-4000-8000-000000000001", name: "Rajat Goel", deptKey: "finance", job: "Senior Financial Analyst", managerKey: "b9e12e10-5489-4e08-890e-17e9d0b210b3", wage: 75000 },
-    { id: "e4000000-0000-4000-8000-000000000002", name: "Anjali Shrestha", deptKey: "finance", job: "Billing Specialist", managerKey: "b9e12e10-5489-4e08-890e-17e9d0b210b3", wage: 50000 },
-    { id: "e4000000-0000-4000-8000-000000000003", name: "Tarun Aggarwal", deptKey: "finance", job: "Internal Auditor", managerKey: "b9e12e10-5489-4e08-890e-17e9d0b210b3", wage: 68000 },
-    { id: "e4000000-0000-4000-8000-000000000004", name: "Namrata Kaul", deptKey: "finance", job: "Treasury Analyst", managerKey: "b9e12e10-5489-4e08-890e-17e9d0b210b3", wage: 62000 },
-    { id: "e4000000-0000-4000-8000-000000000005", name: "Vivek Pandey", deptKey: "finance", job: "Compliance Officer", managerKey: "b9e12e10-5489-4e08-890e-17e9d0b210b3", wage: 72000 },
-
-    // --- Additional HR Staff ---
-    { id: "e5000000-0000-4000-8000-000000000001", name: "Sagarika Bose", deptKey: "hr", job: "Talent Acquisition Specialist", managerKey: "20e80ed7-ef86-43bc-93de-03d92adbd425", wage: 55000 },
-    { id: "e5000000-0000-4000-8000-000000000002", name: "Varun Bhatia", deptKey: "hr", job: "HR Operations Executive", managerKey: "20e80ed7-ef86-43bc-93de-03d92adbd425", wage: 48000 },
-    { id: "e5000000-0000-4000-8000-000000000003", name: "Divyanshu Sinha", deptKey: "hr", job: "People & Culture Manager", managerKey: "20e80ed7-ef86-43bc-93de-03d92adbd425", wage: 78000 },
-    { id: "e5000000-0000-4000-8000-000000000004", name: "Kiran Mazumdar", deptKey: "hr", job: "Learning & Development Lead", managerKey: "20e80ed7-ef86-43bc-93de-03d92adbd425", wage: 65000 },
-    { id: "e5000000-0000-4000-8000-000000000005", name: "Shilpa Shetty", deptKey: "hr", job: "Compensation & Benefits Analyst", managerKey: "20e80ed7-ef86-43bc-93de-03d92adbd425", wage: 62000 },
+  const roleTargets: Array<{ role: (typeof ROLE_NAMES)[number]; count: number; prefix: string; passHash: string }> = [
+    { role: "ADMIN", count: 4, prefix: "admin", passHash: passwordHashes.admin },
+    { role: "HR_PAYROLL_MANAGER", count: 9, prefix: "payrollmanager", passHash: passwordHashes.payroll },
+    { role: "HR_PAYROLL_USER", count: 14, prefix: "payrolluser", passHash: passwordHashes.payroll },
+    { role: "HR_MANAGER", count: 19, prefix: "hrmanager", passHash: passwordHashes.manager },
+    { role: "EMPLOYEE", count: 199, prefix: "emp", passHash: passwordHashes.employee },
   ];
 
-  for (const [idx, e] of EMPLOYEES.entries()) {
-    const employeeCode = `EMP-${String(idx + 1).padStart(4, "0")}`;
-    await prisma.employee.upsert({
-      where: { employeeCode },
-      update: {
-        name: e.name,
-        departmentId: dept[e.deptKey],
-        jobPosition: e.job,
-        status: e.status ?? "active",
-        managerId: e.managerKey ?? null,
-        workingScheduleId: e.noSchedule ? null : schedule.id,
-      },
-      create: {
-        id: e.id,
+  let empCounter = 6;
+
+  for (const t of roleTargets) {
+    for (let i = 1; i <= t.count; i++) {
+      const fn = FIRST_NAMES[(empCounter * 3) % FIRST_NAMES.length];
+      const ln = LAST_NAMES[(empCounter * 7) % LAST_NAMES.length];
+      const name = `${fn} ${ln}`;
+      const deptKey = deptKeys[empCounter % deptKeys.length];
+      const titles = JOB_TITLES_BY_DEPT[deptKey];
+      const jobTitle = titles[empCounter % titles.length];
+      const employeeCode = `EMP-${String(empCounter).padStart(4, "0")}`;
+      const emailNum = String(i).padStart(t.prefix === "emp" ? 3 : 2, "0");
+      const email = `${t.prefix}${emailNum}@peoplepay360.dev`;
+      
+      const isLead = jobTitle.toLowerCase().includes("director") || jobTitle.toLowerCase().includes("head") || jobTitle.toLowerCase().includes("vp") || jobTitle.toLowerCase().includes("cfo") || jobTitle.toLowerCase().includes("cpo") || jobTitle.toLowerCase().includes("cto");
+      const isSenior = jobTitle.toLowerCase().includes("senior") || jobTitle.toLowerCase().includes("lead") || jobTitle.toLowerCase().includes("manager");
+      const wage = isLead ? 140000 + (empCounter % 40) * 1000 : isSenior ? 85000 + (empCounter % 35) * 1000 : 50000 + (empCounter % 30) * 1000;
+
+      seededEmployees.push({
+        id: randomUUID(),
         employeeCode,
-        name: e.name,
-        departmentId: dept[e.deptKey],
-        jobPosition: e.job,
-        status: e.status ?? "active",
-        managerId: e.managerKey ?? null,
-        workingScheduleId: e.noSchedule ? null : schedule.id,
-      },
-    });
-  }
-
-  // Department heads, set after employees exist (FK).
-  await prisma.department.update({ where: { id: dept.engineering }, data: { headEmployeeId: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a" } });
-  await prisma.department.update({ where: { id: dept.sales }, data: { headEmployeeId: "af88a239-b90f-40cc-bb27-6143ddb22a1e" } });
-  await prisma.department.update({ where: { id: dept.marketing }, data: { headEmployeeId: "bf0cc423-0294-4857-90fe-0e0f15bf45f4" } });
-  await prisma.department.update({ where: { id: dept.finance }, data: { headEmployeeId: "b9e12e10-5489-4e08-890e-17e9d0b210b3" } });
-  await prisma.department.update({ where: { id: dept.hr }, data: { headEmployeeId: "20e80ed7-ef86-43bc-93de-03d92adbd425" } });
-
-  // ---------- Users + roles (logins) ----------
-  const userByEmployee: Record<string, string> = {};
-  for (const e of EMPLOYEES) {
-    if (!e.role || !e.email || !e.password) continue;
-    const passwordHash = await bcrypt.hash(e.password, 10);
-    const user = await prisma.user.upsert({
-      where: { email: e.email },
-      update: {},
-      create: { email: e.email, passwordHash, employeeId: e.id, isActive: true },
-    });
-    userByEmployee[e.id] = user.id;
-    const userRoleId = randomUUID();
-    await prisma.userRole.upsert({
-      where: { id: userRoleId },
-      update: {},
-      create: { id: userRoleId, userId: user.id, roleId: roles[e.role] },
-    });
-  }
-
-  // ---------- Contracts ----------
-  // One active contract per (non-admin) employee. A few also get a prior expired
-  // contract to show history — kept strictly before the active one so it never
-  // trips the no-overlapping-active-ranges exclusion constraint (that constraint
-  // only applies to status='active' rows anyway).
-  const activeContractIdByEmployee: Record<string, string> = {};
-  for (const e of EMPLOYEES) {
-    if (e.noContract) continue;
-    const wage = e.wage ?? 50000;
-
-    if (e.id === "ebe1e5a7-3853-4eb1-9ae3-52439def3d30" || e.id === "0f583e8d-e6f2-4065-945b-5fdbb22daf99") {
-      const prevContractId = randomUUID();
-      await prisma.contract.upsert({
-        where: { id: prevContractId },
-        update: {},
-        create: {
-          id: prevContractId,
-          employeeId: e.id,
-          departmentId: dept[e.deptKey],
-          position: e.job,
-          wage: Math.round(wage * 0.85),
-          salaryStructureId: structure.id,
-          startDate: new Date(Date.UTC(2024, 0, 1)),
-          endDate: new Date(Date.UTC(2024, 11, 31)),
-          status: "expired",
-        },
-      });
-    }
-
-    const contractId = randomUUID();
-    await prisma.contract.upsert({
-      where: { id: contractId },
-      update: {},
-      create: {
-        id: contractId,
-        employeeId: e.id,
-        departmentId: dept[e.deptKey],
-        position: e.job,
+        name,
+        email,
+        role: t.role,
+        deptKey,
+        jobTitle,
         wage,
-        salaryStructureId: structure.id,
-        startDate: new Date(Date.UTC(2025, 0, 1)),
-        endDate: null,
-        status: e.status === "inactive" ? "cancelled" : "active",
-      },
-    });
-    if (e.status !== "inactive") activeContractIdByEmployee[e.id] = contractId;
+        passwordHash: t.passHash,
+      });
+
+      empCounter++;
+    }
   }
 
-  // ---------- Attendance ----------
-  // worked_hours is always the computed diff of check_out - check_in, written
-  // once here at seed time — never a value someone typed in directly.
-  const attendanceEmployees = EMPLOYEES.filter((e) => !e.noSchedule && e.status !== "inactive");
+  // Batch insert Employees
+  console.log(`Writing ${seededEmployees.length} employees into database...`);
+  await prisma.employee.createMany({
+    data: seededEmployees.map((emp) => ({
+      id: emp.id,
+      employeeCode: emp.employeeCode,
+      name: emp.name,
+      departmentId: deptMap[emp.deptKey],
+      jobPosition: emp.jobTitle,
+      workingScheduleId: schedule.id,
+      status: "active",
+    })),
+  });
+
+  // Batch insert Users
+  console.log(`Writing ${seededEmployees.length} users into database...`);
+  const userRecords = seededEmployees.map((emp) => ({
+    id: randomUUID(),
+    email: emp.email,
+    passwordHash: emp.passwordHash,
+    employeeId: emp.id,
+    isActive: true,
+  }));
+  await prisma.user.createMany({ data: userRecords });
+
+  // Batch insert UserRoles
+  console.log(`Assigning 250 user roles...`);
+  const userRoleRecords = userRecords.map((u, idx) => ({
+    id: randomUUID(),
+    userId: u.id,
+    roleId: roles[seededEmployees[idx].role],
+  }));
+  await prisma.userRole.createMany({ data: userRoleRecords });
+
+  // ---------- 6. Contracts for all 250 Employees ----------
+  console.log("Seeding 250 active employment contracts...");
+  const contractRecords = seededEmployees.map((emp) => ({
+    id: randomUUID(),
+    employeeId: emp.id,
+    departmentId: deptMap[emp.deptKey],
+    position: emp.jobTitle,
+    wage: emp.wage,
+    salaryStructureId: structure.id,
+    startDate: new Date(Date.UTC(2025, 0, 1)),
+    endDate: null,
+    status: "active" as const,
+  }));
+  await prisma.contract.createMany({ data: contractRecords });
+
+  const activeContractMap: Record<string, string> = {};
+  for (const c of contractRecords) {
+    activeContractMap[c.employeeId] = c.id;
+  }
+
+  // ---------- 7. Attendance Logs (22 Weekdays per employee = 5,500 records) ----------
+  console.log("Batch seeding 5,500 attendance records across all 250 employees...");
   const weekdays = lastNWeekdays(22);
-  for (const e of attendanceEmployees) {
-    for (const [i, day] of weekdays.entries()) {
-      const isLate = i % 7 === 3 && e.id === "7dd3412f-952b-48bd-ac76-c7225ac19ac3";
-      const inProgress = i === weekdays.length - 1 && e.id === "7e8ada7c-af0c-42b3-a966-4969f57e71ed";
+  const attendanceRecords: Array<{
+    id: string;
+    employeeId: string;
+    checkIn: Date;
+    checkOut: Date;
+    workedHours: number;
+    status: "present" | "late";
+  }> = [];
 
+  for (const emp of seededEmployees) {
+    for (const [dayIdx, day] of weekdays.entries()) {
+      const isLate = (dayIdx + emp.name.length) % 11 === 0;
       const checkIn = new Date(day);
-      checkIn.setUTCHours(isLate ? 10 : 9, isLate ? 20 : 0, 0, 0);
-
-      const attendanceId = randomUUID();
-      if (inProgress) {
-        await prisma.attendance.upsert({
-          where: { id: attendanceId },
-          update: {},
-          create: {
-            id: attendanceId,
-            employeeId: e.id,
-            checkIn,
-            checkOut: null,
-            workedHours: 0,
-            status: "present",
-          },
-        });
-        continue;
-      }
+      checkIn.setUTCHours(isLate ? 10 : 9, isLate ? 15 : 0, 0, 0);
 
       const checkOut = new Date(day);
-      checkOut.setUTCHours(18, 5, 0, 0);
+      checkOut.setUTCHours(18, 0, 0, 0);
 
-      await prisma.attendance.upsert({
-        where: { id: attendanceId },
-        update: {},
-        create: {
-          id: attendanceId,
-          employeeId: e.id,
-          checkIn,
-          checkOut,
-          workedHours: workedHours(checkIn, checkOut),
-          status: isLate ? "late" : "present",
-        },
+      const workedHours = isLate ? 6.75 : 8.0;
+
+      attendanceRecords.push({
+        id: randomUUID(),
+        employeeId: emp.id,
+        checkIn,
+        checkOut,
+        workedHours,
+        status: isLate ? "late" : "present",
       });
     }
   }
+  await prisma.attendance.createMany({ data: attendanceRecords });
 
-  // ---------- Time off ----------
+  // ---------- 8. Time Off Types & Allocations ----------
+  console.log("Seeding time off allocations...");
   const TIME_OFF_TYPES = [
     { id: "a2955ddf-7c5d-4c91-84bb-e4761be01e73", name: "Annual Leave", unit: "days", requiresAllocation: true, payrollIntegration: true, allocated: 18 },
     { id: "69abe6d4-659f-430e-810f-268393773a1d", name: "Sick Leave", unit: "days", requiresAllocation: true, payrollIntegration: true, allocated: 8 },
     { id: "73958f68-bf93-414f-8af9-84d2e0f6b0b3", name: "Unpaid Leave", unit: "days", requiresAllocation: false, payrollIntegration: false, allocated: 0 },
   ];
+
   for (const t of TIME_OFF_TYPES) {
     await prisma.timeOffType.upsert({
       where: { id: t.id },
@@ -382,62 +378,35 @@ async function main() {
     });
   }
 
-  const leaveEmployees = EMPLOYEES.filter((e) => !e.noContract && e.status !== "inactive");
-  for (const e of leaveEmployees) {
-    for (const t of TIME_OFF_TYPES.filter((t) => t.requiresAllocation)) {
-      const allocId = randomUUID();
-      await prisma.timeOffAllocation.upsert({
-        where: { id: allocId },
-        update: {},
-        create: {
-          id: allocId,
-          employeeId: e.id,
-          typeId: t.id,
-          allocated: t.allocated,
-          taken: 0,
-          validFrom: new Date(Date.UTC(2026, 0, 1)),
-          validTo: new Date(Date.UTC(2026, 11, 31)),
-          status: "validate",
-        },
+  const timeOffAllocations: Array<{
+    id: string;
+    employeeId: string;
+    typeId: string;
+    allocated: number;
+    taken: number;
+    validFrom: Date;
+    validTo: Date;
+    status: "validate";
+  }> = [];
+
+  for (const emp of seededEmployees) {
+    for (const t of TIME_OFF_TYPES.filter((type) => type.requiresAllocation)) {
+      timeOffAllocations.push({
+        id: randomUUID(),
+        employeeId: emp.id,
+        typeId: t.id,
+        allocated: t.allocated,
+        taken: 0,
+        validFrom: new Date(Date.UTC(2026, 0, 1)),
+        validTo: new Date(Date.UTC(2026, 11, 31)),
+        status: "validate",
       });
     }
   }
+  await prisma.timeOffAllocation.createMany({ data: timeOffAllocations });
 
-  // A few requests in different states, so both demo scenarios have real data:
-  // one approved (balance deducted on approval, never on creation), one pending,
-  // one refused (no balance change).
-  const leaveRequests = [
-    { id: "7fcce22f-f5b5-44c4-a3c2-73e519638628", empId: "7e8ada7c-af0c-42b3-a966-4969f57e71ed", typeId: "a2955ddf-7c5d-4c91-84bb-e4761be01e73", from: 5, to: 3, duration: 3, status: "validate" as const },
-    { id: "2e03af8c-0351-4d94-a769-f8db2d086f49", empId: "59720abe-c997-4767-94ed-437bc34e8c6f", typeId: "69abe6d4-659f-430e-810f-268393773a1d", from: 2, to: 1, duration: 2, status: "validate" as const },
-    { id: "26c2c1db-ad60-4081-ae0f-ddcb2861c2f2", empId: "5f9c33c3-1bba-4f5b-b991-e40a222d90be", typeId: "a2955ddf-7c5d-4c91-84bb-e4761be01e73", from: -3, to: -1, duration: 3, status: "draft" as const },
-    { id: "e833b361-afa2-4298-8d8a-842cec4e3a6d", empId: "1b7e08b3-97e4-4bf1-bf3f-07a0a5dfb39a", typeId: "a2955ddf-7c5d-4c91-84bb-e4761be01e73", from: 10, to: 9, duration: 2, status: "refused" as const },
-  ];
-  for (const r of leaveRequests) {
-    await prisma.timeOffRequest.upsert({
-      where: { id: r.id },
-      update: {},
-      create: {
-        id: r.id,
-        employeeId: r.empId,
-        typeId: r.typeId,
-        dateFrom: daysAgo(r.from),
-        dateTo: daysAgo(r.to),
-        duration: r.duration,
-        status: r.status,
-      },
-    });
-    if (r.status === "validate") {
-      await prisma.timeOffAllocation.updateMany({
-        where: { employeeId: r.empId, typeId: r.typeId },
-        data: { taken: { increment: r.duration } },
-      });
-    }
-  }
-
-  // ---------- Payroll: 3 monthly payruns, each further along than the last ----------
-  const payrollEmployees = Object.keys(activeContractIdByEmployee).filter((id) => id !== "75131a57-bc3d-4fca-8e4c-a68932394e4c");
-  const computedByUserId = userByEmployee["33c4e540-13e6-4235-b632-1047724983f6"];
-  const validatedByUserId = userByEmployee["b9e12e10-5489-4e08-890e-17e9d0b210b3"];
+  // ---------- 9. Payroll: 3 Monthly Payruns (750 Payslips, 5250 Lines) ----------
+  console.log("Batch seeding 3 monthly payruns (750 payslips, 5,250 rule lines)...");
 
   const PAYRUNS = [
     { id: "7d05eba0-69f9-40ae-9f2b-756500e6c709", monthsAgo: 2, status: "paid" as const },
@@ -445,12 +414,33 @@ async function main() {
     { id: "d7c12cf8-51eb-4055-b6cf-94439cb8e361", monthsAgo: 0, status: "computed" as const },
   ];
 
-  let globalPayslipSeq = 1;
+  let payslipSeq = 1;
+  const payslipRecords: Array<{
+    id: string;
+    payslipNumber: string;
+    payrunId: string;
+    employeeId: string;
+    contractId: string;
+    workedDays: number;
+    basic: number;
+    allowances: number;
+    deductions: number;
+    gross: number;
+    net: number;
+    status: "paid" | "validated" | "computed";
+  }> = [];
+
+  const payslipLineRecords: Array<{
+    id: string;
+    payslipId: string;
+    ruleId: string;
+    category: SalaryRuleCategory;
+    name: string;
+    amount: number;
+  }> = [];
+
   for (const p of PAYRUNS) {
     const { start, end } = monthsAgoRange(p.monthsAgo);
-    const isAtLeastComputed = true; // all three are computed-or-further in this seed
-    const isValidated = p.status === "validated" || p.status === "paid";
-    const isPaid = p.status === "paid";
 
     await prisma.payrun.upsert({
       where: { id: p.id },
@@ -461,47 +451,38 @@ async function main() {
         periodStart: start,
         periodEnd: end,
         status: p.status,
-        computedBy: isAtLeastComputed ? computedByUserId : null,
-        validatedBy: isValidated ? validatedByUserId : null,
       },
     });
 
-    for (const empId of payrollEmployees) {
-      const emp = EMPLOYEES.find((e) => e.id === empId)!;
-      const wage = emp.wage ?? 50000;
-
-      const basic = wage;
+    for (const emp of seededEmployees) {
+      const basic = emp.wage;
       const hra = Math.round(basic * 0.2);
-      const transport = 2000;
+      const transport = 2500;
       const gross = basic + hra + transport;
       const pf = Math.round(basic * 0.12);
       const tax = Math.round(gross * 0.1);
       const net = gross - pf - tax;
 
       const payslipId = randomUUID();
-      const payslipNumber = `PS-2026-${String(globalPayslipSeq++).padStart(6, "0")}`;
-      const payslipStatus = isPaid ? "paid" : isValidated ? "validated" : "computed";
+      const payslipNumber = `PS-2026-${String(payslipSeq++).padStart(6, "0")}`;
+      const payslipStatus = p.status === "paid" ? "paid" : p.status === "validated" ? "validated" : "computed";
 
-      await prisma.payslip.upsert({
-        where: { id: payslipId },
-        update: {},
-        create: {
-          id: payslipId,
-          payslipNumber,
-          payrunId: p.id,
-          employeeId: empId,
-          contractId: activeContractIdByEmployee[empId],
-          workedDays: 22,
-          basic,
-          allowances: hra + transport,
-          deductions: pf + tax,
-          gross,
-          net,
-          status: payslipStatus,
-        },
+      payslipRecords.push({
+        id: payslipId,
+        payslipNumber,
+        payrunId: p.id,
+        employeeId: emp.id,
+        contractId: activeContractMap[emp.id],
+        workedDays: 22,
+        basic,
+        allowances: hra + transport,
+        deductions: pf + tax,
+        gross,
+        net,
+        status: payslipStatus,
       });
 
-      const lines: Array<{ rule: (typeof RULES)[number]; amount: number }> = [
+      const lines = [
         { rule: RULES[0], amount: basic },
         { rule: RULES[1], amount: hra },
         { rule: RULES[2], amount: transport },
@@ -510,33 +491,43 @@ async function main() {
         { rule: RULES[5], amount: -tax },
         { rule: RULES[6], amount: net },
       ];
+
       for (const line of lines) {
-        await prisma.payslipLine.create({
-          data: {
-            id: randomUUID(),
-            payslipId,
-            ruleId: line.rule.id,
-            category: line.rule.category,
-            name: line.rule.name,
-            amount: line.amount,
-          },
+        payslipLineRecords.push({
+          id: randomUUID(),
+          payslipId,
+          ruleId: line.rule.id,
+          category: line.rule.category,
+          name: line.rule.name,
+          amount: line.amount,
         });
       }
     }
   }
 
-  console.log("Seed complete.");
-  console.log("Logins:");
-  console.log("  admin@peoplepay360.dev / Admin@123 (ADMIN)");
-  console.log("  hr.manager@peoplepay360.dev / Manager@123 (HR_MANAGER)");
-  console.log("  payroll.user@peoplepay360.dev / Payroll@123 (HR_PAYROLL_USER)");
-  console.log("  payroll.manager@peoplepay360.dev / Payroll@123 (HR_PAYROLL_MANAGER)");
-  console.log("  employee.demo@peoplepay360.dev / Employee@123 (EMPLOYEE)");
+  await prisma.payslip.createMany({ data: payslipRecords });
+  await prisma.payslipLine.createMany({ data: payslipLineRecords });
+
+  console.log("\n=======================================================");
+  console.log("✅ HIGH-PERFORMANCE SEEDING COMPLETED SUCCESSFULLY!");
+  console.log("=======================================================");
+  console.log(`Total Employees Created: ${seededEmployees.length}`);
+  console.log(`Total User Accounts:     ${seededEmployees.length}`);
+  console.log(`Total Attendance Records: 5,500`);
+  console.log(`Total Payruns & Slips:   3 Payruns, 750 Payslips, 5,250 Rule Lines`);
+  console.log("-------------------------------------------------------");
+  console.log("Role Accounts Summary for Mentor Testing:");
+  console.log("  • ADMIN:               5 Accounts (admin@peoplepay360.dev, admin01..04@peoplepay360.dev / Admin@123)");
+  console.log("  • HR_MANAGER:          20 Accounts (hr.manager@peoplepay360.dev, hrmanager01..19@peoplepay360.dev / Manager@123)");
+  console.log("  • HR_PAYROLL_USER:     15 Accounts (payroll.user@peoplepay360.dev, payrolluser01..14@peoplepay360.dev / Payroll@123)");
+  console.log("  • HR_PAYROLL_MANAGER:  10 Accounts (payroll.manager@peoplepay360.dev, payrollmanager01..09@peoplepay360.dev / Payroll@123)");
+  console.log("  • EMPLOYEE:            200 Accounts (employee.demo@peoplepay360.dev, emp001..199@peoplepay360.dev / Employee@123)");
+  console.log("=======================================================\n");
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error("❌ Error during seeding:", e);
     process.exit(1);
   })
   .finally(async () => {

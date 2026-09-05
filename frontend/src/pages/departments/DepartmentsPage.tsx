@@ -8,8 +8,10 @@ import { Card } from '../../components/common/Card';
 import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
+import { Pagination } from '../../components/common/Pagination';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 
@@ -17,6 +19,10 @@ export const DepartmentsPage: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -170,7 +176,7 @@ export const DepartmentsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {departments.map((dept) => {
+                {departments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((dept) => {
                   const parentDept = departments.find((d) => String(d.id) === String(dept.parent_department_id));
                   const headEmp = employees.find((e) => String(e.id) === String(dept.head_employee_id));
 
@@ -219,6 +225,18 @@ export const DepartmentsPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(departments.length / itemsPerPage)}
+            totalItems={departments.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(size) => {
+              setItemsPerPage(size);
+              setCurrentPage(1);
+            }}
+          />
         </div>
       )}
 
@@ -249,14 +267,15 @@ export const DepartmentsPage: React.FC = () => {
             helperText="Select a parent department to organize sub-units"
           />
 
-          <Select
+          <SearchableSelect
             label="Head of Department"
             value={headId}
-            onChange={(e) => setHeadId(e.target.value)}
+            onChange={(val) => setHeadId(val)}
             placeholder="Select Employee..."
             options={employees.map((e) => ({
               value: String(e.id),
-              label: `${e.name} — ${e.job_position}`,
+              label: e.name,
+              sublabel: e.job_position,
             }))}
           />
 

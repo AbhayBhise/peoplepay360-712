@@ -8,6 +8,7 @@ import { Badge } from '../../components/common/Badge';
 import { Card } from '../../components/common/Card';
 import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
+import { Pagination } from '../../components/common/Pagination';
 import { useToast } from '../../context/ToastContext';
 import { formatCurrency } from '../../utils/currency';
 
@@ -16,6 +17,10 @@ export const AllPayslipsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const { error } = useToast();
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     const load = async () => {
@@ -93,11 +98,11 @@ export const AllPayslipsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {filtered.map((p) => (
+                {filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p) => (
                   <tr key={p.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="py-3 px-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">#{p.id}</td>
                     <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">
-                      {p.employee_name || `Employee #${p.employee_id}`}
+                      {(p as any).employee?.name || p.employee_name || (p as any).employeeName || ((p as any).employee?.employeeCode || (p as any).employeeCode || (p.employee_id || (p as any).employeeId ? `Employee #${(p.employee_id || (p as any).employeeId).substring(0, 8)}` : 'Staff Member'))}
                     </td>
                     <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
                       {p.period_start} → {p.period_end}
@@ -145,6 +150,18 @@ export const AllPayslipsPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(filtered.length / itemsPerPage)}
+            totalItems={filtered.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(size) => {
+              setItemsPerPage(size);
+              setCurrentPage(1);
+            }}
+          />
         </div>
       )}
     </div>
