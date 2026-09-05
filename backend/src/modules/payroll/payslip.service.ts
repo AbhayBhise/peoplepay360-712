@@ -3,6 +3,17 @@ import { ApiError } from "../../utils/ApiError";
 import { AuthPayload, isHrmPlus } from "../../middleware/auth";
 import { generatePayslipPdf } from "./payslipPdf";
 
+// Named consistently, reused by both listPayslips and getPayslip so the list view and
+// detail view can never drift into showing different data for the same fields again —
+// the earlier bug was listPayslips including no relations at all (Employee/Structure
+// name never sent, not just mismapped) while getPayslip included relations but not deep
+// enough to reach the structure's actual name.
+const payslipInclude = {
+  employee: true,
+  payrun: { include: { structure: true } },
+  contract: { include: { salaryStructure: true } },
+} as const;
+
 export function listPayslips(auth: AuthPayload, filters: { payrunId?: string; employeeId?: string }) {
   const visibilityFilter = isHrmPlus(auth.roles)
     ? {}
@@ -15,13 +26,14 @@ export function listPayslips(auth: AuthPayload, filters: { payrunId?: string; em
       employeeId: filters.employeeId || undefined,
     },
     orderBy: { createdAt: "desc" },
+    include: payslipInclude,
   });
 }
 
 export async function getPayslip(auth: AuthPayload, id: string) {
   const payslip = await prisma.payslip.findUnique({
     where: { id },
-    include: { lines: { include: { rule: true } }, employee: true, payrun: true, contract: true },
+    include: { ...payslipInclude, lines: { include: { rule: true } } },
   });
   if (!payslip) throw ApiError.notFound(`payslip: no payslip with id ${id}`);
   if (!isHrmPlus(auth.roles) && payslip.employeeId !== auth.employeeId) {
