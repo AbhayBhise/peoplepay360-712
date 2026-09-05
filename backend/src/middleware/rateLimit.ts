@@ -12,3 +12,14 @@ export const loginRateLimit = rateLimit({
   legacyHeaders: false,
   message: { success: false, error: "auth: too many login attempts, try again in a few minutes" },
 });
+
+// Same reasoning as loginRateLimit, applied to the other endpoints that involve
+// guessing a secret (current password) or a token (password reset): change-password,
+// forgot-password, reset-password.
+export const accountSecurityRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: "too many attempts, try again in a few minutes" },
+});

@@ -2,11 +2,18 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { ok } from "../../utils/response";
+import { passwordSchema } from "../../utils/passwordPolicy";
+import { recordAudit } from "../../utils/audit";
 import * as authService from "./auth.service";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "must be a valid email address" }),
   password: z.string().min(1, { message: "is required" }),
+});
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, { message: "is required" }),
+  newPassword: passwordSchema,
 });
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
@@ -18,6 +25,13 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 export const me = asyncHandler(async (req: Request, res: Response) => {
   const result = await authService.getMe(req.auth!);
   return ok(res, result);
+});
+
+export const changePassword = asyncHandler(async (req: Request, res: Response) => {
+  const body = changePasswordSchema.parse(req.body);
+  await authService.changePassword(req.auth!, body.currentPassword, body.newPassword);
+  await recordAudit(req, { module: "auth", action: "change_password", recordId: req.auth!.userId });
+  return ok(res, { message: "Password changed successfully" });
 });
 
 // JWT auth is stateless — there is no server-side session to invalidate here. This

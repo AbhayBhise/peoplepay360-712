@@ -36,7 +36,7 @@ export async function sendMail(options: {
   const info = await transporter.sendMail({ from, ...options });
 
   if (!process.env.SMTP_HOST) {
-    console.log(`[mailer:jsonTransport] would send to ${options.to}: "${options.subject}"`);
+    console.log(`[mailer:jsonTransport] would send to ${options.to}: "${options.subject}"\n${options.text}`);
   }
   return info;
 }

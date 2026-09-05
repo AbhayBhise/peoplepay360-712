@@ -38,7 +38,29 @@ function attendanceWhere(filters: DashboardFilters) {
   };
 }
 
-export async function getSummary(filters: DashboardFilters) {
+// canSeePayroll gates the financial fields specifically — HR Manager gets this dashboard
+// too (attendance/leave are HR's job), but per the problem statement's role table
+// ("HR Manager: ...no access to payroll features"), the money figures must not be in
+// their response at all, not just hidden by the frontend.
+export async function getSummary(filters: DashboardFilters, canSeePayroll: boolean) {
+  const approvedTimeOff = await prisma.timeOffRequest.count({
+    where: {
+      status: "validate",
+      employee: filters.departmentId ? { departmentId: filters.departmentId } : undefined,
+      dateFrom: filters.periodStart || filters.periodEnd ? { gte: filters.periodStart, lte: filters.periodEnd } : undefined,
+    },
+  });
+
+  const totalAttendance = await prisma.attendance.count({ where: attendanceWhere(filters) });
+  const presentAttendance = await prisma.attendance.count({
+    where: { ...attendanceWhere(filters), status: { in: ["present", "late"] } },
+  });
+  const attendanceHealthPct = totalAttendance > 0 ? (presentAttendance / totalAttendance) * 100 : 0;
+
+  if (!canSeePayroll) {
+    return { approvedTimeOff, attendanceHealthPct: round2(attendanceHealthPct) };
+  }
+
   const paidPayslips = await prisma.payslip.findMany({
     where: { ...payslipWhere(filters), status: "paid" },
     select: { net: true },
@@ -54,20 +76,6 @@ export async function getSummary(filters: DashboardFilters) {
     computedOrBeyond.length > 0
       ? computedOrBeyond.reduce((sum, p) => sum + Number(p.net), 0) / computedOrBeyond.length
       : 0;
-
-  const approvedTimeOff = await prisma.timeOffRequest.count({
-    where: {
-      status: "validate",
-      employee: filters.departmentId ? { departmentId: filters.departmentId } : undefined,
-      dateFrom: filters.periodStart || filters.periodEnd ? { gte: filters.periodStart, lte: filters.periodEnd } : undefined,
-    },
-  });
-
-  const totalAttendance = await prisma.attendance.count({ where: attendanceWhere(filters) });
-  const presentAttendance = await prisma.attendance.count({
-    where: { ...attendanceWhere(filters), status: { in: ["present", "late"] } },
-  });
-  const attendanceHealthPct = totalAttendance > 0 ? (presentAttendance / totalAttendance) * 100 : 0;
 
   return {
     totalNetPaid: round2(totalNetPaid),
@@ -179,6 +187,61 @@ export async function getAlerts(filters: DashboardFilters) {
   // runtime check needed here.
 
   return alerts;
+}
+
+// Personal dashboard for any employee — no company financials, only their own data.
+// This is what an Employee sees instead of being blocked from the HRM+ endpoints above.
+export async function getMyDashboard(employeeId: string) {
+  const now = new Date();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+
+  const [attendanceThisMonth, allocations, recentRequests, recentPayslips] = await Promise.all([
+    prisma.attendance.findMany({ where: { employeeId, checkIn: { gte: monthStart } } }),
+    prisma.timeOffAllocation.findMany({
+      where: { employeeId, status: "validate" },
+      include: { type: true },
+    }),
+    prisma.timeOffRequest.findMany({
+      where: { employeeId },
+      orderBy: { dateFrom: "desc" },
+      take: 5,
+      include: { type: true },
+    }),
+    prisma.payslip.findMany({
+      where: { employeeId, status: { in: ["computed", "validated", "paid"] } },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+    }),
+  ]);
+
+  const present = attendanceThisMonth.filter((a) => a.status === "present" || a.status === "late").length;
+  const late = attendanceThisMonth.filter((a) => a.status === "late").length;
+  const missingCheckouts = attendanceThisMonth.filter((a) => a.checkOut === null).length;
+
+  const leaveBalances = allocations.map((a) => ({
+    typeName: a.type.name,
+    allocated: Number(a.allocated),
+    taken: Number(a.taken),
+    remaining: Number(a.allocated) - Number(a.taken),
+  }));
+
+  return {
+    attendanceThisMonth: { present, late, missingCheckouts, totalDays: attendanceThisMonth.length },
+    leaveBalances,
+    recentTimeOffRequests: recentRequests.map((r) => ({
+      typeName: r.type.name,
+      dateFrom: r.dateFrom,
+      dateTo: r.dateTo,
+      duration: Number(r.duration),
+      status: r.status,
+    })),
+    recentPayslips: recentPayslips.map((p) => ({
+      id: p.id,
+      net: Number(p.net),
+      status: p.status,
+      createdAt: p.createdAt,
+    })),
+  };
 }
 
 function round2(n: number): number {
