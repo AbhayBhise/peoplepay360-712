@@ -100,7 +100,7 @@ export const DashboardPage: React.FC = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded-full bg-purple-50 border border-purple-100 text-[#714B67] text-2xs font-bold font-mono">
+            <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-2xs font-bold font-mono">
               WORKFORCE COMMAND CENTER
             </span>
             <span className="text-slate-300">·</span>
@@ -117,14 +117,14 @@ export const DashboardPage: React.FC = () => {
         {/* Global Live Filter Bar */}
         <div className="flex flex-wrap items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 text-xs">
           <div className="flex items-center gap-1.5 px-2 py-1 text-slate-500 font-bold uppercase text-2xs">
-            <Filter className="w-3.5 h-3.5 text-[#714B67]" />
+            <Filter className="w-3.5 h-3.5 text-indigo-600" />
             Filters:
           </div>
 
           <select
             value={departmentId}
             onChange={(e) => setDepartmentId(e.target.value)}
-            className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:border-[#714B67] shadow-2xs font-medium"
+            className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:border-indigo-600 shadow-2xs font-medium"
           >
             <option value="">All Departments</option>
             {departments.map((d) => (
@@ -137,7 +137,7 @@ export const DashboardPage: React.FC = () => {
           <select
             value={employeeType}
             onChange={(e) => setEmployeeType(e.target.value)}
-            className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:border-[#714B67] shadow-2xs font-medium"
+            className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:border-indigo-600 shadow-2xs font-medium"
           >
             <option value="">All Employee Types</option>
             <option value="Full Time">Full Time</option>
@@ -167,7 +167,7 @@ export const DashboardPage: React.FC = () => {
       ) : (
         <>
           {/* 2. ACTION CENTER — WHAT NEEDS ATTENTION TODAY */}
-          <div className="bg-linear-to-r from-purple-950 via-slate-900 to-[#122b2a] rounded-2xl p-6 text-white shadow-lg border border-slate-800">
+          <div className="bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 rounded-2xl p-6 text-white shadow-lg border border-slate-800">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-teal-500/20 text-teal-300 flex items-center justify-center border border-teal-500/30">
@@ -200,9 +200,9 @@ export const DashboardPage: React.FC = () => {
                   size="sm"
                   variant="outline"
                   onClick={() => navigate('/attendance')}
-                  className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-2xs py-1 px-2.5 shrink-0"
+                  className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-2xs shrink-0"
                 >
-                  Review
+                  Triage Punches
                 </Button>
               </div>
 
@@ -214,16 +214,16 @@ export const DashboardPage: React.FC = () => {
                     <span>Pending Leave Approvals</span>
                   </div>
                   <p className="text-2xs text-slate-300 mt-1 leading-snug">
-                    Employee leave requests awaiting manager approval
+                    {summary?.approved_time_off_count ? 2 : 1} employee leave requests awaiting manager sign-off
                   </p>
                 </div>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => navigate('/time-off')}
-                  className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-2xs py-1 px-2.5 shrink-0"
+                  className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-2xs shrink-0"
                 >
-                  Approve
+                  Review Requests
                 </Button>
               </div>
 
@@ -231,21 +231,21 @@ export const DashboardPage: React.FC = () => {
               {isHRPUPlus() && (
                 <div className="bg-white/10 backdrop-blur-xs p-3.5 rounded-xl border border-white/15 flex items-start justify-between gap-3 hover:bg-white/15 transition-all">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 text-teal-300 font-bold text-xs">
+                    <div className="flex items-center gap-1.5 text-indigo-300 font-bold text-xs">
                       <CircleDollarSign className="w-3.5 h-3.5" />
-                      <span>Payroll Ready for Validation</span>
+                      <span>Payroll Cycle</span>
                     </div>
                     <p className="text-2xs text-slate-300 mt-1 leading-snug">
-                      Computed payslips require manager review and signoff
+                      Active payrun batch ready for computation and payslip generation
                     </p>
                   </div>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => navigate('/payroll/payruns')}
-                    className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-2xs py-1 px-2.5 shrink-0"
+                    className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-2xs shrink-0"
                   >
-                    Open
+                    Open Payruns
                   </Button>
                 </div>
               )}
@@ -284,22 +284,22 @@ export const DashboardPage: React.FC = () => {
                   <span className="text-2xs text-amber-700">Scope defined</span>
                 </div>
 
-                <div className="p-3 bg-purple-50/60 rounded-xl border border-purple-200/80">
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xs font-bold text-purple-800 uppercase">Computed</span>
-                    <span className="w-2 h-2 rounded-full bg-purple-500" />
-                  </div>
-                  <div className="text-lg font-black font-financial text-purple-900 mt-1">1 Batch</div>
-                  <span className="text-2xs text-purple-700">Rules executed</span>
-                </div>
-
                 <div className="p-3 bg-indigo-50/60 rounded-xl border border-indigo-200/80">
                   <div className="flex items-center justify-between">
-                    <span className="text-2xs font-bold text-indigo-800 uppercase">Validated</span>
+                    <span className="text-2xs font-bold text-indigo-800 uppercase">Computed</span>
                     <span className="w-2 h-2 rounded-full bg-indigo-500" />
                   </div>
-                  <div className="text-lg font-black font-financial text-indigo-900 mt-1">0 Batches</div>
-                  <span className="text-2xs text-indigo-700">Ready for payment</span>
+                  <div className="text-lg font-black font-financial text-indigo-900 mt-1">1 Batch</div>
+                  <span className="text-2xs text-indigo-700">Rules executed</span>
+                </div>
+
+                <div className="p-3 bg-sky-50/60 rounded-xl border border-sky-200/80">
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xs font-bold text-sky-800 uppercase">Validated</span>
+                    <span className="w-2 h-2 rounded-full bg-sky-500" />
+                  </div>
+                  <div className="text-lg font-black font-financial text-sky-900 mt-1">0 Batches</div>
+                  <span className="text-2xs text-sky-700">Ready for payment</span>
                 </div>
 
                 <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-200/80">
@@ -338,7 +338,7 @@ export const DashboardPage: React.FC = () => {
             <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Payslips Generated</span>
-                <div className="w-8 h-8 rounded-lg bg-purple-50 text-[#714B67] flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
                   <FileSpreadsheet className="w-4 h-4" />
                 </div>
               </div>
@@ -346,7 +346,7 @@ export const DashboardPage: React.FC = () => {
                 <div className="text-2xl font-extrabold text-slate-900 font-financial tracking-tight">
                   {summary?.payslips_generated ?? 12}
                 </div>
-                <div className="text-2xs text-purple-700 font-semibold mt-1">
+                <div className="text-2xs text-indigo-700 font-semibold mt-1">
                   Batched Line Items
                 </div>
               </div>
@@ -356,7 +356,7 @@ export const DashboardPage: React.FC = () => {
             <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Average Salary</span>
-                <div className="w-8 h-8 rounded-lg bg-teal-50 text-[#008784] flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center">
                   <TrendingUp className="w-4 h-4" />
                 </div>
               </div>
@@ -414,7 +414,7 @@ export const DashboardPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-[#714B67]" />
+                    <Building2 className="w-4 h-4 text-indigo-600" />
                     <span>Department Salary Expenditure & Headcount</span>
                   </h3>
                   <p className="text-2xs text-slate-500 mt-0.5">
@@ -446,7 +446,7 @@ export const DashboardPage: React.FC = () => {
                         </div>
                         <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
                           <div
-                            className="bg-linear-to-r from-[#714B67] to-[#008784] h-full rounded-full transition-all duration-500"
+                            className="bg-linear-to-r from-indigo-600 to-teal-500 h-full rounded-full transition-all duration-500"
                             style={{ width: `${Math.max(pct, 6)}%` }}
                           />
                         </div>
@@ -461,7 +461,7 @@ export const DashboardPage: React.FC = () => {
             <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
               <div>
                 <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-teal-600" />
+                  <Clock className="w-4 h-4 text-indigo-600" />
                   <span>Attendance Health Radar</span>
                 </h3>
                 <p className="text-2xs text-slate-500 mt-0.5">Real-time punch metrics and exception rates</p>

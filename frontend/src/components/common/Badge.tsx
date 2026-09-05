@@ -39,7 +39,7 @@ export const Badge: React.FC<BadgeProps> = ({
     draft: 'bg-amber-50 text-amber-800 border-amber-200',
     validate: 'bg-blue-50 text-blue-800 border-blue-200',
     validated: 'bg-indigo-50 text-indigo-800 border-indigo-200',
-    computed: 'bg-purple-50 text-purple-800 border-purple-200',
+    computed: 'bg-indigo-50 text-indigo-800 border-indigo-200',
     paid: 'bg-emerald-100 text-emerald-900 border-emerald-300 font-semibold',
     refused: 'bg-rose-50 text-rose-800 border-rose-200',
     warning: 'bg-amber-100 text-amber-900 border-amber-300',

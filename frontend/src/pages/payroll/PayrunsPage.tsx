@@ -47,7 +47,7 @@ export const PayrunsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <CircleDollarSign className="w-6 h-6 text-[#714B67]" />
+            <CircleDollarSign className="w-6 h-6 text-indigo-600" />
             <span>Payroll Runs (Payruns)</span>
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -96,7 +96,7 @@ export const PayrunsPage: React.FC = () => {
                   <tr
                     key={pr.id}
                     onClick={() => navigate(`/payroll/payruns/${pr.id}`)}
-                    className="hover:bg-purple-50/40 cursor-pointer transition-colors"
+                    className="hover:bg-indigo-50/40 cursor-pointer transition-colors"
                   >
                     <td className="py-3 px-4">
                       <div className="font-bold text-slate-900">
@@ -104,7 +104,7 @@ export const PayrunsPage: React.FC = () => {
                       </div>
                       <div className="text-2xs text-slate-400 font-mono">ID: #{pr.id}</div>
                     </td>
-                    <td className="py-3 px-4 text-purple-900 font-semibold">
+                    <td className="py-3 px-4 text-indigo-900 font-semibold">
                       {pr.structure_name || `Structure #${pr.structure_id}`}
                     </td>
                     <td className="py-3 px-4 text-slate-600">
@@ -132,7 +132,7 @@ export const PayrunsPage: React.FC = () => {
                       </Badge>
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <span className="text-xs font-semibold text-[#714B67] hover:underline">
+                      <span className="text-xs font-semibold text-indigo-600 hover:underline">
                         Open Processing →
                       </span>
                     </td>

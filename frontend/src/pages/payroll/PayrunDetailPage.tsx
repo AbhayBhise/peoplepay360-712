@@ -246,7 +246,7 @@ export const PayrunDetailPage: React.FC = () => {
                 <div
                   className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all shadow-xs ${
                     isCurrent
-                      ? 'bg-[#714B67] text-white ring-4 ring-purple-100'
+                      ? 'bg-indigo-600 text-white ring-4 ring-indigo-100'
                       : isCompleted
                       ? 'bg-teal-600 text-white'
                       : 'bg-white text-slate-400 border-2 border-slate-200'
@@ -256,7 +256,7 @@ export const PayrunDetailPage: React.FC = () => {
                 </div>
                 <span
                   className={`text-xs mt-2 font-semibold ${
-                    isCurrent ? 'text-[#714B67]' : isCompleted ? 'text-teal-800' : 'text-slate-400'
+                    isCurrent ? 'text-indigo-600' : isCompleted ? 'text-teal-800' : 'text-slate-400'
                   }`}
                 >
                   {step.label}
@@ -286,7 +286,7 @@ export const PayrunDetailPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4! shadow-2xs">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 text-[#714B67] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
               <Layers className="w-5 h-5" />
             </div>
             <div>
@@ -331,7 +331,7 @@ export const PayrunDetailPage: React.FC = () => {
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
           <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-            <FileSpreadsheet className="w-4 h-4 text-[#714B67]" />
+            <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
             <span>Generated Payslips ({payslipsList.length})</span>
           </h3>
         </div>
@@ -390,7 +390,7 @@ export const PayrunDetailPage: React.FC = () => {
                     <td className="py-3 px-4 text-right">
                       <Link
                         to={`/payroll/payslips/${p.id}`}
-                        className="text-xs font-semibold text-[#714B67] hover:underline"
+                        className="text-xs font-semibold text-indigo-600 hover:underline"
                       >
                         View Breakdown →
                       </Link>

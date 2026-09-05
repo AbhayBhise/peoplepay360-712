@@ -20,7 +20,7 @@ export const Spinner: React.FC<SpinnerProps> = ({
 
   return (
     <div className={`flex flex-col items-center justify-center py-10 gap-3 text-slate-500 ${className}`}>
-      <Loader2 className={`${sizeStyles[size]} animate-spin text-[#714B67]`} />
+      <Loader2 className={`${sizeStyles[size]} animate-spin text-indigo-600`} />
       {label && <p className="text-xs font-medium text-slate-500 animate-pulse">{label}</p>}
     </div>
   );

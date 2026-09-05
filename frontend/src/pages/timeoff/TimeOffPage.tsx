@@ -221,7 +221,7 @@ export const TimeOffPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <CalendarDays className="w-6 h-6 text-[#714B67]" />
+            <CalendarDays className="w-6 h-6 text-indigo-600" />
             <span>Time Off & Leave Balance Experience</span>
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -262,16 +262,16 @@ export const TimeOffPage: React.FC = () => {
         <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-900">Sick Leave</span>
-            <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 text-2xs font-bold font-mono">
+            <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-2xs font-bold font-mono">
               8 / 10 Days Left
             </span>
           </div>
           <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-            <div className="bg-[#714B67] h-full rounded-full" style={{ width: '80%' }} />
+            <div className="bg-indigo-600 h-full rounded-full" style={{ width: '80%' }} />
           </div>
           <div className="flex items-center justify-between text-2xs text-slate-500">
             <span>Taken: 2 days</span>
-            <span className="font-bold text-purple-900">Remaining: 8 days</span>
+            <span className="font-bold text-indigo-900">Remaining: 8 days</span>
           </div>
         </div>
 
@@ -299,7 +299,7 @@ export const TimeOffPage: React.FC = () => {
             onClick={() => setActiveTab('requests')}
             className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
               activeTab === 'requests'
-                ? 'border-[#714B67] text-[#714B67]'
+                ? 'border-indigo-600 text-indigo-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -309,7 +309,7 @@ export const TimeOffPage: React.FC = () => {
             onClick={() => setActiveTab('allocations')}
             className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
               activeTab === 'allocations'
-                ? 'border-[#714B67] text-[#714B67]'
+                ? 'border-indigo-600 text-indigo-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -319,7 +319,7 @@ export const TimeOffPage: React.FC = () => {
             onClick={() => setActiveTab('types')}
             className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
               activeTab === 'types'
-                ? 'border-[#714B67] text-[#714B67]'
+                ? 'border-indigo-600 text-indigo-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -488,7 +488,7 @@ export const TimeOffPage: React.FC = () => {
             <div key={t.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <h3 className="font-bold text-slate-900 text-sm">{t.name}</h3>
-                <span className="px-2 py-0.5 rounded-full bg-purple-50 text-[#714B67] text-2xs font-bold border border-purple-100 uppercase">
+                <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-2xs font-bold border border-indigo-100 uppercase">
                   {t.unit}
                 </span>
               </div>

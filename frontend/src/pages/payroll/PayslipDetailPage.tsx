@@ -105,7 +105,7 @@ export const PayslipDetailPage: React.FC = () => {
         {/* Company & Employee Identity Banner */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 border-b border-slate-200 gap-4">
           <div>
-            <div className="text-xl font-extrabold text-[#714B67] tracking-tight">
+            <div className="text-xl font-extrabold text-indigo-600 tracking-tight">
               People<span className="text-teal-600">Pay360</span>
             </div>
             <p className="text-xs text-slate-500">Official Monthly Earnings Statement</p>
@@ -169,7 +169,7 @@ export const PayslipDetailPage: React.FC = () => {
                       <tr
                         key={idx}
                         className={`hover:bg-slate-50 transition-colors ${
-                          isNet ? 'bg-emerald-50/50 font-bold' : isGross ? 'bg-purple-50/40 font-semibold' : ''
+                          isNet ? 'bg-emerald-50/50 font-bold' : isGross ? 'bg-indigo-50/40 font-semibold' : ''
                         }`}
                       >
                         <td className="py-3 px-4">
@@ -180,7 +180,7 @@ export const PayslipDetailPage: React.FC = () => {
                                 : line.category === 'Allowance'
                                 ? 'bg-teal-100 text-teal-800'
                                 : line.category === 'Basic'
-                                ? 'bg-purple-100 text-[#714B67]'
+                                ? 'bg-indigo-100 text-indigo-700'
                                 : isNet
                                 ? 'bg-emerald-100 text-emerald-900'
                                 : 'bg-slate-100 text-slate-800'
@@ -207,7 +207,7 @@ export const PayslipDetailPage: React.FC = () => {
                 ) : (
                   <>
                     <tr className="hover:bg-slate-50">
-                      <td className="py-3 px-4"><span className="px-2 py-0.5 rounded bg-purple-100 text-[#714B67] text-2xs font-semibold">Basic</span></td>
+                      <td className="py-3 px-4"><span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 text-2xs font-semibold">Basic</span></td>
                       <td className="py-3 px-4 text-slate-800 font-medium">Basic Salary</td>
                       <td className="py-3 px-4 text-right font-mono font-semibold">${payslip.basic?.toLocaleString()}</td>
                     </tr>
@@ -229,7 +229,7 @@ export const PayslipDetailPage: React.FC = () => {
                   <td colSpan={2} className="py-3 px-4 text-slate-700 uppercase tracking-wider text-xs">
                     Gross Salary
                   </td>
-                  <td className="py-3 px-4 text-right font-mono text-purple-900 text-sm">
+                  <td className="py-3 px-4 text-right font-mono text-indigo-900 text-sm">
                     ${payslip.gross?.toLocaleString()}
                   </td>
                 </tr>

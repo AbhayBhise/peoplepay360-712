@@ -66,7 +66,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       category: 'Navigation',
       title: 'Executive Dashboard',
       subtitle: 'Real-time KPIs, Action Center, and Payroll Health',
-      icon: <LayoutDashboard className="w-4 h-4 text-[#714B67]" />,
+      icon: <LayoutDashboard className="w-4 h-4 text-indigo-600" />,
       action: () => { navigate('/dashboard'); onClose(); },
       roleAllowed: true,
     },
@@ -75,7 +75,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       category: 'Navigation',
       title: 'Employees Directory',
       subtitle: 'Kanban & List views, Employee 360 Hub',
-      icon: <Users className="w-4 h-4 text-purple-600" />,
+      icon: <Users className="w-4 h-4 text-indigo-600" />,
       action: () => { navigate('/employees'); onClose(); },
       roleAllowed: true,
     },
@@ -120,7 +120,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       category: 'Navigation',
       title: 'Payrun Batches',
       subtitle: '2-Step Wizard, batch computation, and validation',
-      icon: <CircleDollarSign className="w-4 h-4 text-[#714B67]" />,
+      icon: <CircleDollarSign className="w-4 h-4 text-indigo-600" />,
       action: () => { navigate('/payroll/payruns'); onClose(); },
       roleAllowed: isHRPUPlus(),
     },
@@ -158,7 +158,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       category: 'Actions',
       title: 'Add New Employee',
       subtitle: 'Create employee record and assign department',
-      icon: <Plus className="w-4 h-4 text-purple-600" />,
+      icon: <Plus className="w-4 h-4 text-indigo-600" />,
       action: () => {
         onClose();
         if (onTriggerQuickAction) onTriggerQuickAction('new_employee');
@@ -197,7 +197,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       category: 'Actions',
       title: 'Launch Payrun Wizard',
       subtitle: 'Start 2-step period & employee selection',
-      icon: <CircleDollarSign className="w-4 h-4 text-[#714B67]" />,
+      icon: <CircleDollarSign className="w-4 h-4 text-indigo-600" />,
       action: () => {
         onClose();
         if (onTriggerQuickAction) onTriggerQuickAction('launch_payrun');
@@ -275,7 +275,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     onMouseEnter={() => setSelectedIndex(idx)}
                     className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl cursor-pointer transition-all ${
                       isSelected
-                        ? 'bg-purple-50 text-[#714B67] border border-purple-100 shadow-2xs'
+                        ? 'bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-2xs'
                         : 'hover:bg-slate-50 text-slate-700'
                     }`}
                   >
@@ -303,7 +303,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     </div>
                     <div className="flex items-center gap-1.5 text-2xs text-slate-400 font-medium">
                       <span>Jump</span>
-                      <CornerDownLeft className="w-3.5 h-3.5 text-purple-600" />
+                      <CornerDownLeft className="w-3.5 h-3.5 text-indigo-600" />
                     </div>
                   </div>
                 );

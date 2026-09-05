@@ -143,7 +143,7 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({
       {/* Brand Header */}
       <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800/80 bg-slate-950/40">
         <NavLink to="/dashboard" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 rounded-xl bg-linear-to-tr from-[#714B67] to-[#008784] text-white flex items-center justify-center font-black text-lg shadow-md border border-white/20 group-hover:scale-105 transition-transform">
+          <div className="w-9 h-9 rounded-xl bg-linear-to-tr from-indigo-600 to-teal-500 text-white flex items-center justify-center font-black text-lg shadow-md border border-white/20 group-hover:scale-105 transition-transform">
             P
           </div>
           <div className="leading-tight">
@@ -182,7 +182,7 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({
                       onClick={onClose}
                       className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all group ${
                         isActive
-                          ? 'bg-[#714B67] text-white font-semibold shadow-xs'
+                          ? 'bg-indigo-600 text-white font-semibold shadow-xs'
                           : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
                       }`}
                     >
@@ -214,7 +214,7 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({
       <div className="p-3 border-t border-slate-800/80 bg-slate-950/40">
         <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 flex items-center justify-between">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-linear-to-tr from-[#714B67] to-teal-600 text-white font-bold flex items-center justify-center text-xs shrink-0 shadow-2xs border border-white/20">
+            <div className="w-8 h-8 rounded-lg bg-linear-to-tr from-indigo-600 to-teal-500 text-white font-bold flex items-center justify-center text-xs shrink-0 shadow-2xs border border-white/20">
               {user?.name ? user.name.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase() || 'U'}
             </div>
             <div className="min-w-0">

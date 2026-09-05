@@ -53,17 +53,17 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-[#2d1829] to-[#0d2221] flex items-center justify-center p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-indigo-950 flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <div className="max-w-md w-full animate-fade-in my-auto">
         {/* Brand Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-linear-to-tr from-[#714B67] to-[#008784] text-white shadow-xl mb-3 border border-white/20">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-linear-to-tr from-indigo-600 to-teal-500 text-white shadow-xl mb-3 border border-white/20">
             <span className="font-extrabold text-2xl tracking-tighter">P</span>
           </div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">
             People<span className="text-teal-400">Pay360</span>
           </h1>
-          <p className="text-xs sm:text-sm text-purple-200/90 mt-1 font-medium">
+          <p className="text-xs sm:text-sm text-indigo-200/90 mt-1 font-medium">
             Integrated HR, Attendance & Payroll Platform
           </p>
         </div>
@@ -108,7 +108,7 @@ export const LoginPage: React.FC = () => {
             <Button
               type="submit"
               variant="primary"
-              className="w-full mt-2 py-2.5 bg-[#714B67] hover:bg-[#5a3b52] font-semibold text-sm shadow-md"
+              className="w-full mt-2 py-2.5 bg-indigo-600 hover:bg-indigo-700 font-semibold text-sm shadow-md"
               isLoading={loading}
               icon={<ShieldCheck className="w-4 h-4" />}
             >
@@ -128,9 +128,9 @@ export const LoginPage: React.FC = () => {
                   key={acc.label}
                   type="button"
                   onClick={() => handleQuickFill(acc.email, acc.password)}
-                  className="p-2 text-left bg-slate-50 hover:bg-purple-50 hover:border-purple-200 border border-slate-200 rounded-lg transition-all group cursor-pointer"
+                  className="p-2 text-left bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 border border-slate-200 rounded-lg transition-all group cursor-pointer"
                 >
-                  <div className="text-xs font-bold text-slate-800 group-hover:text-[#714B67]">
+                  <div className="text-xs font-bold text-slate-800 group-hover:text-indigo-600">
                     {acc.label}
                   </div>
                   <div className="text-2xs text-slate-500 truncate">{acc.email.split('@')[0]}</div>

@@ -80,7 +80,7 @@ export const AppLayout: React.FC = () => {
                   <React.Fragment key={url}>
                     <ChevronRight className="w-3.5 h-3.5 text-slate-300 shrink-0" />
                     {isLast ? (
-                      <span className="font-bold text-[#714B67] truncate">{getSegmentTitle(seg)}</span>
+                      <span className="font-bold text-indigo-600 truncate">{getSegmentTitle(seg)}</span>
                     ) : (
                       <Link to={url} className="hover:text-slate-900 font-medium truncate">
                         {getSegmentTitle(seg)}

@@ -133,7 +133,7 @@ export const EmployeeDetailPage: React.FC = () => {
             Employees Directory
           </Button>
           <span className="text-slate-300">/</span>
-          <span className="text-xs font-bold text-[#714B67] uppercase font-mono">Employee 360</span>
+          <span className="text-xs font-bold text-indigo-600 uppercase font-mono">Employee 360</span>
         </div>
 
         {isHRMPlus() && (
@@ -150,10 +150,10 @@ export const EmployeeDetailPage: React.FC = () => {
 
       {/* EMPLOYEE 360 COMMAND BANNER */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="bg-linear-to-r from-slate-900 via-[#3a1d33] to-[#122b2a] p-6 sm:p-8 text-white">
+        <div className="bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 p-6 sm:p-8 text-white">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-5">
-              <div className="w-20 h-20 rounded-2xl bg-linear-to-tr from-[#714B67] to-teal-500 text-white font-black text-3xl flex items-center justify-center shadow-xl border-2 border-white/30 shrink-0">
+              <div className="w-20 h-20 rounded-2xl bg-linear-to-tr from-indigo-600 to-teal-500 text-white font-black text-3xl flex items-center justify-center shadow-xl border-2 border-white/30 shrink-0">
                 {employee.name.charAt(0).toUpperCase()}
               </div>
               <div className="space-y-1">
@@ -165,13 +165,13 @@ export const EmployeeDetailPage: React.FC = () => {
                     {employee.status === 'active' ? 'Active Employee' : 'Inactive'}
                   </Badge>
                 </div>
-                <p className="text-sm font-semibold text-purple-200 flex items-center gap-2">
+                <p className="text-sm font-semibold text-indigo-200 flex items-center gap-2">
                   <Briefcase className="w-4 h-4 text-teal-400" />
                   <span>{employee.job_position}</span>
                 </p>
                 <div className="flex flex-wrap items-center gap-4 text-xs text-slate-300 pt-1">
                   <span className="flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5 text-purple-400" />
+                    <Building2 className="w-3.5 h-3.5 text-indigo-400" />
                     {employee.department_name || `Department #${employee.department_id || '—'}`}
                   </span>
                   {employee.email && (
@@ -195,7 +195,7 @@ export const EmployeeDetailPage: React.FC = () => {
         {/* SMART BUTTONS BAR WITH LIVE METRICS */}
         <div className="bg-slate-50/90 border-b border-slate-200 px-6 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="text-2xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <TrendingUp className="w-3.5 h-3.5 text-[#714B67]" />
+            <TrendingUp className="w-3.5 h-3.5 text-indigo-600" />
             Live Operational Modules:
           </div>
 
@@ -205,11 +205,11 @@ export const EmployeeDetailPage: React.FC = () => {
               onClick={() => setActiveTab('contracts')}
               className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === 'contracts'
-                  ? 'bg-[#714B67] text-white border-[#714B67] shadow-sm'
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
                   : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
               }`}
             >
-              <FileSpreadsheet className={`w-4 h-4 ${activeTab === 'contracts' ? 'text-purple-200' : 'text-purple-600'}`} />
+              <FileSpreadsheet className={`w-4 h-4 ${activeTab === 'contracts' ? 'text-indigo-200' : 'text-indigo-600'}`} />
               <div className="text-left leading-tight">
                 <div className="text-2xs uppercase tracking-wider opacity-80">Contracts</div>
                 <div className="text-sm font-bold font-financial">{contractsCount}</div>
@@ -221,7 +221,7 @@ export const EmployeeDetailPage: React.FC = () => {
               onClick={() => setActiveTab('attendance')}
               className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === 'attendance'
-                  ? 'bg-[#714B67] text-white border-[#714B67] shadow-sm'
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
                   : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
               }`}
             >
@@ -237,7 +237,7 @@ export const EmployeeDetailPage: React.FC = () => {
               onClick={() => setActiveTab('timeoff')}
               className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === 'timeoff'
-                  ? 'bg-[#714B67] text-white border-[#714B67] shadow-sm'
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
                   : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
               }`}
             >
@@ -253,7 +253,7 @@ export const EmployeeDetailPage: React.FC = () => {
               onClick={() => setActiveTab('payslips')}
               className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === 'payslips'
-                  ? 'bg-[#714B67] text-white border-[#714B67] shadow-sm'
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
                   : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
               }`}
             >
@@ -273,7 +273,7 @@ export const EmployeeDetailPage: React.FC = () => {
               onClick={() => setActiveTab('overview')}
               className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
                 activeTab === 'overview'
-                  ? 'border-[#714B67] text-[#714B67]'
+                  ? 'border-indigo-600 text-indigo-600'
                   : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -283,7 +283,7 @@ export const EmployeeDetailPage: React.FC = () => {
               onClick={() => setActiveTab('contracts')}
               className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
                 activeTab === 'contracts'
-                  ? 'border-[#714B67] text-[#714B67]'
+                  ? 'border-indigo-600 text-indigo-600'
                   : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -293,7 +293,7 @@ export const EmployeeDetailPage: React.FC = () => {
               onClick={() => setActiveTab('attendance')}
               className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
                 activeTab === 'attendance'
-                  ? 'border-[#714B67] text-[#714B67]'
+                  ? 'border-indigo-600 text-indigo-600'
                   : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -303,7 +303,7 @@ export const EmployeeDetailPage: React.FC = () => {
               onClick={() => setActiveTab('timeoff')}
               className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
                 activeTab === 'timeoff'
-                  ? 'border-[#714B67] text-[#714B67]'
+                  ? 'border-indigo-600 text-indigo-600'
                   : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -313,7 +313,7 @@ export const EmployeeDetailPage: React.FC = () => {
               onClick={() => setActiveTab('payslips')}
               className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
                 activeTab === 'payslips'
-                  ? 'border-[#714B67] text-[#714B67]'
+                  ? 'border-indigo-600 text-indigo-600'
                   : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -331,7 +331,7 @@ export const EmployeeDetailPage: React.FC = () => {
                 {/* Left Card: Organizational Architecture */}
                 <div className="bg-slate-50/70 rounded-2xl border border-slate-200/80 p-6 space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-[#714B67]" />
+                    <Building2 className="w-4 h-4 text-indigo-600" />
                     <span>Organizational Placement</span>
                   </h3>
                   <div className="grid grid-cols-2 gap-4 text-xs">
@@ -376,13 +376,13 @@ export const EmployeeDetailPage: React.FC = () => {
               {/* EMPLOYEE OPERATIONAL TIMELINE */}
               <div className="space-y-4 pt-2">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                  <History className="w-4 h-4 text-purple-600" />
+                  <History className="w-4 h-4 text-indigo-600" />
                   <span>Workforce Lifecycle Timeline</span>
                 </h3>
 
                 <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
                   <div className="relative">
-                    <span className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-[#714B67] ring-4 ring-purple-100" />
+                    <span className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-indigo-600 ring-4 ring-indigo-100" />
                     <div className="text-xs font-bold text-slate-900">Active Contract Coverage</div>
                     <p className="text-2xs text-slate-500">
                       Contract active for current period under {employee.department_name || 'assigned department'}.
@@ -438,7 +438,7 @@ export const EmployeeDetailPage: React.FC = () => {
                         <tr key={c.id} className="hover:bg-slate-50/80">
                           <td className="py-3 px-4 font-bold text-slate-900">{c.position}</td>
                           <td className="py-3 px-4 font-financial font-extrabold text-slate-900">${c.wage.toLocaleString()}</td>
-                          <td className="py-3 px-4 text-purple-900 font-semibold">{c.salary_structure_name || `Structure #${c.salary_structure_id}`}</td>
+                          <td className="py-3 px-4 text-indigo-900 font-semibold">{c.salary_structure_name || `Structure #${c.salary_structure_id}`}</td>
                           <td className="py-3 px-4 text-slate-600">
                             {c.start_date} {c.end_date ? `to ${c.end_date}` : '→ Permanent'}
                           </td>
@@ -586,7 +586,7 @@ export const EmployeeDetailPage: React.FC = () => {
                     <tbody className="divide-y divide-slate-100">
                       {payslips.map((p) => (
                         <tr key={p.id} className="hover:bg-slate-50/80">
-                          <td className="py-3 px-4 font-mono font-bold text-[#714B67]">#{p.id}</td>
+                          <td className="py-3 px-4 font-mono font-bold text-indigo-600">#{p.id}</td>
                           <td className="py-3 px-4">{p.worked_days ?? '—'}</td>
                           <td className="py-3 px-4 font-financial font-semibold">${p.basic?.toLocaleString() ?? '—'}</td>
                           <td className="py-3 px-4 font-financial font-extrabold text-emerald-800 text-sm">
@@ -610,7 +610,7 @@ export const EmployeeDetailPage: React.FC = () => {
                           <td className="py-3 px-4 text-right">
                             <Link
                               to={`/payroll/payslips/${p.id}`}
-                              className="text-xs font-bold text-[#714B67] hover:underline"
+                              className="text-xs font-bold text-indigo-600 hover:underline"
                             >
                               View Breakdown →
                             </Link>

@@ -66,7 +66,7 @@ export const ReportsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-[#714B67]" />
+            <BarChart3 className="w-6 h-6 text-indigo-600" />
             <span>Workforce & Financial Analytics Reports</span>
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -91,7 +91,7 @@ export const ReportsPage: React.FC = () => {
             onClick={() => setActiveReport('payroll')}
             className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
               activeReport === 'payroll'
-                ? 'border-[#714B67] text-[#714B67]'
+                ? 'border-indigo-600 text-indigo-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -101,7 +101,7 @@ export const ReportsPage: React.FC = () => {
             onClick={() => setActiveReport('departments')}
             className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
               activeReport === 'departments'
-                ? 'border-[#714B67] text-[#714B67]'
+                ? 'border-indigo-600 text-indigo-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >

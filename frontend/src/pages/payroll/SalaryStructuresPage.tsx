@@ -161,7 +161,7 @@ export const SalaryStructuresPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <Layers className="w-6 h-6 text-[#714B67]" />
+            <Layers className="w-6 h-6 text-indigo-600" />
             <span>Salary Structures & Sequenced Rules</span>
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -209,7 +209,7 @@ export const SalaryStructuresPage: React.FC = () => {
                     onClick={() => setSelectedStructure(s)}
                     className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                       isSelected
-                        ? 'bg-purple-50/80 border-[#714B67] shadow-xs'
+                        ? 'bg-indigo-50/80 border-indigo-600 shadow-xs'
                         : 'bg-white border-slate-200 hover:border-slate-300'
                     }`}
                   >
@@ -218,7 +218,7 @@ export const SalaryStructuresPage: React.FC = () => {
                       <div className="text-2xs text-slate-500 mt-0.5">Structure ID: #{s.id}</div>
                     </div>
                     <ChevronRight
-                      className={`w-4 h-4 ${isSelected ? 'text-[#714B67]' : 'text-slate-300'}`}
+                      className={`w-4 h-4 ${isSelected ? 'text-indigo-600' : 'text-slate-300'}`}
                     />
                   </div>
                 );
@@ -233,7 +233,7 @@ export const SalaryStructuresPage: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-bold text-slate-900">{selectedStructure?.name}</h3>
                   <p className="text-xs text-slate-500">
-                    Rules execute in strict <span className="font-semibold text-purple-900">Sequence order</span> from lowest to highest.
+                    Rules execute in strict <span className="font-semibold text-indigo-900">Sequence order</span> from lowest to highest.
                   </p>
                 </div>
                 {isHRPMPlus() && (
@@ -273,11 +273,11 @@ export const SalaryStructuresPage: React.FC = () => {
                     <tbody className="divide-y divide-slate-100">
                       {rules.map((r) => (
                         <tr key={r.id} className="hover:bg-slate-50/80">
-                          <td className="py-2.5 px-3 font-mono font-bold text-[#714B67]">
+                          <td className="py-2.5 px-3 font-mono font-bold text-indigo-600">
                             #{r.sequence}
                           </td>
                           <td className="py-2.5 px-3 font-bold text-slate-800">{r.name}</td>
-                          <td className="py-2.5 px-3 font-mono text-purple-900 text-2xs">{r.code}</td>
+                          <td className="py-2.5 px-3 font-mono text-indigo-900 text-2xs">{r.code}</td>
                           <td className="py-2.5 px-3">
                             <span
                               className={`px-2 py-0.5 rounded text-2xs font-semibold ${
@@ -286,7 +286,7 @@ export const SalaryStructuresPage: React.FC = () => {
                                   : r.category === 'Allowance'
                                   ? 'bg-teal-100 text-teal-800'
                                   : r.category === 'Basic'
-                                  ? 'bg-purple-100 text-[#714B67]'
+                                  ? 'bg-indigo-100 text-indigo-700'
                                   : 'bg-emerald-100 text-emerald-900'
                               }`}
                             >

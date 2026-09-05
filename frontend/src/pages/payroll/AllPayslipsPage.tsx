@@ -45,7 +45,7 @@ export const AllPayslipsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <FileSpreadsheet className="w-6 h-6 text-[#714B67]" />
+            <FileSpreadsheet className="w-6 h-6 text-indigo-600" />
             <span>Employee Payslips</span>
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -62,7 +62,7 @@ export const AllPayslipsPage: React.FC = () => {
             placeholder="Search payslips by employee name or ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-[#714B67]"
+            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600"
           />
         </div>
       </Card>
@@ -94,7 +94,7 @@ export const AllPayslipsPage: React.FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {filtered.map((p) => (
                   <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-[#714B67]">#{p.id}</td>
+                    <td className="py-3 px-4 font-mono font-bold text-indigo-600">#{p.id}</td>
                     <td className="py-3 px-4 font-bold text-slate-900">
                       {p.employee_name || `Employee #${p.employee_id}`}
                     </td>
@@ -103,7 +103,7 @@ export const AllPayslipsPage: React.FC = () => {
                     </td>
                     <td className="py-3 px-4">{p.worked_days} Days</td>
                     <td className="py-3 px-4 font-mono">${p.basic?.toLocaleString()}</td>
-                    <td className="py-3 px-4 font-mono text-purple-900">${p.gross?.toLocaleString()}</td>
+                    <td className="py-3 px-4 font-mono text-indigo-900">${p.gross?.toLocaleString()}</td>
                     <td className="py-3 px-4 font-mono font-bold text-emerald-800 text-sm">
                       ${p.net?.toLocaleString()}
                     </td>
@@ -126,7 +126,7 @@ export const AllPayslipsPage: React.FC = () => {
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           to={`/payroll/payslips/${p.id}`}
-                          className="text-xs font-semibold text-[#714B67] hover:underline"
+                          className="text-xs font-semibold text-indigo-600 hover:underline"
                         >
                           View Breakdown
                         </Link>

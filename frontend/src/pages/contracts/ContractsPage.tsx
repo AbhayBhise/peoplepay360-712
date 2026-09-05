@@ -123,7 +123,7 @@ export const ContractsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <FileSpreadsheet className="w-6 h-6 text-[#714B67]" />
+            <FileSpreadsheet className="w-6 h-6 text-indigo-600" />
             <span>Employee Contracts</span>
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -170,7 +170,7 @@ export const ContractsPage: React.FC = () => {
                   return (
                     <tr
                       key={c.id}
-                      className={`hover:bg-purple-50/30 transition-colors ${
+                      className={`hover:bg-indigo-50/30 transition-colors ${
                         c.is_active_for_today ? 'bg-emerald-50/20' : ''
                       }`}
                     >
@@ -184,7 +184,7 @@ export const ContractsPage: React.FC = () => {
                       <td className="py-3 px-4 font-mono font-bold text-slate-900">
                         ${Number(c.wage).toLocaleString()}
                       </td>
-                      <td className="py-3 px-4 text-purple-900 font-medium">
+                      <td className="py-3 px-4 text-indigo-900 font-medium">
                         {c.salary_structure_name || struct?.name || `Structure #${c.salary_structure_id}`}
                       </td>
                       <td className="py-3 px-4 text-slate-600">

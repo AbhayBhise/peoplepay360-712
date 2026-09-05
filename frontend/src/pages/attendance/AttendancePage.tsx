@@ -169,7 +169,7 @@ export const AttendancePage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <Clock className="w-6 h-6 text-[#714B67]" />
+            <Clock className="w-6 h-6 text-indigo-600" />
             <span>Attendance & Worked Hours Monitoring</span>
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -258,7 +258,7 @@ export const AttendancePage: React.FC = () => {
             placeholder="Search by employee name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-[#714B67]"
+            className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600"
           />
         </div>
       </div>
@@ -353,7 +353,7 @@ export const AttendancePage: React.FC = () => {
                           {isHRMPlus() && (
                             <button
                               onClick={() => handleOpenCorrection(log)}
-                              className="p-1.5 text-slate-400 hover:text-[#714B67] hover:bg-purple-50 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
                               title="HR Adjustment"
                             >
                               <Edit className="w-4 h-4" />

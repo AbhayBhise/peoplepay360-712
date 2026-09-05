@@ -132,7 +132,7 @@ export const WorkingSchedulesPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <CalendarCheck className="w-6 h-6 text-[#714B67]" />
+            <CalendarCheck className="w-6 h-6 text-indigo-600" />
             <span>Working Schedules</span>
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -164,7 +164,7 @@ export const WorkingSchedulesPage: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <h3 className="font-bold text-slate-900 text-base">{s.name}</h3>
-                  <span className="px-2 py-0.5 rounded-full bg-purple-50 text-[#714B67] text-2xs font-bold border border-purple-100">
+                  <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-2xs font-bold border border-indigo-100">
                     {s.type}
                   </span>
                 </div>
@@ -225,7 +225,7 @@ export const WorkingSchedulesPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleAddDay}
-                className="text-xs font-semibold text-[#714B67] hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-xs font-semibold text-indigo-600 hover:underline flex items-center gap-1 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Add Day

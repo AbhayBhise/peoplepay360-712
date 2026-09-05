@@ -127,7 +127,7 @@ export const DepartmentsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <Building2 className="w-6 h-6 text-[#714B67]" />
+            <Building2 className="w-6 h-6 text-indigo-600" />
             <span>Departments</span>
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -178,7 +178,7 @@ export const DepartmentsPage: React.FC = () => {
                     <tr key={dept.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-purple-50 text-[#714B67] border border-purple-100 flex items-center justify-center font-bold text-xs">
+                          <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center font-bold text-xs">
                             <Building2 className="w-4 h-4" />
                           </div>
                           <div>
@@ -198,7 +198,7 @@ export const DepartmentsPage: React.FC = () => {
                           <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => handleOpenEdit(dept)}
-                              className="p-1.5 rounded-md text-slate-500 hover:text-[#714B67] hover:bg-purple-50 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-md text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
                               title="Edit Department"
                             >
                               <Edit className="w-4 h-4" />

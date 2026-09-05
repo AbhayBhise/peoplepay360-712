@@ -155,17 +155,17 @@ export const PayrunWizardModal: React.FC<PayrunWizardModalProps> = ({
       {/* 2-STEP PROGRESS STEPPER */}
       <div className="mb-6">
         <div className="flex items-center justify-between text-xs font-bold text-slate-500 mb-2">
-          <span className={step === 1 ? 'text-[#714B67] font-extrabold' : 'text-slate-400'}>
+          <span className={step === 1 ? 'text-indigo-600 font-extrabold' : 'text-slate-400'}>
             Step 1: Structure & Period
           </span>
-          <span className={step === 2 ? 'text-[#714B67] font-extrabold' : 'text-slate-400'}>
+          <span className={step === 2 ? 'text-indigo-600 font-extrabold' : 'text-slate-400'}>
             Step 2: Employee Selection & Batch Creation ({selectedEmpIds.length} Selected)
           </span>
         </div>
         <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden flex">
           <div
             className={`h-full transition-all duration-300 ${
-              step === 1 ? 'w-1/2 bg-[#714B67]' : 'w-full bg-[#714B67]'
+              step === 1 ? 'w-1/2 bg-indigo-600' : 'w-full bg-indigo-600'
             }`}
           />
         </div>
@@ -202,11 +202,11 @@ export const PayrunWizardModal: React.FC<PayrunWizardModalProps> = ({
             />
           </div>
 
-          <div className="p-4 bg-purple-50 rounded-2xl border border-purple-100 text-xs text-purple-950 flex items-start gap-3">
-            <Users className="w-5 h-5 text-[#714B67] shrink-0 mt-0.5" />
+          <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 text-xs text-indigo-950 flex items-start gap-3">
+            <Users className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
             <div>
               <strong className="font-bold">Live Server-Side Contract Verification:</strong>
-              <div className="text-2xs text-purple-800 mt-0.5">
+              <div className="text-2xs text-indigo-800 mt-0.5">
                 Continuing will verify active contracts covering {periodStart} to {periodEnd} assigned to{' '}
                 <strong>{selectedStructureObj?.name || 'this structure'}</strong>.
               </div>
@@ -239,7 +239,7 @@ export const PayrunWizardModal: React.FC<PayrunWizardModalProps> = ({
             </div>
             <div>
               <span className="text-slate-500">Selected:</span>{' '}
-              <strong className="text-[#714B67] font-bold">{selectedEmpIds.length} / {eligibleEmployees.length}</strong>
+              <strong className="text-indigo-600 font-bold">{selectedEmpIds.length} / {eligibleEmployees.length}</strong>
             </div>
           </div>
 
@@ -257,7 +257,7 @@ export const PayrunWizardModal: React.FC<PayrunWizardModalProps> = ({
               <button
                 type="button"
                 onClick={handleSelectAllExplicitly}
-                className="text-xs font-bold text-[#714B67] hover:underline cursor-pointer"
+                className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer"
               >
                 {selectedEmpIds.length === eligibleEmployees.length ? 'Deselect All' : 'Select All'}
               </button>
@@ -292,7 +292,7 @@ export const PayrunWizardModal: React.FC<PayrunWizardModalProps> = ({
                   <label
                     key={emp.id}
                     className={`flex items-center justify-between p-3.5 cursor-pointer transition-colors ${
-                      isSelected ? 'bg-purple-50/70' : 'hover:bg-slate-50'
+                      isSelected ? 'bg-indigo-50/70' : 'hover:bg-slate-50'
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -300,7 +300,7 @@ export const PayrunWizardModal: React.FC<PayrunWizardModalProps> = ({
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => handleToggleEmployee(emp.id)}
-                        className="w-4 h-4 rounded text-[#714B67] focus:ring-[#714B67]"
+                        className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-600"
                       />
                       <div>
                         <div className="text-xs font-bold text-slate-900">{emp.name}</div>
