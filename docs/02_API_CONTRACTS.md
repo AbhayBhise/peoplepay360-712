@@ -84,7 +84,7 @@ Every endpoint marked with a role requirement must reject at the **route/middlew
 - **Validation (reject with 409/422, not a 500):**
   - `end_date` null or `end_date > start_date`.
   - No existing **active** contract for the same `employee_id` with an overlapping `[start_date, end_date]` range. Error: `"contract: overlaps with active contract #<id> (<start_date> – <end_date>)"`.
-- Role above HRM (HRPU/HRPM) has read-only access to this endpoint's GET per the RBAC matrix — HRPU/HRPM do not get write access to Contracts (that stays HRM+Admin per the problem statement's role table; confirm against `00_PROJECT_BRIEF.md` if extending).
+- Write access is HRM+ (HR Manager, HR Payroll User, HR Payroll Manager, Admin) — the problem statement's role table says HR Payroll User/Manager get "all HR Manager permissions plus" payroll extras, i.e. they inherit full Contract CRUD, they aren't restricted to read-only here. **Resolved & implemented** — see `backend/src/modules/contracts/`.
 
 ### `DELETE /api/contracts/:id`
 - Role: A only, and only if the contract has never been referenced by a computed payslip (payroll history integrity).
