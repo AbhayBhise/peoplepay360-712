@@ -8,6 +8,11 @@ import { errorHandler } from "./middleware/errorHandler";
 
 export const app = express();
 
+// BigInt serialization fix for Prisma BigInt fields
+(BigInt.prototype as any).toJSON = function () {
+  return Number(this);
+};
+
 app.use(helmet());
 // Origin restricted via env in anything resembling production; permissive in dev so the
 // frontend on :3000 talking to the backend on :4000 (or a teammate's machine) just works.
