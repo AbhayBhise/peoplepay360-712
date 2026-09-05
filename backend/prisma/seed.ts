@@ -5,6 +5,7 @@
 //
 // Keeps the 5 system roles and the admin login intact — other modules depend
 // on them (see prior version of this file / docs/roles/DATABASE.md).
+import { randomUUID } from "crypto";
 import { PrismaClient, SalaryRuleCategory, ComputationMethod } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
@@ -77,11 +78,12 @@ async function main() {
     ["friday", "09:00", "18:00"],
   ] as const;
   for (const [day, start, end] of scheduleLines) {
+    const lineId = randomUUID();
     await prisma.scheduleLine.upsert({
-      where: { id: "df310224-b8cf-421a-a184-0ec7aae78816" },
+      where: { id: lineId },
       update: {},
       create: {
-        id: "df310224-b8cf-421a-a184-0ec7aae78816",
+        id: lineId,
         scheduleId: schedule.id,
         day,
         startTime: start,
@@ -207,10 +209,11 @@ async function main() {
       create: { email: e.email, passwordHash, employeeId: e.id, isActive: true },
     });
     userByEmployee[e.id] = user.id;
+    const userRoleId = randomUUID();
     await prisma.userRole.upsert({
-      where: { id: "8e87de69-7684-4492-9703-a3c4223f8912" },
+      where: { id: userRoleId },
       update: {},
-      create: { id: "8e87de69-7684-4492-9703-a3c4223f8912", userId: user.id, roleId: roles[e.role] },
+      create: { id: userRoleId, userId: user.id, roleId: roles[e.role] },
     });
   }
 
@@ -225,11 +228,12 @@ async function main() {
     const wage = e.wage ?? 50000;
 
     if (e.id === "ebe1e5a7-3853-4eb1-9ae3-52439def3d30" || e.id === "0f583e8d-e6f2-4065-945b-5fdbb22daf99") {
+      const prevContractId = randomUUID();
       await prisma.contract.upsert({
-        where: { id: "82eb602f-726c-44e0-88a3-b949700640bf" },
+        where: { id: prevContractId },
         update: {},
         create: {
-          id: "82eb602f-726c-44e0-88a3-b949700640bf",
+          id: prevContractId,
           employeeId: e.id,
           departmentId: dept[e.deptKey],
           position: e.job,
@@ -242,7 +246,7 @@ async function main() {
       });
     }
 
-    const contractId = "f37e965e-d67d-4107-a270-8a9b0a3ec6e7";
+    const contractId = randomUUID();
     await prisma.contract.upsert({
       where: { id: contractId },
       update: {},
@@ -274,12 +278,13 @@ async function main() {
       const checkIn = new Date(day);
       checkIn.setUTCHours(isLate ? 10 : 9, isLate ? 20 : 0, 0, 0);
 
+      const attendanceId = randomUUID();
       if (inProgress) {
         await prisma.attendance.upsert({
-          where: { id: "0c536492-f8a2-4c77-b918-bf0212035c6d" },
+          where: { id: attendanceId },
           update: {},
           create: {
-            id: "0c536492-f8a2-4c77-b918-bf0212035c6d",
+            id: attendanceId,
             employeeId: e.id,
             checkIn,
             checkOut: null,
@@ -294,10 +299,10 @@ async function main() {
       checkOut.setUTCHours(18, 5, 0, 0);
 
       await prisma.attendance.upsert({
-        where: { id: "0c536492-f8a2-4c77-b918-bf0212035c6d" },
+        where: { id: attendanceId },
         update: {},
         create: {
-          id: "0c536492-f8a2-4c77-b918-bf0212035c6d",
+          id: attendanceId,
           employeeId: e.id,
           checkIn,
           checkOut,
@@ -331,11 +336,12 @@ async function main() {
   const leaveEmployees = EMPLOYEES.filter((e) => !e.noContract && e.status !== "inactive");
   for (const e of leaveEmployees) {
     for (const t of TIME_OFF_TYPES.filter((t) => t.requiresAllocation)) {
+      const allocId = randomUUID();
       await prisma.timeOffAllocation.upsert({
-        where: { id: "5c849226-89f6-4f63-9bf2-61bae1cb84a8" },
+        where: { id: allocId },
         update: {},
         create: {
-          id: "5c849226-89f6-4f63-9bf2-61bae1cb84a8",
+          id: allocId,
           employeeId: e.id,
           typeId: t.id,
           allocated: t.allocated,
@@ -422,7 +428,7 @@ async function main() {
       const tax = Math.round(gross * 0.1);
       const net = gross - pf - tax;
 
-      const payslipId = "c0e257d8-fe21-4d72-888d-241950661990";
+      const payslipId = randomUUID();
       const payslipStatus = isPaid ? "paid" : isValidated ? "validated" : "computed";
 
       await prisma.payslip.upsert({
@@ -455,6 +461,7 @@ async function main() {
       for (const line of lines) {
         await prisma.payslipLine.create({
           data: {
+            id: randomUUID(),
             payslipId,
             ruleId: line.rule.id,
             category: line.rule.category,
