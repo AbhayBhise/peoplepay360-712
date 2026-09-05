@@ -228,7 +228,7 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({
           <button
             onClick={async () => {
               await logout();
-              window.location.href = '/login';
+              window.location.href = '/';
             }}
             title="Sign out"
             className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-700/60 transition-colors cursor-pointer"

@@ -26,13 +26,13 @@ export const SecuritySection: React.FC = () => {
   ];
 
   return (
-    <section id="security" className="py-16 sm:py-24 border-t border-white/10 bg-slate-900/30">
+    <section id="security" className="py-16 sm:py-24 border-t border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-slate-900/30 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-14">
-          <h2 className="text-xs sm:text-sm uppercase tracking-widest text-indigo-400 font-semibold mb-3">
+          <h2 className="text-xs sm:text-sm uppercase tracking-widest text-indigo-600 dark:text-indigo-400 font-semibold mb-3">
             Enterprise Security
           </h2>
-          <p className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          <p className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             Built for secure workforce management
           </p>
         </div>
@@ -43,13 +43,13 @@ export const SecuritySection: React.FC = () => {
             return (
               <div 
                 key={idx}
-                className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 backdrop-blur-xl transition-all"
+                className="p-6 rounded-2xl bg-white dark:bg-white/5 border border-slate-200/90 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 backdrop-blur-xl shadow-xs transition-all"
               >
-                <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center mb-4">
+                <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/20 text-teal-600 dark:text-teal-400 flex items-center justify-center mb-4">
                   <Icon className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-bold text-white mb-2">{item.title}</h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">{item.description}</p>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">{item.title}</h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{item.description}</p>
               </div>
             );
           })}

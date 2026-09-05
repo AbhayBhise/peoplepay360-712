@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import { ThemeToggle } from '../../../components/common/ThemeToggle';
 import { Sparkles, Menu, X, ArrowRight } from 'lucide-react';
 
 export const LandingNavbar: React.FC = () => {
@@ -17,7 +18,7 @@ export const LandingNavbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
         {/* Logo / Brand */}
         <a 
@@ -29,34 +30,37 @@ export const LandingNavbar: React.FC = () => {
             <Sparkles className="w-5 h-5" />
           </div>
           <div className="flex flex-col">
-            <span className="font-bold text-lg sm:text-xl tracking-tight text-white flex items-center gap-1">
-              PeoplePay<span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-400 to-teal-400">360</span>
+            <span className="font-bold text-lg sm:text-xl tracking-tight text-slate-900 dark:text-white flex items-center gap-1">
+              PeoplePay<span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-500 to-teal-500 dark:from-indigo-400 dark:to-teal-400">360</span>
             </span>
-            <span className="text-[10px] text-slate-400 font-medium tracking-wider uppercase">HRMS & Payroll</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-wider uppercase">HRMS & Payroll</span>
           </div>
         </a>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300" aria-label="Main Navigation">
-          <a href="#features" className="hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded px-1">
+        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600 dark:text-slate-300" aria-label="Main Navigation">
+          <a href="#features" className="hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded px-1">
             Features
           </a>
-          <a href="#how-it-works" className="hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded px-1">
+          <a href="#how-it-works" className="hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded px-1">
             How It Works
           </a>
-          <a href="#solutions" className="hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded px-1">
+          <a href="#solutions" className="hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded px-1">
             Solutions
           </a>
-          <a href="#security" className="hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded px-1">
+          <a href="#security" className="hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded px-1">
             Security
           </a>
         </nav>
 
         {/* Desktop Actions */}
         <div className="hidden sm:flex items-center gap-3">
+          {/* Theme Toggle */}
+          <ThemeToggle />
+
           <button
             onClick={handleAuthAction}
-            className="px-4 py-2 text-sm font-semibold text-slate-300 hover:text-white hover:bg-white/5 rounded-xl border border-transparent hover:border-white/10 transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+            className="px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-white/10 transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
           >
             {isAuthenticated ? 'Dashboard' : 'Sign In'}
           </button>
@@ -69,11 +73,12 @@ export const LandingNavbar: React.FC = () => {
           </button>
         </div>
 
-        {/* Mobile Menu Button */}
-        <div className="flex md:hidden">
+        {/* Mobile Actions: Toggle + Menu Button */}
+        <div className="flex md:hidden items-center gap-2">
+          <ThemeToggle />
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl border border-white/10 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+            className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
             aria-expanded={mobileMenuOpen}
             aria-label="Toggle Navigation Menu"
           >
@@ -84,43 +89,43 @@ export const LandingNavbar: React.FC = () => {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-white/10 bg-slate-950/95 backdrop-blur-2xl px-4 pt-3 pb-6 animate-fade-in">
-          <nav className="flex flex-col gap-3 text-base font-medium text-slate-300">
+        <div className="md:hidden border-b border-slate-200 dark:border-white/10 bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl px-4 pt-3 pb-6 animate-fade-in">
+          <nav className="flex flex-col gap-3 text-base font-medium text-slate-700 dark:text-slate-300">
             <a 
               href="#features" 
               onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg hover:bg-white/5 hover:text-white transition-all"
+              className="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all"
             >
               Features
             </a>
             <a 
               href="#how-it-works" 
               onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg hover:bg-white/5 hover:text-white transition-all"
+              className="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all"
             >
               How It Works
             </a>
             <a 
               href="#solutions" 
               onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg hover:bg-white/5 hover:text-white transition-all"
+              className="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all"
             >
               Solutions
             </a>
             <a 
               href="#security" 
               onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg hover:bg-white/5 hover:text-white transition-all"
+              className="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all"
             >
               Security
             </a>
-            <div className="pt-4 border-t border-white/10 flex flex-col gap-2">
+            <div className="pt-4 border-t border-slate-200 dark:border-white/10 flex flex-col gap-2">
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
                   handleAuthAction();
                 }}
-                className="w-full py-2.5 text-center text-sm font-semibold text-slate-300 hover:text-white bg-white/5 rounded-xl border border-white/10"
+                className="w-full py-2.5 text-center text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10"
               >
                 Sign In
               </button>

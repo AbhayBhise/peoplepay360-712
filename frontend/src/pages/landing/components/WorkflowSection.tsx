@@ -34,13 +34,13 @@ export const WorkflowSection: React.FC = () => {
   ];
 
   return (
-    <section id="how-it-works" className="py-16 sm:py-24 border-t border-white/10 bg-slate-900/40 relative">
+    <section id="how-it-works" className="py-16 sm:py-24 border-t border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-slate-900/40 relative transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-14">
-          <h2 className="text-xs sm:text-sm uppercase tracking-widest text-indigo-400 font-semibold mb-3">
+          <h2 className="text-xs sm:text-sm uppercase tracking-widest text-indigo-600 dark:text-indigo-400 font-semibold mb-3">
             Seamless Lifecycle
           </h2>
-          <p className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          <p className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             From workforce activity to payroll — connected end to end
           </p>
         </div>
@@ -52,11 +52,11 @@ export const WorkflowSection: React.FC = () => {
             return (
               <div 
                 key={idx} 
-                className="relative p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 backdrop-blur-xl transition-all flex flex-col justify-between"
+                className="relative p-6 rounded-2xl bg-white dark:bg-white/5 border border-slate-200/90 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 backdrop-blur-xl shadow-xs transition-all flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between mb-5">
-                    <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-white/10 text-slate-200 border border-white/10">
+                    <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10">
                       STEP {item.step}
                     </span>
                     <div className={`w-10 h-10 rounded-xl bg-linear-to-tr ${item.color} flex items-center justify-center text-white shadow-md`}>
@@ -64,15 +64,15 @@ export const WorkflowSection: React.FC = () => {
                     </div>
                   </div>
 
-                  <h3 className="text-base font-bold text-white mb-2">{item.title}</h3>
-                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">{item.title}</h3>
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
                     {item.description}
                   </p>
                 </div>
 
                 {/* Horizontal Indicator on Desktop */}
                 {idx < steps.length - 1 && (
-                  <div className="hidden md:block absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-slate-800 border border-white/20 text-slate-400 text-xs flex items-center justify-center font-bold">
+                  <div className="hidden md:block absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-white/20 text-slate-600 dark:text-slate-400 text-xs flex items-center justify-center font-bold">
                     →
                   </div>
                 )}

@@ -29,6 +29,34 @@
     --text-dim: #94a3b8;
   }
 
+  .dark {
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --primary-light: #1e1b4b;
+    --primary-subtle: #312e81;
+    --primary-border: #4338ca;
+
+    --secondary: #f8fafc;
+    --secondary-hover: #f1f5f9;
+    --secondary-light: #1e293b;
+    --secondary-border: #334155;
+
+    --accent: #22d3ee;
+    --accent-light: #083344;
+
+    --bg-main: #0b0f19;
+    --surface: #111827;
+    --surface-elevated: #1f2937;
+    --border-subtle: #1e293b;
+    --border-base: #334155;
+    --border-strong: #475569;
+
+    --text-primary: #f9fafb;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+  }
+
   body {
     margin: 0;
     padding: 0;
@@ -44,6 +72,16 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: -0.011em;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .dark body {
+    background-color: var(--bg-main);
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(20, 184, 166, 0.08) 0px, transparent 50%),
+      radial-gradient(at 50% 100%, rgba(79, 70, 229, 0.08) 0px, transparent 50%);
+    color: var(--text-primary);
   }
 
   #root {
@@ -70,8 +108,14 @@
   background: #cbd5e1;
   border-radius: 9999px;
 }
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }
 
 /* Financial Monospace & Typography Utilities */
@@ -89,9 +133,20 @@
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.dark .surface-card {
+  background: rgba(17, 24, 39, 0.85);
+  border: 1px solid rgba(51, 65, 85, 0.7);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+}
+
 .surface-card:hover {
   border-color: rgba(199, 210, 254, 0.9);
   box-shadow: 0 8px 24px -4px rgba(79, 70, 229, 0.08), 0 4px 8px -2px rgba(15, 23, 42, 0.04);
+}
+
+.dark .surface-card:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4);
 }
 
 .surface-elevated {
@@ -99,6 +154,12 @@
   backdrop-filter: blur(16px);
   border: 1px solid rgba(226, 232, 240, 0.9);
   box-shadow: 0 12px 30px -6px rgba(15, 23, 42, 0.09), 0 6px 12px -4px rgba(15, 23, 42, 0.04);
+}
+
+.dark .surface-elevated {
+  background: rgba(31, 41, 55, 0.95);
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  box-shadow: 0 12px 30px -6px rgba(0, 0, 0, 0.4);
 }
 
 /* Micro-animations and Transitions */
@@ -236,6 +297,12 @@
   animation: shimmer 1.5s infinite ease-in-out;
 }
 
+.dark .skeleton-shimmer {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite ease-in-out;
+}
+
 /* Interactive Utility Classes */
 .hover-card-lift {
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
@@ -261,6 +328,11 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(226, 232, 240, 0.7);
+}
+
+.dark .glass-panel {
+  background: rgba(17, 24, 39, 0.85);
+  border: 1px solid rgba(51, 65, 85, 0.7);
 }
 
 .glass-panel-dark {
