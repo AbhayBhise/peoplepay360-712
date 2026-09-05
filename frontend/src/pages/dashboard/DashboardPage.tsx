@@ -317,7 +317,7 @@ export const DashboardPage: React.FC = () => {
           {/* 4. FIVE CORE KPI METRIC CARDS */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* KPI 1: Total Net Paid */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default">
               <div className="flex items-center justify-between">
                 <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Total Net Paid</span>
                 <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
@@ -335,7 +335,7 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* KPI 2: Payslips Generated */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default">
               <div className="flex items-center justify-between">
                 <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Payslips Generated</span>
                 <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
@@ -353,7 +353,7 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* KPI 3: Average Salary */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default">
               <div className="flex items-center justify-between">
                 <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Average Salary</span>
                 <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center">
@@ -371,7 +371,7 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* KPI 4: Approved Time Off */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default">
               <div className="flex items-center justify-between">
                 <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Approved Leaves</span>
                 <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
@@ -389,7 +389,7 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* KPI 5: Attendance Health */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default">
               <div className="flex items-center justify-between">
                 <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Attendance Health</span>
                 <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center">
