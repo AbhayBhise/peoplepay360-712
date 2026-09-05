@@ -1,6 +1,7 @@
 import { prisma } from "../../prisma";
 import { ApiError } from "../../utils/ApiError";
 import { AuthPayload, isHrmPlus } from "../../middleware/auth";
+import { generatePayslipPdf } from "./payslipPdf";
 
 export function listPayslips(auth: AuthPayload, filters: { payrunId?: string; employeeId?: string }) {
   const visibilityFilter = isHrmPlus(auth.roles)
@@ -27,4 +28,21 @@ export async function getPayslip(auth: AuthPayload, id: string) {
     throw ApiError.forbidden("you may only view your own payslips");
   }
   return payslip;
+}
+
+export async function getPayslipPdfBuffer(auth: AuthPayload, id: string): Promise<Buffer> {
+  const payslip = await getPayslip(auth, id);
+  return generatePayslipPdf({
+    employeeName: payslip.employee.name,
+    periodStart: payslip.payrun.periodStart,
+    periodEnd: payslip.payrun.periodEnd,
+    status: payslip.status,
+    workedDays: Number(payslip.workedDays),
+    basic: Number(payslip.basic),
+    allowances: Number(payslip.allowances),
+    deductions: Number(payslip.deductions),
+    gross: Number(payslip.gross),
+    net: Number(payslip.net),
+    lines: payslip.lines.map((l) => ({ category: l.category, name: l.name, amount: Number(l.amount) })),
+  });
 }

@@ -4,6 +4,8 @@ import { ApiError } from "../../utils/ApiError";
 import { AuthPayload } from "../../middleware/auth";
 import { previewPayrunSchema, createPayrunSchema } from "./payrun.validation";
 import { evaluateFormula } from "./formulaEvaluator";
+import { generatePayslipPdf } from "./payslipPdf";
+import { sendMail } from "../../utils/mailer";
 
 type PreviewInput = z.infer<typeof previewPayrunSchema>;
 type CreateInput = z.infer<typeof createPayrunSchema>;
@@ -208,6 +210,62 @@ export async function validatePayrun(auth: AuthPayload, payrunId: string) {
     where: { id: payrunId },
     data: { status: "validated", validatedBy: auth.userId },
   });
+}
+
+// Bulk email delivery from the Payrun workflow, per docs/00_PROJECT_BRIEF.md section 3
+// and the "Send Payslips" action on the Payrun processing screen. Employees without a
+// linked User account (no email on file) are surfaced as skipped, not silently dropped —
+// same "surface missing required information" principle as the payrun warnings.
+export async function sendPayslipsForPayrun(payrunId: string) {
+  const payrun = await prisma.payrun.findUnique({
+    where: { id: payrunId },
+    include: {
+      payslips: {
+        include: { employee: true, lines: true },
+      },
+    },
+  });
+  if (!payrun) throw ApiError.notFound(`payrun: no payrun with id ${payrunId}`);
+  if (payrun.status === "draft") {
+    throw ApiError.conflict("payrun: compute the payrun before sending payslips");
+  }
+
+  const sent: string[] = [];
+  const skipped: string[] = [];
+
+  for (const payslip of payrun.payslips) {
+    const user = await prisma.user.findUnique({ where: { employeeId: payslip.employeeId } });
+    if (!user?.email) {
+      skipped.push(`${payslip.employee.name}: no email on file`);
+      continue;
+    }
+
+    const pdf = await generatePayslipPdf({
+      employeeName: payslip.employee.name,
+      periodStart: payrun.periodStart,
+      periodEnd: payrun.periodEnd,
+      status: payslip.status,
+      workedDays: Number(payslip.workedDays),
+      basic: Number(payslip.basic),
+      allowances: Number(payslip.allowances),
+      deductions: Number(payslip.deductions),
+      gross: Number(payslip.gross),
+      net: Number(payslip.net),
+      lines: payslip.lines.map((l) => ({ category: l.category, name: l.name, amount: Number(l.amount) })),
+    });
+
+    await sendMail({
+      to: user.email,
+      subject: `Your payslip for ${payrun.periodStart.toISOString().slice(0, 10)} to ${payrun.periodEnd.toISOString().slice(0, 10)}`,
+      text: `Hi ${payslip.employee.name}, your payslip is attached. Net pay: ${payslip.net}.`,
+      attachments: [
+        { filename: `payslip-${payslip.id}.pdf`, content: pdf, contentType: "application/pdf" },
+      ],
+    });
+    sent.push(payslip.employee.name);
+  }
+
+  return { sent, skipped };
 }
 
 export async function markPayrunPaid(payrunId: string) {

@@ -66,6 +66,9 @@ export const markPayrunPaid = asyncHandler(async (req: Request, res: Response) =
   await payrunService.markPayrunPaid(req.params.id);
   return ok(res, { id: req.params.id, status: "paid" });
 });
+export const sendPayslips = asyncHandler(async (req: Request, res: Response) => {
+  return ok(res, await payrunService.sendPayslipsForPayrun(req.params.id));
+});
 
 // ---- Payslips ----
 export const listPayslips = asyncHandler(async (req: Request, res: Response) => {
@@ -77,4 +80,10 @@ export const listPayslips = asyncHandler(async (req: Request, res: Response) => 
 });
 export const getPayslip = asyncHandler(async (req: Request, res: Response) => {
   return ok(res, await payslipService.getPayslip(req.auth!, req.params.id));
+});
+export const getPayslipPdf = asyncHandler(async (req: Request, res: Response) => {
+  const pdf = await payslipService.getPayslipPdfBuffer(req.auth!, req.params.id);
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="payslip-${req.params.id}.pdf"`);
+  res.send(pdf);
 });

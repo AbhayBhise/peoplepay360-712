@@ -27,7 +27,9 @@ payrollRouter.get("/payruns/:id", requireRole(...HRPU_PLUS), payrollController.g
 payrollRouter.post("/payruns/:id/compute", requireRole(...HRPU_PLUS), payrollController.computePayrun);
 payrollRouter.post("/payruns/:id/validate", requireRole(...HRPM_PLUS), payrollController.validatePayrun);
 payrollRouter.post("/payruns/:id/mark-paid", requireRole(...HRPM_PLUS), payrollController.markPayrunPaid);
+payrollRouter.post("/payruns/:id/send-payslips", requireRole(...HRPU_PLUS), payrollController.sendPayslips);
 
 // Payslips: HRPU+ see everyone, Employee sees only self (payslip.service.ts)
 payrollRouter.get("/payslips", payrollController.listPayslips);
 payrollRouter.get("/payslips/:id", payrollController.getPayslip);
+payrollRouter.get("/payslips/:id/pdf", payrollController.getPayslipPdf);
