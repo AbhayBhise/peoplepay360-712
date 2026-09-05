@@ -1,0 +1,106 @@
+import React, { Suspense, lazy } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
+import { AppLayout } from './components/layout/AppLayout';
+import { PageLoader, RouteFallbackLoader } from './components/common/PageLoader';
+
+// Lazy-loaded route components for high performance and code-splitting
+const LoginPage = lazy(() => import('./pages/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
+const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })));
+const EmployeesPage = lazy(() => import('./pages/employees/EmployeesPage').then((m) => ({ default: m.EmployeesPage })));
+const EmployeeDetailPage = lazy(() => import('./pages/employees/EmployeeDetailPage').then((m) => ({ default: m.EmployeeDetailPage })));
+const DepartmentsPage = lazy(() => import('./pages/departments/DepartmentsPage').then((m) => ({ default: m.DepartmentsPage })));
+const ContractsPage = lazy(() => import('./pages/contracts/ContractsPage').then((m) => ({ default: m.ContractsPage })));
+const WorkingSchedulesPage = lazy(() => import('./pages/working_schedules/WorkingSchedulesPage').then((m) => ({ default: m.WorkingSchedulesPage })));
+const AttendancePage = lazy(() => import('./pages/attendance/AttendancePage').then((m) => ({ default: m.AttendancePage })));
+const TimeOffPage = lazy(() => import('./pages/timeoff/TimeOffPage').then((m) => ({ default: m.TimeOffPage })));
+const PayrunsPage = lazy(() => import('./pages/payroll/PayrunsPage').then((m) => ({ default: m.PayrunsPage })));
+const PayrunDetailPage = lazy(() => import('./pages/payroll/PayrunDetailPage').then((m) => ({ default: m.PayrunDetailPage })));
+const AllPayslipsPage = lazy(() => import('./pages/payroll/AllPayslipsPage').then((m) => ({ default: m.AllPayslipsPage })));
+const PayslipDetailPage = lazy(() => import('./pages/payroll/PayslipDetailPage').then((m) => ({ default: m.PayslipDetailPage })));
+const SalaryStructuresPage = lazy(() => import('./pages/payroll/SalaryStructuresPage').then((m) => ({ default: m.SalaryStructuresPage })));
+const ReportsPage = lazy(() => import('./pages/reports/ReportsPage').then((m) => ({ default: m.ReportsPage })));
+
+// Route guard that checks authentication
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <RouteFallbackLoader />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// Route guard for public login route
+const PublicOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <RouteFallbackLoader />;
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+export const App: React.FC = () => {
+  return (
+    <ToastProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              {/* Public Login Route */}
+              <Route
+                path="/login"
+                element={
+                  <PublicOnlyRoute>
+                    <LoginPage />
+                  </PublicOnlyRoute>
+                }
+              />
+
+              {/* Protected App Routes */}
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="dashboard" element={<DashboardPage />} />
+                <Route path="employees" element={<EmployeesPage />} />
+                <Route path="employees/:id" element={<EmployeeDetailPage />} />
+                <Route path="departments" element={<DepartmentsPage />} />
+                <Route path="contracts" element={<ContractsPage />} />
+                <Route path="working-schedules" element={<WorkingSchedulesPage />} />
+                <Route path="attendance" element={<AttendancePage />} />
+                <Route path="time-off" element={<TimeOffPage />} />
+                <Route path="payroll/payruns" element={<PayrunsPage />} />
+                <Route path="payroll/payruns/:id" element={<PayrunDetailPage />} />
+                <Route path="payroll/payslips" element={<AllPayslipsPage />} />
+                <Route path="payroll/payslips/:id" element={<PayslipDetailPage />} />
+                <Route path="payroll/salary-structures" element={<SalaryStructuresPage />} />
+                <Route path="reports" element={<ReportsPage />} />
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              </Route>
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </AuthProvider>
+    </ToastProvider>
+  );
+};
+
+export default App;
