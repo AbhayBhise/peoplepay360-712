@@ -10,7 +10,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "ts-node prisma/seed.ts",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "test:e2e": "ts-node scripts/e2e-smoke-test.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
