@@ -4,14 +4,12 @@ import * as dashboardController from "./dashboard.controller";
 
 export const dashboardRouter = Router();
 
-dashboardRouter.use(authenticate, requireRole(...HRM_PLUS));
+// Employee personal dashboard view (accessible to any authenticated role including EMPLOYEE)
+dashboardRouter.get("/me", authenticate, dashboardController.me);
 
-// Decision (docs/02_API_CONTRACTS.md open item, resolved): one shared endpoint set for
-// HRM+, no field-splitting between HR-only vs payroll-inclusive KPIs — the dashboard is
-// read-only aggregation, splitting it added complexity with no real benefit under a
-// 24-hour clock. Revisit if the team wants tighter HR/Payroll separation later.
-dashboardRouter.get("/summary", dashboardController.summary);
-dashboardRouter.get("/salary-by-department", dashboardController.salaryByDepartment);
-dashboardRouter.get("/net-salary-trend", dashboardController.netSalaryTrend);
-dashboardRouter.get("/attendance-overview", dashboardController.attendanceOverview);
-dashboardRouter.get("/alerts", dashboardController.alerts);
+// Organization management endpoints (guarded by HRM+)
+dashboardRouter.get("/summary", authenticate, requireRole(...HRM_PLUS), dashboardController.summary);
+dashboardRouter.get("/salary-by-department", authenticate, requireRole(...HRM_PLUS), dashboardController.salaryByDepartment);
+dashboardRouter.get("/net-salary-trend", authenticate, requireRole(...HRM_PLUS), dashboardController.netSalaryTrend);
+dashboardRouter.get("/attendance-overview", authenticate, requireRole(...HRM_PLUS), dashboardController.attendanceOverview);
+dashboardRouter.get("/alerts", authenticate, requireRole(...HRM_PLUS), dashboardController.alerts);

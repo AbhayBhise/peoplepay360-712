@@ -4,6 +4,7 @@ import {
   SalaryByDepartment,
   NetSalaryTrend,
   AttendanceOverview,
+  EmployeeDashboard,
 } from '../types';
 import { MOCK_EMPLOYEES, MOCK_CONTRACTS, MOCK_REQUESTS, MOCK_ATTENDANCE } from './mockData';
 
@@ -15,40 +16,108 @@ export interface DashboardFilters {
 }
 
 // Backend returns camelCase (docs/02_API_CONTRACTS.md); frontend types use snake_case
-// matching the mock data shape. Map once here rather than touching every consumer.
+// matching the mock data shape. Safely coerce missing or omitted fields from HR Manager view.
 function mapSummary(raw: any): DashboardSummary {
+  if (!raw) {
+    return {
+      total_net_paid: 0,
+      payslips_generated: 0,
+      average_salary: 0,
+      approved_time_off_count: 0,
+      attendance_health_pct: 100,
+    };
+  }
   return {
-    total_net_paid: raw.totalNetPaid,
-    payslips_generated: raw.payslipsGenerated,
-    average_salary: raw.averageSalary,
-    approved_time_off_count: raw.approvedTimeOff,
-    attendance_health_pct: raw.attendanceHealthPct,
+    total_net_paid: raw.totalNetPaid !== undefined ? Number(raw.totalNetPaid) : 0,
+    payslips_generated: raw.payslipsGenerated !== undefined ? Number(raw.payslipsGenerated) : 0,
+    average_salary: raw.averageSalary !== undefined ? Number(raw.averageSalary) : 0,
+    approved_time_off_count: raw.approvedTimeOff !== undefined ? Number(raw.approvedTimeOff) : 0,
+    attendance_health_pct: raw.attendanceHealthPct !== undefined ? Number(raw.attendanceHealthPct) : 100,
   };
 }
 function mapSalaryByDepartment(raw: any[]): SalaryByDepartment[] {
+  if (!Array.isArray(raw)) return [];
   return raw.map((d) => ({
     department_id: d.departmentId,
     department_name: d.departmentName,
-    headcount: d.headcount,
-    total_salary: d.totalSalary,
+    headcount: d.headcount ?? 0,
+    total_salary: d.totalSalary !== undefined ? Number(d.totalSalary) : 0,
   }));
 }
 function mapNetSalaryTrend(raw: any[]): NetSalaryTrend[] {
-  return raw.map((t) => ({ month: t.month, net_total: t.netTotal }));
+  if (!Array.isArray(raw)) return [];
+  return raw.map((t) => ({ month: t.month, net_total: t.netTotal !== undefined ? Number(t.netTotal) : 0 }));
 }
 function mapAttendanceOverview(raw: any): AttendanceOverview {
+  if (!raw) {
+    return {
+      present: 0,
+      late: 0,
+      absent: 0,
+      overtime: 0,
+      missing_checkouts: 0,
+      manual_edits: 0,
+      coverage_pct: 100,
+    };
+  }
   return {
-    present: raw.present,
-    late: raw.late,
-    absent: raw.absent,
-    overtime: raw.overtime ?? 0, // not yet tracked by the backend's Attendance status enum
-    missing_checkouts: raw.missingCheckouts,
-    manual_edits: raw.manualEdits,
-    coverage_pct: raw.coveragePct,
+    present: raw.present ?? 0,
+    late: raw.late ?? 0,
+    absent: raw.absent ?? 0,
+    overtime: raw.overtime ?? 0,
+    missing_checkouts: raw.missingCheckouts ?? 0,
+    manual_edits: raw.manualEdits ?? 0,
+    coverage_pct: raw.coveragePct !== undefined ? Number(raw.coveragePct) : 100,
   };
 }
 
 export const dashboardApi = {
+  getMyDashboard: async (): Promise<EmployeeDashboard> => {
+    try {
+      const raw = await apiRequest<any>(apiClient.get('/api/dashboard/me'));
+      return raw;
+    } catch {
+      return {
+        employee: {
+          id: 1,
+          name: 'Sarah Jenkins',
+          jobPosition: 'Lead Engineer',
+          departmentName: 'Engineering & Product',
+          workingScheduleName: 'Standard 40h Full-Time',
+          weeklyHours: 40,
+        },
+        contract: {
+          id: 1,
+          wage: 6500,
+          position: 'Lead Engineer',
+          salaryStructureName: 'Executive & Management Structure',
+          startDate: '2025-01-01',
+          endDate: null,
+        },
+        attendance: {
+          presentDays: 21,
+          lateDays: 1,
+          totalHours: 176,
+          healthPct: 98,
+        },
+        timeOff: {
+          leaveBalances: [
+            { typeId: 1, typeName: 'Paid Time Off', unit: 'days', allocatedDays: 20, usedDays: 4, remainingDays: 16 },
+            { typeId: 2, typeName: 'Sick Leave', unit: 'days', allocatedDays: 10, usedDays: 1, remainingDays: 9 },
+          ],
+          pendingRequests: 0,
+          approvedRequests: 2,
+          recentRequests: [
+            { id: 101, typeName: 'Paid Time Off', dateFrom: '2026-08-10', dateTo: '2026-08-14', durationDays: 4, status: 'validate' },
+          ],
+        },
+        recentPayslips: [
+          { id: 501, payrunId: 1, periodStart: '2026-08-01', periodEnd: '2026-08-31', status: 'paid', basic: 6000, gross: 7200, net: 6480 },
+        ],
+      };
+    }
+  },
+
   getSummary: async (filters?: DashboardFilters): Promise<DashboardSummary> => {
     try {
       const raw = await apiRequest<any>(apiClient.get('/api/dashboard/summary', { params: filters }));

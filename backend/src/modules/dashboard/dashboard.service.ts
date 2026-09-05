@@ -181,6 +181,148 @@ export async function getAlerts(filters: DashboardFilters) {
   return alerts;
 }
 
+export async function getMyDashboard(userId: string, authEmployeeId?: string | null) {
+  let employee = authEmployeeId
+    ? await prisma.employee.findUnique({
+        where: { id: authEmployeeId },
+        include: {
+          department: true,
+          workingSchedule: true,
+          contracts: {
+            where: { status: "active" },
+            include: { salaryStructure: true },
+            take: 1,
+          },
+        },
+      })
+    : null;
+
+  if (!employee) {
+    employee = await prisma.employee.findFirst({
+      where: { user: { id: userId } },
+      include: {
+        department: true,
+        workingSchedule: true,
+        contracts: {
+          where: { status: "active" },
+          include: { salaryStructure: true },
+          take: 1,
+        },
+      },
+    });
+  }
+
+  if (!employee) {
+    return {
+      employee: null,
+      attendance: { presentDays: 0, lateDays: 0, totalHours: 0, healthPct: 100 },
+      timeOff: { leaveBalances: [], pendingRequests: 0, approvedRequests: 0, recentRequests: [] },
+      contract: null,
+      recentPayslips: [],
+    };
+  }
+
+  const empId = employee.id;
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const attendances = await prisma.attendance.findMany({
+    where: { employeeId: empId, checkIn: { gte: startOfMonth } },
+  });
+  const presentDays = attendances.filter((a) => a.status === "present").length;
+  const lateDays = attendances.filter((a) => a.status === "late").length;
+  const totalHours = attendances.reduce((acc, a) => acc + Number(a.workedHours || 0), 0);
+  const healthPct = attendances.length > 0 ? Math.round(((presentDays + lateDays) / attendances.length) * 100) : 100;
+
+  const allocations = await prisma.timeOffAllocation.findMany({
+    where: { employeeId: empId },
+    include: { timeOffType: true },
+  });
+  const requests = await prisma.timeOffRequest.findMany({
+    where: { employeeId: empId },
+    include: { timeOffType: true },
+    orderBy: { dateFrom: "desc" },
+    take: 5,
+  });
+
+  const pendingRequests = requests.filter((r) => r.status === "confirm").length;
+  const approvedRequests = requests.filter((r) => r.status === "validate").length;
+
+  const leaveBalances = allocations.map((alloc) => {
+    const consumed = requests
+      .filter((r) => r.timeOffTypeId === alloc.timeOffTypeId && r.status === "validate")
+      .reduce((acc, r) => acc + Number(r.durationDays || 0), 0);
+    const allocated = Number(alloc.allocatedDays || 0);
+    return {
+      typeId: alloc.timeOffTypeId,
+      typeName: alloc.timeOffType.name,
+      unit: alloc.timeOffType.unit,
+      allocatedDays: allocated,
+      usedDays: consumed,
+      remainingDays: Math.max(0, allocated - consumed),
+    };
+  });
+
+  const payslips = await prisma.payslip.findMany({
+    where: { employeeId: empId, status: { in: ["computed", "validated", "paid"] } },
+    include: { payrun: true },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+
+  const activeContract = employee.contracts[0] || null;
+
+  return {
+    employee: {
+      id: employee.id,
+      name: employee.name,
+      jobPosition: employee.jobPosition,
+      departmentName: employee.department?.name,
+      workingScheduleName: employee.workingSchedule?.name,
+      weeklyHours: employee.workingSchedule?.weeklyHours ? Number(employee.workingSchedule.weeklyHours) : 40,
+    },
+    contract: activeContract
+      ? {
+          id: activeContract.id,
+          wage: Number(activeContract.wage),
+          position: activeContract.position,
+          salaryStructureName: activeContract.salaryStructure?.name,
+          startDate: activeContract.startDate.toISOString().slice(0, 10),
+          endDate: activeContract.endDate ? activeContract.endDate.toISOString().slice(0, 10) : null,
+        }
+      : null,
+    attendance: {
+      presentDays,
+      lateDays,
+      totalHours: round2(totalHours),
+      healthPct,
+    },
+    timeOff: {
+      leaveBalances,
+      pendingRequests,
+      approvedRequests,
+      recentRequests: requests.map((r) => ({
+        id: r.id,
+        typeName: r.timeOffType.name,
+        dateFrom: r.dateFrom.toISOString().slice(0, 10),
+        dateTo: r.dateTo.toISOString().slice(0, 10),
+        durationDays: Number(r.durationDays),
+        status: r.status,
+      })),
+    },
+    recentPayslips: payslips.map((p) => ({
+      id: p.id,
+      payrunId: p.payrunId,
+      periodStart: p.payrun.periodStart.toISOString().slice(0, 10),
+      periodEnd: p.payrun.periodEnd.toISOString().slice(0, 10),
+      status: p.status,
+      basic: Number(p.basic),
+      gross: Number(p.gross),
+      net: Number(p.net),
+    })),
+  };
+}
+
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
