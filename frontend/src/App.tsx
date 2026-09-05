@@ -5,6 +5,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import { AppLayout } from './components/layout/AppLayout';
 import { PageLoader, RouteFallbackLoader } from './components/common/PageLoader';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 // Lazy-loaded route components for high performance and code-splitting
 const LandingPage = lazy(() => import('./pages/landing/LandingPage').then((m) => ({ default: m.LandingPage })));
@@ -60,49 +61,51 @@ export const App: React.FC = () => {
       <ToastProvider>
         <AuthProvider>
           <BrowserRouter>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                {/* Public Landing Page */}
-                <Route path="/" element={<LandingPage />} />
+            <ErrorBoundary>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  {/* Public Landing Page */}
+                  <Route path="/" element={<LandingPage />} />
 
-                {/* Public Login Route */}
-                <Route
-                  path="/login"
-                  element={
-                    <PublicOnlyRoute>
-                      <LoginPage />
-                    </PublicOnlyRoute>
-                  }
-                />
+                  {/* Public Login Route */}
+                  <Route
+                    path="/login"
+                    element={
+                      <PublicOnlyRoute>
+                        <LoginPage />
+                      </PublicOnlyRoute>
+                    }
+                  />
 
-                {/* Protected App Routes */}
-                <Route
-                  element={
-                    <ProtectedRoute>
-                      <AppLayout />
-                    </ProtectedRoute>
-                  }
-                >
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/employees" element={<EmployeesPage />} />
-                  <Route path="/employees/:id" element={<EmployeeDetailPage />} />
-                  <Route path="/departments" element={<DepartmentsPage />} />
-                  <Route path="/contracts" element={<ContractsPage />} />
-                  <Route path="/working-schedules" element={<WorkingSchedulesPage />} />
-                  <Route path="/attendance" element={<AttendancePage />} />
-                  <Route path="/time-off" element={<TimeOffPage />} />
-                  <Route path="/payroll/payruns" element={<PayrunsPage />} />
-                  <Route path="/payroll/payruns/:id" element={<PayrunDetailPage />} />
-                  <Route path="/payroll/payslips" element={<AllPayslipsPage />} />
-                  <Route path="/payroll/payslips/:id" element={<PayslipDetailPage />} />
-                  <Route path="/payroll/salary-structures" element={<SalaryStructuresPage />} />
-                  <Route path="/reports" element={<ReportsPage />} />
-                </Route>
+                  {/* Protected App Routes */}
+                  <Route
+                    element={
+                      <ProtectedRoute>
+                        <AppLayout />
+                      </ProtectedRoute>
+                    }
+                  >
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/employees" element={<EmployeesPage />} />
+                    <Route path="/employees/:id" element={<EmployeeDetailPage />} />
+                    <Route path="/departments" element={<DepartmentsPage />} />
+                    <Route path="/contracts" element={<ContractsPage />} />
+                    <Route path="/working-schedules" element={<WorkingSchedulesPage />} />
+                    <Route path="/attendance" element={<AttendancePage />} />
+                    <Route path="/time-off" element={<TimeOffPage />} />
+                    <Route path="/payroll/payruns" element={<PayrunsPage />} />
+                    <Route path="/payroll/payruns/:id" element={<PayrunDetailPage />} />
+                    <Route path="/payroll/payslips" element={<AllPayslipsPage />} />
+                    <Route path="/payroll/payslips/:id" element={<PayslipDetailPage />} />
+                    <Route path="/payroll/salary-structures" element={<SalaryStructuresPage />} />
+                    <Route path="/reports" element={<ReportsPage />} />
+                  </Route>
 
-                {/* Catch-all fallback */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Suspense>
+                  {/* Catch-all fallback */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Suspense>
+            </ErrorBoundary>
           </BrowserRouter>
         </AuthProvider>
       </ToastProvider>
