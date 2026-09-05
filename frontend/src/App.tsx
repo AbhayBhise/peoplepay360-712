@@ -46,8 +46,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
-
-
 // Route guard for public login route
 const PublicOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -64,19 +62,30 @@ const PublicOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) 
 };
 
 // Route guard for role-based access
-const RoleProtectedRoute: React.FC<{ children: React.ReactNode; isAllowed: (auth: ReturnType<typeof useAuth>) => boolean }> = ({ children, isAllowed }) => {
+const RoleProtectedRoute: React.FC<{
+  children: React.ReactNode;
+  isAllowed?: (auth: ReturnType<typeof useAuth>) => boolean;
+  role?: string | string[];
+}> = ({ children, isAllowed, role }) => {
   const auth = useAuth();
   const { error: toastError } = useToast();
-  const allowed = isAllowed(auth);
+  const allowed = isAllowed ? isAllowed(auth) : role ? auth.hasRole(role as any) : true;
 
   React.useEffect(() => {
-    if (!auth.isLoading && !allowed) {
-      toastError("You don't have access to that page");
+    if (!auth.isLoading && auth.isAuthenticated && !allowed) {
+      const roleMsg = role
+        ? `Access restricted. Requires ${Array.isArray(role) ? role.join(' / ') : role} role permissions.`
+        : "You don't have access to that page";
+      toastError(roleMsg, 'Unauthorized Access');
     }
-  }, [auth.isLoading, allowed, toastError]);
+  }, [auth.isLoading, auth.isAuthenticated, allowed, toastError, role]);
 
   if (auth.isLoading) {
     return <RouteFallbackLoader />;
+  }
+
+  if (!auth.isAuthenticated) {
+    return <Navigate to="/login" replace />;
   }
 
   if (!allowed) {
