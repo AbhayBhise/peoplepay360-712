@@ -24,6 +24,8 @@ const AllPayslipsPage = lazy(() => import('./pages/payroll/AllPayslipsPage').the
 const PayslipDetailPage = lazy(() => import('./pages/payroll/PayslipDetailPage').then((m) => ({ default: m.PayslipDetailPage })));
 const SalaryStructuresPage = lazy(() => import('./pages/payroll/SalaryStructuresPage').then((m) => ({ default: m.SalaryStructuresPage })));
 const ReportsPage = lazy(() => import('./pages/reports/ReportsPage').then((m) => ({ default: m.ReportsPage })));
+const ProfilePage = lazy(() => import('./pages/profile/ProfilePage').then((m) => ({ default: m.ProfilePage })));
+const AdminPage = lazy(() => import('./pages/admin/AdminPage').then((m) => ({ default: m.AdminPage })));
 
 // Route guard that checks authentication
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -99,6 +101,8 @@ export const App: React.FC = () => {
                     <Route path="/payroll/payslips/:id" element={<PayslipDetailPage />} />
                     <Route path="/payroll/salary-structures" element={<SalaryStructuresPage />} />
                     <Route path="/reports" element={<ReportsPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/admin" element={<AdminPage />} />
                   </Route>
 
                   {/* Catch-all fallback */}
