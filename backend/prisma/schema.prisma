@@ -145,6 +145,7 @@ model ScheduleLine {
 
 model Employee {
   id                String         @id @default(uuid()) @db.Uuid
+  employeeCode      String?        @unique @map("employee_code")
   departmentId      String?        @map("department_id") @db.Uuid
   managerId         String?        @map("manager_id") @db.Uuid
   workingScheduleId String?        @map("working_schedule_id") @db.Uuid
@@ -367,8 +368,9 @@ enum PayslipStatus {
 }
 
 model Payslip {
-  id         String        @id @default(uuid()) @db.Uuid
-  payrunId   String        @map("payrun_id") @db.Uuid
+  id            String        @id @default(uuid()) @db.Uuid
+  payslipNumber String?       @unique @map("payslip_number")
+  payrunId      String        @map("payrun_id") @db.Uuid
   employeeId String        @map("employee_id") @db.Uuid
   contractId String?       @map("contract_id") @db.Uuid
   workedDays Decimal       @default(0) @map("worked_days") @db.Decimal(5, 2)
