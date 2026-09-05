@@ -22,6 +22,7 @@ import { Card } from '../../components/common/Card';
 import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
 import { Pagination } from '../../components/common/Pagination';
@@ -405,12 +406,16 @@ export const AttendancePage: React.FC = () => {
         description="Punches will automatically calculate worked hours upon check-out"
       >
         <form onSubmit={handlePunchSubmit} className="space-y-4">
-          <Select
+          <SearchableSelect
             label="Employee"
             value={punchEmpId}
-            onChange={(e) => setPunchEmpId(e.target.value)}
+            onChange={(val) => setPunchEmpId(val)}
             placeholder="Select Employee..."
-            options={employees.map((e) => ({ value: String(e.id), label: `${e.name} (${e.job_position})` }))}
+            options={employees.map((e) => ({
+              value: String(e.id),
+              label: e.name,
+              sublabel: e.job_position,
+            }))}
             required
           />
 

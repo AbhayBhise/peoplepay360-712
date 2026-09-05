@@ -8,6 +8,7 @@ import { Card } from '../../components/common/Card';
 import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
 import { Pagination } from '../../components/common/Pagination';
@@ -266,14 +267,15 @@ export const DepartmentsPage: React.FC = () => {
             helperText="Select a parent department to organize sub-units"
           />
 
-          <Select
+          <SearchableSelect
             label="Head of Department"
             value={headId}
-            onChange={(e) => setHeadId(e.target.value)}
+            onChange={(val) => setHeadId(val)}
             placeholder="Select Employee..."
             options={employees.map((e) => ({
               value: String(e.id),
-              label: `${e.name} — ${e.job_position}`,
+              label: e.name,
+              sublabel: e.job_position,
             }))}
           />
 

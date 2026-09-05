@@ -16,6 +16,7 @@ import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
 import { Pagination } from '../../components/common/Pagination';
@@ -554,12 +555,16 @@ export const TimeOffPage: React.FC = () => {
       >
         <form onSubmit={handleSubmitRequest} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Select
+            <SearchableSelect
               label="Employee"
               value={reqEmpId}
-              onChange={(e) => setReqEmpId(e.target.value)}
+              onChange={(val) => setReqEmpId(val)}
               placeholder="Select Employee..."
-              options={employees.map((e) => ({ value: String(e.id), label: `${e.name} (${e.job_position})` }))}
+              options={employees.map((e) => ({
+                value: String(e.id),
+                label: e.name,
+                sublabel: e.job_position,
+              }))}
               required
             />
 
@@ -660,12 +665,16 @@ export const TimeOffPage: React.FC = () => {
         description="Assign authorized annual/monthly leave days balance to an employee"
       >
         <form onSubmit={handleSubmitAlloc} className="space-y-4">
-          <Select
+          <SearchableSelect
             label="Employee"
             value={allocEmpId}
-            onChange={(e) => setAllocEmpId(e.target.value)}
+            onChange={(val) => setAllocEmpId(val)}
             placeholder="Select Employee..."
-            options={employees.map((e) => ({ value: String(e.id), label: `${e.name} (${e.job_position})` }))}
+            options={employees.map((e) => ({
+              value: String(e.id),
+              label: e.name,
+              sublabel: e.job_position,
+            }))}
             required
           />
 

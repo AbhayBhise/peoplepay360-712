@@ -10,6 +10,7 @@ import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
 import { Pagination } from '../../components/common/Pagination';
@@ -262,14 +263,15 @@ export const ContractsPage: React.FC = () => {
         maxWidth="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Select
+          <SearchableSelect
             label="Employee"
             value={employeeId}
-            onChange={(e) => handleEmployeeChange(e.target.value)}
+            onChange={(val) => handleEmployeeChange(val)}
             placeholder="Select Employee..."
             options={employees.map((e) => ({
               value: String(e.id),
-              label: `${e.name} (${e.job_position})`,
+              label: e.name,
+              sublabel: e.job_position,
             }))}
             required
           />

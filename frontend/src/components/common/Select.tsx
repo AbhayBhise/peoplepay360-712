@@ -11,10 +11,11 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
   helperText?: string;
   options: SelectOption[];
   placeholder?: string;
+  disablePlaceholder?: boolean;
 }
 
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, error, helperText, options, placeholder, className = '', id, ...props }, ref) => {
+  ({ label, error, helperText, options, placeholder, disablePlaceholder = false, className = '', id, ...props }, ref) => {
     const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
 
     return (
@@ -37,7 +38,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             {...props}
           >
             {placeholder && (
-              <option value="" disabled className="dark:bg-slate-900 dark:text-slate-400">
+              <option value="" disabled={disablePlaceholder} className="dark:bg-slate-900 dark:text-slate-400">
                 {placeholder}
               </option>
             )}
