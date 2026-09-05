@@ -14,10 +14,45 @@ export interface DashboardFilters {
   employee_type?: string;
 }
 
+// Backend returns camelCase (docs/02_API_CONTRACTS.md); frontend types use snake_case
+// matching the mock data shape. Map once here rather than touching every consumer.
+function mapSummary(raw: any): DashboardSummary {
+  return {
+    total_net_paid: raw.totalNetPaid,
+    payslips_generated: raw.payslipsGenerated,
+    average_salary: raw.averageSalary,
+    approved_time_off_count: raw.approvedTimeOff,
+    attendance_health_pct: raw.attendanceHealthPct,
+  };
+}
+function mapSalaryByDepartment(raw: any[]): SalaryByDepartment[] {
+  return raw.map((d) => ({
+    department_id: d.departmentId,
+    department_name: d.departmentName,
+    headcount: d.headcount,
+    total_salary: d.totalSalary,
+  }));
+}
+function mapNetSalaryTrend(raw: any[]): NetSalaryTrend[] {
+  return raw.map((t) => ({ month: t.month, net_total: t.netTotal }));
+}
+function mapAttendanceOverview(raw: any): AttendanceOverview {
+  return {
+    present: raw.present,
+    late: raw.late,
+    absent: raw.absent,
+    overtime: raw.overtime ?? 0, // not yet tracked by the backend's Attendance status enum
+    missing_checkouts: raw.missingCheckouts,
+    manual_edits: raw.manualEdits,
+    coverage_pct: raw.coveragePct,
+  };
+}
+
 export const dashboardApi = {
   getSummary: async (filters?: DashboardFilters): Promise<DashboardSummary> => {
     try {
-      return await apiRequest<DashboardSummary>(apiClient.get('/api/dashboard/summary', { params: filters }));
+      const raw = await apiRequest<any>(apiClient.get('/api/dashboard/summary', { params: filters }));
+      return mapSummary(raw);
     } catch {
       const totalWages = MOCK_CONTRACTS.reduce((sum, c) => sum + (c.wage || 0), 0);
       const avgSalary = MOCK_CONTRACTS.length > 0 ? totalWages / MOCK_CONTRACTS.length : 6500;
@@ -35,9 +70,10 @@ export const dashboardApi = {
 
   getSalaryByDepartment: async (filters?: DashboardFilters): Promise<SalaryByDepartment[]> => {
     try {
-      return await apiRequest<SalaryByDepartment[]>(
+      const raw = await apiRequest<any[]>(
         apiClient.get('/api/dashboard/salary-by-department', { params: filters })
       );
+      return mapSalaryByDepartment(raw);
     } catch {
       return [
         { department_id: 3, department_name: 'Engineering & Product', headcount: 2, total_salary: 11800 },
@@ -50,9 +86,10 @@ export const dashboardApi = {
 
   getNetSalaryTrend: async (filters?: DashboardFilters): Promise<NetSalaryTrend[]> => {
     try {
-      return await apiRequest<NetSalaryTrend[]>(
+      const raw = await apiRequest<any[]>(
         apiClient.get('/api/dashboard/net-salary-trend', { params: filters })
       );
+      return mapNetSalaryTrend(raw);
     } catch {
       return [
         { month: 'Jun 2026', net_total: 42000 },
@@ -64,9 +101,10 @@ export const dashboardApi = {
 
   getAttendanceOverview: async (filters?: DashboardFilters): Promise<AttendanceOverview> => {
     try {
-      return await apiRequest<AttendanceOverview>(
+      const raw = await apiRequest<any>(
         apiClient.get('/api/dashboard/attendance-overview', { params: filters })
       );
+      return mapAttendanceOverview(raw);
     } catch {
       return {
         present: 24,

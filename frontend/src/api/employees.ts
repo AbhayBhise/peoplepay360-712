@@ -15,10 +15,37 @@ export interface EmployeeFilters {
   search?: string;
 }
 
+// Backend returns camelCase fields and nested relations (department: {id, name}), not the
+// flat snake_case shape the frontend types/components expect. Map once here.
+function normalizeEmployee(raw: any): Employee {
+  return {
+    id: raw.id,
+    name: raw.name,
+    email: raw.email,
+    department_id: raw.departmentId ?? raw.department?.id,
+    department_name: raw.department?.name,
+    manager_id: raw.managerId ?? raw.manager?.id ?? null,
+    manager_name: raw.manager?.name,
+    job_position: raw.jobPosition ?? raw.job_position,
+    status: raw.status,
+    working_schedule_id: raw.workingScheduleId ?? raw.workingSchedule?.id,
+    working_schedule_name: raw.workingSchedule?.name,
+    contracts_count: raw.contractsCount,
+    contractsCount: raw.contractsCount,
+    attendance_count: raw.attendanceCount,
+    attendanceCount: raw.attendanceCount,
+    time_off_count: raw.timeOffCount,
+    timeOffCount: raw.timeOffCount,
+    payslips_count: raw.payslipsCount,
+    payslipsCount: raw.payslipsCount,
+  };
+}
+
 export const employeesApi = {
   getEmployees: async (filters?: EmployeeFilters): Promise<Employee[]> => {
     try {
-      return await apiRequest<Employee[]>(apiClient.get('/api/employees', { params: filters }));
+      const raw = await apiRequest<any[]>(apiClient.get('/api/employees', { params: filters }));
+      return raw.map(normalizeEmployee);
     } catch {
       let result = [...MOCK_EMPLOYEES];
       if (filters?.department_id) {
@@ -42,7 +69,8 @@ export const employeesApi = {
 
   getEmployeeById: async (id: number | string): Promise<Employee> => {
     try {
-      return await apiRequest<Employee>(apiClient.get(`/api/employees/${id}`));
+      const raw = await apiRequest<any>(apiClient.get(`/api/employees/${id}`));
+      return normalizeEmployee(raw);
     } catch {
       const emp = MOCK_EMPLOYEES.find((e) => e.id === Number(id));
       if (emp) return emp;
@@ -76,7 +104,8 @@ export const employeesApi = {
         status: data.status,
         workingScheduleId: data.working_schedule_id ? String(data.working_schedule_id) : undefined,
       };
-      return await apiRequest<Employee>(apiClient.post('/api/employees', payload));
+      const raw = await apiRequest<any>(apiClient.post('/api/employees', payload));
+      return normalizeEmployee(raw);
     } catch {
       const dept = MOCK_DEPARTMENTS.find((d) => String(d.id) === String(data.department_id));
       const mgr = MOCK_EMPLOYEES.find((e) => String(e.id) === String(data.manager_id));
@@ -120,7 +149,8 @@ export const employeesApi = {
         status: data.status,
         workingScheduleId: data.working_schedule_id ? String(data.working_schedule_id) : undefined,
       };
-      return await apiRequest<Employee>(apiClient.put(`/api/employees/${id}`, payload));
+      const raw = await apiRequest<any>(apiClient.put(`/api/employees/${id}`, payload));
+      return normalizeEmployee(raw);
     } catch {
       const index = MOCK_EMPLOYEES.findIndex((e) => String(e.id) === String(id));
       if (index !== -1) {

@@ -1,5 +1,5 @@
 import { apiClient, apiRequest } from './client';
-import { User } from '../types';
+import { User, Role } from '../types';
 import { MOCK_USERS } from './mockData';
 
 export interface LoginResponse {
@@ -7,10 +7,38 @@ export interface LoginResponse {
   token: string;
 }
 
+// Backend returns roles as UPPER_SNAKE_CASE (docs/02_API_CONTRACTS.md) and identity fields
+// as employeeId/employeeName; the rest of the frontend (AuthContext.hasRole, Sidebar, etc.)
+// was built expecting display-format role strings and a flat `name` field. Normalize here,
+// once, at the API boundary, rather than touching every consumer.
+const ROLE_MAP: Record<string, Role> = {
+  EMPLOYEE: 'Employee',
+  HR_MANAGER: 'HR Manager',
+  HR_PAYROLL_USER: 'HR Payroll User',
+  HR_PAYROLL_MANAGER: 'HR Payroll Manager',
+  ADMIN: 'Admin',
+};
+
+function normalizeUser(raw: any): User {
+  const roles: Role[] = Array.isArray(raw?.roles)
+    ? raw.roles.map((r: string) => ROLE_MAP[r] ?? (r as Role))
+    : [];
+  return {
+    id: raw?.id,
+    employee_id: raw?.employeeId ?? raw?.employee_id,
+    email: raw?.email,
+    name: raw?.employeeName ?? raw?.name ?? raw?.email,
+    roles,
+  };
+}
+
 export const authApi = {
   login: async (credentials: { email: string; password: string }): Promise<LoginResponse> => {
     try {
-      return await apiRequest<LoginResponse>(apiClient.post('/api/auth/login', credentials));
+      const result = await apiRequest<{ user: any; token: string }>(
+        apiClient.post('/api/auth/login', credentials)
+      );
+      return { user: normalizeUser(result.user), token: result.token };
     } catch (err: any) {
       // Offline / Demo Fallback
       const normalizedEmail = credentials.email.trim().toLowerCase();
@@ -44,7 +72,8 @@ export const authApi = {
 
   getMe: async (): Promise<User> => {
     try {
-      return await apiRequest<User>(apiClient.get('/api/auth/me'));
+      const raw = await apiRequest<any>(apiClient.get('/api/auth/me'));
+      return normalizeUser(raw);
     } catch (err: any) {
       const savedUser = localStorage.getItem('peoplepay_user');
       if (savedUser) {
