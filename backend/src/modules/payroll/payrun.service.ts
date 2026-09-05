@@ -89,7 +89,7 @@ export async function getPayrun(id: string) {
 
 export function listPayruns() {
   return prisma.payrun.findMany({
-    include: { _count: { select: { payslips: true } } },
+    include: { _count: { select: { payslips: true } }, structure: true },
     orderBy: { createdAt: "desc" },
   });
 }
