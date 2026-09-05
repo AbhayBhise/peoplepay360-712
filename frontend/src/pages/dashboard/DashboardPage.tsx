@@ -317,10 +317,10 @@ export const DashboardPage: React.FC = () => {
           {/* 4. FIVE CORE KPI METRIC CARDS */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* KPI 1: Total Net Paid */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default">
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 border-t-4 border-t-emerald-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default animate-slide-up stagger-1">
               <div className="flex items-center justify-between">
                 <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Total Net Paid</span>
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-100 shadow-2xs">
                   <CircleDollarSign className="w-4 h-4" />
                 </div>
               </div>
@@ -335,10 +335,10 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* KPI 2: Payslips Generated */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default">
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 border-t-4 border-t-indigo-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default animate-slide-up stagger-2">
               <div className="flex items-center justify-between">
                 <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Payslips Generated</span>
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-2xs">
                   <FileSpreadsheet className="w-4 h-4" />
                 </div>
               </div>
@@ -353,10 +353,10 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* KPI 3: Average Salary */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default">
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 border-t-4 border-t-teal-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default animate-slide-up stagger-3">
               <div className="flex items-center justify-between">
                 <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Average Salary</span>
-                <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-100 shadow-2xs">
                   <TrendingUp className="w-4 h-4" />
                 </div>
               </div>
@@ -371,10 +371,10 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* KPI 4: Approved Time Off */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default">
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 border-t-4 border-t-amber-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default animate-slide-up stagger-4">
               <div className="flex items-center justify-between">
                 <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Approved Leaves</span>
-                <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-100 shadow-2xs">
                   <CalendarDays className="w-4 h-4" />
                 </div>
               </div>
@@ -389,16 +389,16 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* KPI 5: Attendance Health */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default">
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 border-t-4 border-t-sky-500 p-5 shadow-xs flex flex-col justify-between hover-card-lift cursor-default animate-slide-up stagger-5">
               <div className="flex items-center justify-between">
                 <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Attendance Health</span>
-                <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center border border-sky-100 shadow-2xs">
                   <HeartPulse className="w-4 h-4" />
                 </div>
               </div>
               <div className="mt-3">
                 <div className="text-2xl font-extrabold text-slate-900 font-financial tracking-tight">
-                  {summary?.attendance_health_pct ?? 96}%
+                  {(summary as any)?.attendance_health_pct ?? 96}%
                 </div>
                 <div className="text-2xs text-sky-700 font-semibold mt-1">
                   On-Time Punch Ratio

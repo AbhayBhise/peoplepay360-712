@@ -136,18 +136,18 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-30 w-64 bg-slate-900 text-slate-300 border-r border-slate-800 flex flex-col transition-transform duration-200 ease-in-out md:static md:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-30 w-64 bg-linear-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-300 border-r border-slate-800/90 flex flex-col transition-transform duration-200 ease-in-out md:static md:translate-x-0 ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
       }`}
     >
       {/* Brand Header */}
-      <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800/80 bg-slate-950/40">
+      <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800/80 bg-slate-950/60 backdrop-blur-md">
         <NavLink to="/dashboard" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 rounded-xl bg-linear-to-tr from-indigo-600 to-teal-500 text-white flex items-center justify-center font-black text-lg shadow-md border border-white/20 group-hover:scale-105 transition-transform">
+          <div className="w-9 h-9 rounded-xl bg-linear-to-tr from-indigo-600 via-indigo-500 to-teal-400 text-white flex items-center justify-center font-black text-lg shadow-md border border-white/20 group-hover:scale-105 group-hover:shadow-indigo-500/25 transition-all">
             P
           </div>
           <div className="leading-tight">
-            <span className="font-bold text-white text-base tracking-tight">
+            <span className="font-extrabold text-white text-base tracking-tight">
               People<span className="text-teal-400">Pay360</span>
             </span>
             <span className="block text-2xs text-slate-400 font-medium tracking-wide uppercase">
@@ -165,10 +165,10 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({
 
           return (
             <div key={section.title} className="space-y-1">
-              <div className="px-3 text-2xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                {section.title}
+              <div className="px-3 text-2xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center justify-between">
+                <span>{section.title}</span>
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {visibleItems.map((item) => {
                   const isActive =
                     item.path === '/dashboard'
@@ -182,14 +182,14 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({
                       onClick={onClose}
                       className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all group ${
                         isActive
-                          ? 'bg-indigo-600 text-white font-semibold shadow-xs'
-                          : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
+                          ? 'bg-linear-to-r from-indigo-600 to-indigo-700 text-white font-semibold shadow-md shadow-indigo-500/20 border border-indigo-400/30'
+                          : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 hover:translate-x-0.5'
                       }`}
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <span
-                          className={`shrink-0 transition-colors ${
-                            isActive ? 'text-teal-300' : 'text-slate-400 group-hover:text-slate-200'
+                          className={`shrink-0 transition-all ${
+                            isActive ? 'text-teal-300 scale-110' : 'text-slate-400 group-hover:text-indigo-400'
                           }`}
                         >
                           {item.icon}

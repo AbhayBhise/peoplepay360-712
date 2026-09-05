@@ -41,7 +41,12 @@ export const AppLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-slate-50 text-slate-900 font-sans">
+    <div className="min-h-screen flex bg-transparent text-slate-900 font-sans relative overflow-x-hidden">
+      {/* Ambient background decoration glow orbs */}
+      <div className="fixed pointer-events-none -top-24 -right-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl -z-10" />
+      <div className="fixed pointer-events-none top-1/3 -left-28 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl -z-10" />
+      <div className="fixed pointer-events-none -bottom-24 right-1/4 w-96 h-96 bg-indigo-600/5 rounded-full blur-3xl -z-10" />
+
       {/* Sidebar (Desktop Persistent + Mobile Drawer) */}
       <Sidebar
         isOpen={sidebarMobileOpen}
@@ -51,7 +56,7 @@ export const AppLayout: React.FC = () => {
       {/* Backdrop for Mobile Sidebar */}
       {sidebarMobileOpen && (
         <div
-          className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-20 md:hidden"
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-20 md:hidden animate-fade-in"
           onClick={() => setSidebarMobileOpen(false)}
         />
       )}
@@ -66,11 +71,11 @@ export const AppLayout: React.FC = () => {
         />
 
         {/* Sub-Header Context Bar with Breadcrumb */}
-        <div className="bg-white/80 backdrop-blur-xs border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 py-2.5 shadow-2xs">
+        <div className="bg-white/75 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 py-2.5 shadow-2xs">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <nav className="flex items-center space-x-1.5 text-xs text-slate-500">
-              <Link to="/dashboard" className="hover:text-slate-900 flex items-center gap-1 font-medium">
-                <Home className="w-3.5 h-3.5 text-slate-400" />
+              <Link to="/dashboard" className="hover:text-indigo-600 flex items-center gap-1.5 font-medium transition-colors">
+                <Home className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600" />
                 <span>Command Center</span>
               </Link>
               {pathSegments.map((seg, idx) => {
@@ -80,9 +85,11 @@ export const AppLayout: React.FC = () => {
                   <React.Fragment key={url}>
                     <ChevronRight className="w-3.5 h-3.5 text-slate-300 shrink-0" />
                     {isLast ? (
-                      <span className="font-bold text-indigo-600 truncate">{getSegmentTitle(seg)}</span>
+                      <span className="font-bold text-indigo-600 truncate bg-indigo-50/80 px-2 py-0.5 rounded-md border border-indigo-100">
+                        {getSegmentTitle(seg)}
+                      </span>
                     ) : (
-                      <Link to={url} className="hover:text-slate-900 font-medium truncate">
+                      <Link to={url} className="hover:text-indigo-600 font-medium truncate transition-colors">
                         {getSegmentTitle(seg)}
                       </Link>
                     )}
@@ -96,13 +103,13 @@ export const AppLayout: React.FC = () => {
         {/* Main Routed Page Container */}
         <main
           key={location.pathname}
-          className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 animate-fade-in"
+          className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 animate-slide-up"
         >
           <Outlet />
         </main>
 
         {/* Footer */}
-        <footer className="bg-white border-t border-slate-200 py-3.5 text-center text-2xs text-slate-400 font-medium">
+        <footer className="bg-white/60 backdrop-blur-xs border-t border-slate-200/80 py-3.5 text-center text-2xs text-slate-400 font-medium">
           <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
             <span>PeoplePay360 HR & Financial Operations · Odoo Hackathon Final Round</span>
             <span className="font-mono text-slate-400">v1.2.0-enterprise</span>
