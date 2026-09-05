@@ -7,6 +7,11 @@ import { errorHandler } from "./middleware/errorHandler";
 
 export const app = express();
 
+// BigInt serialization fix for Prisma BigInt fields
+(BigInt.prototype as any).toJSON = function () {
+  return Number(this);
+};
+
 app.use(helmet());
 app.use(cors());
 app.use(morgan("dev"));
