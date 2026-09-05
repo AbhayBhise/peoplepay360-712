@@ -22,11 +22,12 @@ import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { formatCurrency } from '../../utils/currency';
 
 export const PayrunDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isHRPUPlus, isHRPMPlus } = useAuth();
+  const { user, isHRPUPlus, isHRPMPlus } = useAuth();
   const { success, error, warning } = useToast();
 
   const [payrun, setPayrun] = useState<Payrun | null>(null);
@@ -177,17 +178,37 @@ export const PayrunDetailPage: React.FC = () => {
             </Button>
           )}
 
-          {payrun.status === 'computed' && isHRPMPlus() && (
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={<CheckCircle2 className="w-4 h-4" />}
-              onClick={handleValidate}
-              isLoading={actionLoading}
-            >
-              Validate Payrun
-            </Button>
-          )}
+          {/* Check Maker-Checker condition: same user who computed cannot validate */}
+          {payrun.status === 'computed' && isHRPMPlus() && (() => {
+            const computedByVal = payrun.computed_by ?? (payrun as any).computedBy;
+            const isMakerCheckerBlocked = Boolean(
+              computedByVal && user?.id && String(computedByVal) === String(user.id)
+            );
+
+            return (
+              <div className="relative group">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={<CheckCircle2 className="w-4 h-4" />}
+                  onClick={handleValidate}
+                  isLoading={actionLoading}
+                  disabled={isMakerCheckerBlocked}
+                  className={isMakerCheckerBlocked ? 'opacity-50 cursor-not-allowed' : ''}
+                >
+                  Validate Payrun
+                </Button>
+                {isMakerCheckerBlocked && (
+                  <div className="hidden group-hover:block absolute right-0 top-full mt-2 z-30 w-72 p-2.5 bg-slate-900 text-white text-2xs rounded-xl shadow-xl border border-slate-700">
+                    <div className="font-bold text-amber-400 mb-1 flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Maker-Checker Segregation
+                    </div>
+                    You computed this payrun. To enforce audit compliance and segregation of duties, another HR Payroll Manager or Admin must review and validate it.
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {payrun.status === 'validated' && isHRPMPlus() && (
             <Button
@@ -282,6 +303,26 @@ export const PayrunDetailPage: React.FC = () => {
         </div>
       )}
 
+      {/* MAKER-CHECKER COMPLIANCE BANNER */}
+      {payrun.status === 'computed' &&
+        Boolean(
+          (payrun.computed_by ?? (payrun as any).computedBy) &&
+            user?.id &&
+            String(payrun.computed_by ?? (payrun as any).computedBy) === String(user.id)
+        ) && (
+          <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-start gap-3 animate-fade-in shadow-xs">
+            <AlertTriangle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <span className="font-bold text-blue-950">
+                Maker-Checker Segregation of Duties Active
+              </span>
+              <p className="text-2xs text-blue-800 leading-relaxed">
+                You computed this payrun batch. To maintain strict financial controls and regulatory audit integrity, this batch must be validated and authorized by a different HR Payroll Manager or Administrator.
+              </p>
+            </div>
+          </div>
+        )}
+
       {/* Payrun Metadata Card */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4! shadow-2xs">
@@ -320,7 +361,7 @@ export const PayrunDetailPage: React.FC = () => {
             <div>
               <div className="text-2xs font-semibold uppercase text-slate-400">Total Net Amount</div>
               <div className="text-base font-extrabold text-emerald-800 font-mono">
-                {payrun.total_net ? `$${payrun.total_net.toLocaleString()}` : 'Pending Computation'}
+                {payrun.total_net ? formatCurrency(payrun.total_net) : 'Pending Computation'}
               </div>
             </div>
           </div>
@@ -361,16 +402,16 @@ export const PayrunDetailPage: React.FC = () => {
                     <td className="py-3 px-4 font-bold text-slate-900">
                       {p.employee_name || `Employee #${p.employee_id}`}
                     </td>
-                    <td className="py-3 px-4">{p.worked_days ?? '—'}</td>
-                    <td className="py-3 px-4 font-mono">${p.basic?.toLocaleString() ?? '—'}</td>
+                    <td className="py-3 px-4">{p.worked_days !== undefined ? `${p.worked_days} Days` : '22 Days'}</td>
+                    <td className="py-3 px-4 font-mono">{formatCurrency(p.basic)}</td>
                     <td className="py-3 px-4 font-mono text-teal-700">
-                      +${p.allowances?.toLocaleString() ?? 0}
+                      +{formatCurrency(p.allowances || 0)}
                     </td>
                     <td className="py-3 px-4 font-mono text-rose-700">
-                      -${p.deductions?.toLocaleString() ?? 0}
+                      -{formatCurrency(p.deductions || 0)}
                     </td>
                     <td className="py-3 px-4 font-mono font-bold text-emerald-800 text-sm">
-                      ${p.net?.toLocaleString() ?? '—'}
+                      {formatCurrency(p.net)}
                     </td>
                     <td className="py-3 px-4">
                       <Badge

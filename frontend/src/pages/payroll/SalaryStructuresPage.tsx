@@ -10,6 +10,7 @@ import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { formatCurrency } from '../../utils/currency';
 
 export const SalaryStructuresPage: React.FC = () => {
   const [structures, setStructures] = useState<SalaryStructure[]>([]);
@@ -296,7 +297,7 @@ export const SalaryStructuresPage: React.FC = () => {
                           <td className="py-2.5 px-3 text-slate-600 capitalize">{r.computation_method}</td>
                           <td className="py-2.5 px-3 text-right font-mono font-semibold">
                             {r.computation_method === 'fixed'
-                              ? `$${r.fixed_amount ?? 0}`
+                              ? formatCurrency(r.fixed_amount ?? 0)
                               : r.computation_method === 'percentage'
                               ? `${r.percentage}% of ${r.base_field || 'wage'}`
                               : 'Formula'}
@@ -318,40 +319,54 @@ export const SalaryStructuresPage: React.FC = () => {
         onClose={() => setIsStructModalOpen(false)}
         title="Create Salary Structure"
         description="Defines a collection of sequenced salary calculation rules"
+        maxWidth="md"
       >
         <form onSubmit={handleCreateStructure} className="space-y-4">
           <Input
             label="Structure Name"
-            placeholder="e.g. Standard Full-Time Structure"
+            placeholder="e.g. Executive & Management Structure"
             value={structName}
             onChange={(e) => setStructName(e.target.value)}
             required
           />
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-            <Button type="button" variant="outline" onClick={() => setIsStructModalOpen(false)} disabled={submittingStruct}>
+          <div className="flex items-center gap-2 pt-2">
+            <input
+              type="checkbox"
+              id="structActive"
+              checked={structActive}
+              onChange={(e) => setStructActive(e.target.checked)}
+              className="rounded text-indigo-600 focus:ring-indigo-500"
+            />
+            <label htmlFor="structActive" className="text-xs font-semibold text-slate-700">
+              Active Structure (Available for contract assignment)
+            </label>
+          </div>
+
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+            <Button variant="outline" size="sm" onClick={() => setIsStructModalOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" isLoading={submittingStruct}>
+            <Button variant="primary" size="sm" type="submit" isLoading={submittingStruct}>
               Create Structure
             </Button>
           </div>
         </form>
       </Modal>
 
-      {/* New Rule Modal */}
+      {/* Add Rule Modal */}
       <Modal
         isOpen={isRuleModalOpen}
         onClose={() => setIsRuleModalOpen(false)}
-        title="Add Sequenced Salary Rule"
-        description="Configure rule code, execution sequence, and computation formula"
+        title="Add Salary Rule to Structure"
+        description={`Define a formula or fixed component for "${selectedStructure?.name}"`}
         maxWidth="lg"
       >
         <form onSubmit={handleCreateRule} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Rule Name"
-              placeholder="e.g. House Rent Allowance"
+              placeholder="e.g. Basic Wage / House Rent Allowance"
               value={ruleName}
               onChange={(e) => setRuleName(e.target.value)}
               required
@@ -359,7 +374,7 @@ export const SalaryStructuresPage: React.FC = () => {
 
             <Input
               label="Rule Code (Uppercase)"
-              placeholder="e.g. HRA, BASIC, PF_DED"
+              placeholder="e.g. BASIC / HRA / PF"
               value={ruleCode}
               onChange={(e) => setRuleCode(e.target.value.toUpperCase())}
               required
@@ -373,17 +388,14 @@ export const SalaryStructuresPage: React.FC = () => {
               onChange={(e) => setRuleCategory(e.target.value as any)}
               options={[
                 { value: 'Basic', label: 'Basic' },
-                { value: 'Allowance', label: 'Allowance' },
-                { value: 'Deduction', label: 'Deduction' },
-                { value: 'Gross', label: 'Gross' },
-                { value: 'Net', label: 'Net' },
+                { value: 'Allowance', label: 'Allowance (+)' },
+                { value: 'Deduction', label: 'Deduction (-)' },
               ]}
             />
 
             <Input
-              label="Execution Sequence"
+              label="Sequence Order (10, 20, 30...)"
               type="number"
-              placeholder="e.g. 10, 20, 30"
               value={ruleSequence}
               onChange={(e) => setRuleSequence(Number(e.target.value))}
               required
@@ -396,7 +408,7 @@ export const SalaryStructuresPage: React.FC = () => {
             value={ruleCompMethod}
             onChange={(e) => setRuleCompMethod(e.target.value as any)}
             options={[
-              { value: 'fixed', label: 'Fixed Amount ($)' },
+              { value: 'fixed', label: 'Fixed Amount (₹)' },
               { value: 'percentage', label: 'Percentage (%) of Base' },
               { value: 'formula', label: 'Dynamic Formula' },
             ]}
@@ -404,9 +416,9 @@ export const SalaryStructuresPage: React.FC = () => {
 
           {ruleCompMethod === 'fixed' && (
             <Input
-              label="Fixed Amount ($)"
+              label="Fixed Amount (₹)"
               type="number"
-              placeholder="e.g. 500"
+              placeholder="e.g. 5000"
               value={ruleFixedAmount}
               onChange={(e) => setRuleFixedAmount(Number(e.target.value))}
               required

@@ -10,6 +10,7 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { PayrunWizardModal } from './PayrunWizardModal';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { formatCurrency } from '../../utils/currency';
 
 export const PayrunsPage: React.FC = () => {
   const [payruns, setPayruns] = useState<Payrun[]>([]);
@@ -114,7 +115,7 @@ export const PayrunsPage: React.FC = () => {
                       {pr.employee_count ?? pr.payslips?.length ?? '—'} Employees
                     </td>
                     <td className="py-3 px-4 font-mono font-bold text-emerald-700">
-                      {pr.total_net ? `$${pr.total_net.toLocaleString()}` : '—'}
+                      {pr.total_net ? formatCurrency(pr.total_net) : '—'}
                     </td>
                     <td className="py-3 px-4">
                       <Badge

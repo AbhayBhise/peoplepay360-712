@@ -1,5 +1,5 @@
 import { apiClient, apiRequest } from './client';
-import { SalaryStructure, SalaryRule, Payrun, PayslipDetail, Employee } from '../types';
+import { SalaryStructure, SalaryRule, Payrun, PayslipDetail, PayslipSummary, Employee } from '../types';
 import {
   MOCK_STRUCTURES,
   MOCK_RULES,
@@ -9,28 +9,140 @@ import {
   MOCK_CONTRACTS,
 } from './mockData';
 
+// Backend returns camelCase fields and nested relations (e.g. employee: { name }, payrun: { periodStart })
+// Normalize into the expected frontend snake_case structure.
+function normalizeSalaryRule(raw: any): SalaryRule {
+  if (!raw) return raw;
+  const rawCat = raw.category || 'Basic';
+  const category = (rawCat.charAt(0).toUpperCase() + rawCat.slice(1).toLowerCase()) as SalaryRule['category'];
+  return {
+    id: raw.id,
+    structure_id: raw.salaryStructureId ?? raw.structureId ?? raw.structure_id,
+    name: raw.name,
+    code: raw.code,
+    category,
+    sequence: raw.sequence ?? 10,
+    computation_method: raw.computationMethod ?? raw.computation_method ?? 'fixed',
+    fixed_amount: raw.fixedAmount !== undefined ? Number(raw.fixedAmount) : (raw.fixed_amount !== undefined ? Number(raw.fixed_amount) : undefined),
+    percentage: raw.percentage !== undefined ? Number(raw.percentage) : undefined,
+    base_field: raw.baseField ?? raw.base_field,
+    formula: raw.formula,
+  };
+}
+
+function normalizeStructure(raw: any): SalaryStructure {
+  if (!raw) return raw;
+  return {
+    id: raw.id,
+    name: raw.name,
+    active: raw.active,
+    rules_count: raw._count?.rules ?? raw.rules_count ?? raw.rulesCount ?? (Array.isArray(raw.rules) ? raw.rules.length : 0),
+    employees_count: raw._count?.contracts ?? raw.employees_count ?? raw.employeesCount,
+    rules: Array.isArray(raw.rules) ? raw.rules.map(normalizeSalaryRule) : undefined,
+  };
+}
+
+function normalizePayslipSummary(raw: any): PayslipSummary {
+  if (!raw) return raw;
+  return {
+    id: raw.id,
+    employee_id: raw.employeeId ?? raw.employee_id,
+    employee_name: raw.employee?.name ?? raw.employeeName ?? raw.employee_name,
+    status: raw.status,
+    worked_days: raw.workedDays !== undefined ? Number(raw.workedDays) : (raw.worked_days !== undefined ? Number(raw.worked_days) : 0),
+    basic: raw.basic !== undefined ? Number(raw.basic) : 0,
+    allowances: raw.allowances !== undefined ? Number(raw.allowances) : 0,
+    deductions: raw.deductions !== undefined ? Number(raw.deductions) : 0,
+    gross: raw.gross !== undefined ? Number(raw.gross) : 0,
+    net: raw.net !== undefined ? Number(raw.net) : 0,
+  };
+}
+
+function normalizePayslipDetail(raw: any): PayslipDetail {
+  if (!raw) return raw;
+  const lines = Array.isArray(raw.lines)
+    ? raw.lines.map((l: any) => ({
+        rule_id: l.ruleId ?? l.rule_id ?? l.id ?? 1,
+        category: l.category ? (l.category.charAt(0).toUpperCase() + l.category.slice(1).toLowerCase()) : 'Basic',
+        name: l.name ?? l.rule?.name ?? 'Salary Component',
+        amount: Number(l.amount ?? 0),
+      }))
+    : [];
+
+  const periodStart = raw.payrun?.periodStart ? raw.payrun.periodStart.split('T')[0] : (raw.periodStart ? raw.periodStart.split('T')[0] : (raw.period_start || ''));
+  const periodEnd = raw.payrun?.periodEnd ? raw.payrun.periodEnd.split('T')[0] : (raw.periodEnd ? raw.periodEnd.split('T')[0] : (raw.period_end || ''));
+
+  return {
+    id: raw.id,
+    employee_id: raw.employeeId ?? raw.employee_id ?? raw.employee?.id,
+    employee_name: raw.employee?.name ?? raw.employeeName ?? raw.employee_name,
+    structure_id: raw.payrun?.structureId ?? raw.structureId ?? raw.structure_id ?? raw.contract?.salaryStructureId,
+    structure_name: raw.payrun?.structure?.name ?? raw.structureName ?? raw.structure_name ?? raw.contract?.salaryStructure?.name,
+    payrun_id: raw.payrunId ?? raw.payrun_id ?? raw.payrun?.id,
+    period_start: periodStart,
+    period_end: periodEnd,
+    status: raw.status,
+    worked_days: raw.workedDays !== undefined ? Number(raw.workedDays) : (raw.worked_days !== undefined ? Number(raw.worked_days) : 0),
+    basic: raw.basic !== undefined ? Number(raw.basic) : 0,
+    allowances: raw.allowances !== undefined ? Number(raw.allowances) : 0,
+    deductions: raw.deductions !== undefined ? Number(raw.deductions) : 0,
+    gross: raw.gross !== undefined ? Number(raw.gross) : 0,
+    net: raw.net !== undefined ? Number(raw.net) : 0,
+    lines,
+  };
+}
+
+function normalizePayrun(raw: any): Payrun {
+  if (!raw) return raw;
+  const payslips = Array.isArray(raw.payslips) ? raw.payslips.map(normalizePayslipSummary) : [];
+  const periodStart = raw.periodStart ? raw.periodStart.split('T')[0] : (raw.period_start || '');
+  const periodEnd = raw.periodEnd ? raw.periodEnd.split('T')[0] : (raw.period_end || '');
+  const totalNet = raw.total_net ?? (raw.totalNet !== undefined ? Number(raw.totalNet) : payslips.reduce((acc, p) => acc + (p.net || 0), 0));
+  const employeeCount = raw.employee_count ?? raw.employeeCount ?? raw._count?.payslips ?? payslips.length;
+
+  return {
+    id: raw.id,
+    name: raw.name ?? (periodStart ? `${new Date(periodStart).toLocaleString('default', { month: 'long', year: 'numeric' })} Batch Run` : `Payrun #${raw.id}`),
+    structure_id: raw.structureId ?? raw.structure_id,
+    structure_name: raw.structure?.name ?? raw.structureName ?? raw.structure_name,
+    period_start: periodStart,
+    period_end: periodEnd,
+    status: raw.status,
+    computed_by: raw.computedBy ?? raw.computed_by,
+    validated_by: raw.validatedBy ?? raw.validated_by,
+    employee_count: employeeCount,
+    total_net: totalNet,
+    warnings: raw.warnings ?? [],
+    payslips,
+    created_at: raw.createdAt ?? raw.created_at,
+  };
+}
+
 export const payrollApi = {
   // Salary Structures
   getStructures: async (): Promise<SalaryStructure[]> => {
     try {
-      return await apiRequest<SalaryStructure[]>(apiClient.get('/api/salary-structures'));
+      const raw = await apiRequest<any[]>(apiClient.get('/api/salary-structures'));
+      return raw.map(normalizeStructure);
     } catch {
       return MOCK_STRUCTURES;
     }
   },
 
-  getStructureById: async (id: number): Promise<SalaryStructure> => {
+  getStructureById: async (id: number | string): Promise<SalaryStructure> => {
     try {
-      return await apiRequest<SalaryStructure>(apiClient.get(`/api/salary-structures/${id}`));
+      const raw = await apiRequest<any>(apiClient.get(`/api/salary-structures/${id}`));
+      return normalizeStructure(raw);
     } catch {
-      const s = MOCK_STRUCTURES.find((item) => item.id === id);
+      const s = MOCK_STRUCTURES.find((item) => String(item.id) === String(id));
       return s || MOCK_STRUCTURES[0];
     }
   },
 
   createStructure: async (data: { name: string; active: boolean }): Promise<SalaryStructure> => {
     try {
-      return await apiRequest<SalaryStructure>(apiClient.post('/api/salary-structures', data));
+      const raw = await apiRequest<any>(apiClient.post('/api/salary-structures', data));
+      return normalizeStructure(raw);
     } catch {
       const newStruct: SalaryStructure = {
         id: MOCK_STRUCTURES.length + 1,
@@ -43,31 +155,46 @@ export const payrollApi = {
     }
   },
 
-  updateStructure: async (id: number, data: { name: string; active: boolean }): Promise<SalaryStructure> => {
+  updateStructure: async (id: number | string, data: { name: string; active: boolean }): Promise<SalaryStructure> => {
     try {
-      return await apiRequest<SalaryStructure>(apiClient.put(`/api/salary-structures/${id}`, data));
+      const raw = await apiRequest<any>(apiClient.put(`/api/salary-structures/${id}`, data));
+      return normalizeStructure(raw);
     } catch {
-      const index = MOCK_STRUCTURES.findIndex((s) => s.id === id);
+      const index = MOCK_STRUCTURES.findIndex((s) => String(s.id) === String(id));
       if (index !== -1) {
         MOCK_STRUCTURES[index] = { ...MOCK_STRUCTURES[index], ...data };
         return MOCK_STRUCTURES[index];
       }
-      return { id, name: data.name, active: data.active };
+      return { id: Number(id) || 1, name: data.name, active: data.active };
     }
   },
 
   // Salary Rules
-  getRules: async (structureId: number): Promise<SalaryRule[]> => {
+  getRules: async (structureId: number | string): Promise<SalaryRule[]> => {
     try {
-      return await apiRequest<SalaryRule[]>(apiClient.get(`/api/salary-structures/${structureId}/rules`));
+      const raw = await apiRequest<any[]>(apiClient.get(`/api/salary-structures/${structureId}/rules`));
+      return raw.map(normalizeSalaryRule).sort((a, b) => a.sequence - b.sequence);
     } catch {
-      return MOCK_RULES.filter((r) => r.structure_id === structureId).sort((a, b) => a.sequence - b.sequence);
+      return MOCK_RULES.filter((r) => String(r.structure_id) === String(structureId)).sort((a, b) => a.sequence - b.sequence);
     }
   },
 
   createRule: async (data: Partial<SalaryRule>): Promise<SalaryRule> => {
     try {
-      return await apiRequest<SalaryRule>(apiClient.post('/api/salary-rules', data));
+      const payload = {
+        salaryStructureId: data.structure_id ? String(data.structure_id) : undefined,
+        name: data.name,
+        code: data.code,
+        category: data.category?.toLowerCase(),
+        sequence: data.sequence,
+        computationMethod: data.computation_method,
+        fixedAmount: data.fixed_amount,
+        percentage: data.percentage,
+        baseField: data.base_field,
+        formula: data.formula,
+      };
+      const raw = await apiRequest<any>(apiClient.post('/api/salary-rules', payload));
+      return normalizeSalaryRule(raw);
     } catch {
       const newRule: SalaryRule = {
         id: MOCK_RULES.length + 1,
@@ -86,16 +213,28 @@ export const payrollApi = {
     }
   },
 
-  updateRule: async (id: number, data: Partial<SalaryRule>): Promise<SalaryRule> => {
+  updateRule: async (id: number | string, data: Partial<SalaryRule>): Promise<SalaryRule> => {
     try {
-      return await apiRequest<SalaryRule>(apiClient.put(`/api/salary-rules/${id}`, data));
+      const payload = {
+        name: data.name,
+        code: data.code,
+        category: data.category?.toLowerCase(),
+        sequence: data.sequence,
+        computationMethod: data.computation_method,
+        fixedAmount: data.fixed_amount,
+        percentage: data.percentage,
+        baseField: data.base_field,
+        formula: data.formula,
+      };
+      const raw = await apiRequest<any>(apiClient.put(`/api/salary-rules/${id}`, payload));
+      return normalizeSalaryRule(raw);
     } catch {
-      const index = MOCK_RULES.findIndex((r) => r.id === id);
+      const index = MOCK_RULES.findIndex((r) => String(r.id) === String(id));
       if (index !== -1) {
         MOCK_RULES[index] = { ...MOCK_RULES[index], ...data };
         return MOCK_RULES[index];
       }
-      return { id, structure_id: 1, name: '', code: '', category: 'Basic', sequence: 10, computation_method: 'fixed', ...data };
+      return { id: Number(id) || 1, structure_id: 1, name: '', code: '', category: 'Basic', sequence: 10, computation_method: 'fixed', ...data };
     }
   },
 
@@ -119,7 +258,7 @@ export const payrollApi = {
           job_position: item.position || item.job_position || 'Staff Member',
           department_id: item.departmentId || item.department_id || 1,
           department_name: item.departmentName || item.department_name,
-          wage: item.wage,
+          wage: item.wage !== undefined ? Number(item.wage) : 0,
           status: 'active',
           contracts_count: 1,
           attendance_count: 22,
@@ -150,7 +289,8 @@ export const payrollApi = {
         periodEnd: data.period_end,
         employeeIds: data.employee_ids.map(String),
       };
-      return await apiRequest<Payrun>(apiClient.post('/api/payruns', payload));
+      const raw = await apiRequest<any>(apiClient.post('/api/payruns', payload));
+      return normalizePayrun(raw);
     } catch {
       const struct = MOCK_STRUCTURES.find((s) => String(s.id) === String(data.structure_id));
       const newPayrun: Payrun = {
@@ -188,26 +328,29 @@ export const payrollApi = {
 
   getPayruns: async (): Promise<Payrun[]> => {
     try {
-      return await apiRequest<Payrun[]>(apiClient.get('/api/payruns'));
+      const raw = await apiRequest<any[]>(apiClient.get('/api/payruns'));
+      return raw.map(normalizePayrun);
     } catch {
       return MOCK_PAYRUNS;
     }
   },
 
-  getPayrunById: async (id: number): Promise<Payrun> => {
+  getPayrunById: async (id: number | string): Promise<Payrun> => {
     try {
-      return await apiRequest<Payrun>(apiClient.get(`/api/payruns/${id}`));
+      const raw = await apiRequest<any>(apiClient.get(`/api/payruns/${id}`));
+      return normalizePayrun(raw);
     } catch {
-      const p = MOCK_PAYRUNS.find((item) => item.id === id);
+      const p = MOCK_PAYRUNS.find((item) => String(item.id) === String(id));
       return p || MOCK_PAYRUNS[0];
     }
   },
 
-  computePayrun: async (id: number): Promise<Payrun> => {
+  computePayrun: async (id: number | string): Promise<Payrun> => {
     try {
-      return await apiRequest<Payrun>(apiClient.post(`/api/payruns/${id}/compute`));
+      const raw = await apiRequest<any>(apiClient.post(`/api/payruns/${id}/compute`));
+      return normalizePayrun(raw);
     } catch {
-      const index = MOCK_PAYRUNS.findIndex((p) => p.id === id);
+      const index = MOCK_PAYRUNS.findIndex((p) => String(p.id) === String(id));
       if (index !== -1) {
         const pr = MOCK_PAYRUNS[index];
         pr.status = 'computed';
@@ -260,11 +403,12 @@ export const payrollApi = {
     }
   },
 
-  validatePayrun: async (id: number): Promise<Payrun> => {
+  validatePayrun: async (id: number | string): Promise<Payrun> => {
     try {
-      return await apiRequest<Payrun>(apiClient.post(`/api/payruns/${id}/validate`));
+      const raw = await apiRequest<any>(apiClient.post(`/api/payruns/${id}/validate`));
+      return normalizePayrun(raw);
     } catch {
-      const index = MOCK_PAYRUNS.findIndex((p) => p.id === id);
+      const index = MOCK_PAYRUNS.findIndex((p) => String(p.id) === String(id));
       if (index !== -1) {
         MOCK_PAYRUNS[index].status = 'validated';
         MOCK_PAYRUNS[index].payslips?.forEach((ps) => {
@@ -277,11 +421,12 @@ export const payrollApi = {
     }
   },
 
-  markPaidPayrun: async (id: number): Promise<Payrun> => {
+  markPaidPayrun: async (id: number | string): Promise<Payrun> => {
     try {
-      return await apiRequest<Payrun>(apiClient.post(`/api/payruns/${id}/mark-paid`));
+      const raw = await apiRequest<any>(apiClient.post(`/api/payruns/${id}/mark-paid`));
+      return normalizePayrun(raw);
     } catch {
-      const index = MOCK_PAYRUNS.findIndex((p) => p.id === id);
+      const index = MOCK_PAYRUNS.findIndex((p) => String(p.id) === String(id));
       if (index !== -1) {
         MOCK_PAYRUNS[index].status = 'paid';
         MOCK_PAYRUNS[index].payslips?.forEach((ps) => {
@@ -294,7 +439,7 @@ export const payrollApi = {
     }
   },
 
-  sendPayslips: async (id: number): Promise<{ message?: string; sent_count?: number }> => {
+  sendPayslips: async (id: number | string): Promise<{ message?: string; sent_count?: number }> => {
     try {
       return await apiRequest(apiClient.post(`/api/payruns/${id}/send-payslips`));
     } catch {
@@ -303,9 +448,13 @@ export const payrollApi = {
   },
 
   // Payslips
-  getPayslips: async (filters?: { employee_id?: number; payrun_id?: number }): Promise<PayslipDetail[]> => {
+  getPayslips: async (filters?: { employee_id?: number | string; payrun_id?: number | string }): Promise<PayslipDetail[]> => {
     try {
-      return await apiRequest<PayslipDetail[]>(apiClient.get('/api/payslips', { params: filters }));
+      const params: any = {};
+      if (filters?.employee_id) params.employeeId = String(filters.employee_id);
+      if (filters?.payrun_id) params.payrunId = String(filters.payrun_id);
+      const raw = await apiRequest<any[]>(apiClient.get('/api/payslips', { params }));
+      return raw.map(normalizePayslipDetail);
     } catch {
       return Object.values(MOCK_PAYSLIP_DETAILS);
     }
@@ -313,7 +462,8 @@ export const payrollApi = {
 
   getPayslipById: async (id: number | string): Promise<PayslipDetail> => {
     try {
-      return await apiRequest<PayslipDetail>(apiClient.get(`/api/payslips/${id}`));
+      const raw = await apiRequest<any>(apiClient.get(`/api/payslips/${id}`));
+      return normalizePayslipDetail(raw);
     } catch {
       const p = MOCK_PAYSLIP_DETAILS[Number(id)];
       if (p) return p;

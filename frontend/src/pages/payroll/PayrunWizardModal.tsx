@@ -4,6 +4,7 @@ import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import { SalaryStructure, Employee, Payrun } from '../../types';
+import { formatCurrency } from '../../utils/currency';
 import { payrollApi } from '../../api/payroll';
 import { useToast } from '../../context/ToastContext';
 import {
@@ -311,7 +312,7 @@ export const PayrunWizardModal: React.FC<PayrunWizardModalProps> = ({
                     </div>
                     {emp.wage && (
                       <span className="text-2xs font-mono font-bold text-slate-500">
-                        ₹{emp.wage.toLocaleString()}/mo
+                        {formatCurrency(emp.wage)} / mo
                       </span>
                     )}
                   </label>
