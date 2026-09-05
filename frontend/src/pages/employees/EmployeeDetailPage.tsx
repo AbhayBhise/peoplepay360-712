@@ -32,6 +32,7 @@ import { Modal } from '../../components/common/Modal';
 import { EmployeeFormModal } from './EmployeeFormModal';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { formatCurrency } from '../../utils/currency';
 
 export const EmployeeDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -469,7 +470,7 @@ export const EmployeeDetailPage: React.FC = () => {
                       {contracts.map((c) => (
                         <tr key={c.id} className="hover:bg-slate-50/80">
                           <td className="py-3 px-4 font-bold text-slate-900">{c.position}</td>
-                          <td className="py-3 px-4 font-financial font-extrabold text-slate-900">${c.wage.toLocaleString()}</td>
+                          <td className="py-3 px-4 font-financial font-extrabold text-slate-900">{formatCurrency(c.wage)}</td>
                           <td className="py-3 px-4 text-indigo-900 font-semibold">{c.salary_structure_name || `Structure #${c.salary_structure_id}`}</td>
                           <td className="py-3 px-4 text-slate-600">
                             {c.start_date} {c.end_date ? `to ${c.end_date}` : '→ Permanent'}
@@ -620,9 +621,9 @@ export const EmployeeDetailPage: React.FC = () => {
                         <tr key={p.id} className="hover:bg-slate-50/80">
                           <td className="py-3 px-4 font-mono font-bold text-indigo-600">#{p.id}</td>
                           <td className="py-3 px-4">{p.worked_days ?? '—'}</td>
-                          <td className="py-3 px-4 font-financial font-semibold">${p.basic?.toLocaleString() ?? '—'}</td>
+                          <td className="py-3 px-4 font-financial font-semibold">{p.basic !== undefined ? formatCurrency(p.basic) : '—'}</td>
                           <td className="py-3 px-4 font-financial font-extrabold text-emerald-800 text-sm">
-                            ${p.net?.toLocaleString() ?? '—'}
+                            {p.net !== undefined ? formatCurrency(p.net) : '—'}
                           </td>
                           <td className="py-3 px-4">
                             <Badge

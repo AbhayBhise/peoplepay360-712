@@ -9,6 +9,7 @@ import { Card } from '../../components/common/Card';
 import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
 import { useToast } from '../../context/ToastContext';
+import { formatCurrency } from '../../utils/currency';
 
 export const AllPayslipsPage: React.FC = () => {
   const [payslips, setPayslips] = useState<PayslipDetail[]>([]);
@@ -102,10 +103,10 @@ export const AllPayslipsPage: React.FC = () => {
                       {p.period_start} → {p.period_end}
                     </td>
                     <td className="py-3 px-4">{p.worked_days} Days</td>
-                    <td className="py-3 px-4 font-mono">${p.basic?.toLocaleString()}</td>
-                    <td className="py-3 px-4 font-mono text-indigo-900">${p.gross?.toLocaleString()}</td>
+                    <td className="py-3 px-4 font-mono">{formatCurrency(p.basic)}</td>
+                    <td className="py-3 px-4 font-mono text-indigo-900">{formatCurrency(p.gross)}</td>
                     <td className="py-3 px-4 font-mono font-bold text-emerald-800 text-sm">
-                      ${p.net?.toLocaleString()}
+                      {formatCurrency(p.net)}
                     </td>
                     <td className="py-3 px-4">
                       <Badge

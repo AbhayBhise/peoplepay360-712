@@ -21,6 +21,7 @@ import { Badge } from '../../components/common/Badge';
 import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
 import { useToast } from '../../context/ToastContext';
+import { formatCurrency } from '../../utils/currency';
 
 export const ReportsPage: React.FC = () => {
   const [activeReport, setActiveReport] = useState<'payroll' | 'attendance' | 'departments'>('payroll');
@@ -141,7 +142,7 @@ export const ReportsPage: React.FC = () => {
                     <td className="py-3.5 px-4 text-slate-600">{pr.period_start} → {pr.period_end}</td>
                     <td className="py-3.5 px-4 font-financial font-medium text-slate-800">{pr.employee_count ?? 3} Employees</td>
                     <td className="py-3.5 px-4 font-financial font-extrabold text-emerald-800 text-sm">
-                      ${pr.total_net?.toLocaleString() ?? '18,900'}
+                      {formatCurrency(pr.total_net ?? 18900)}
                     </td>
                     <td className="py-3.5 px-4">
                       <Badge variant={pr.status === 'paid' ? 'paid' : pr.status === 'validated' ? 'validated' : 'draft'}>
@@ -181,10 +182,10 @@ export const ReportsPage: React.FC = () => {
                       <td className="py-3.5 px-4 font-bold text-slate-900">{dept.department_name}</td>
                       <td className="py-3.5 px-4 font-financial font-semibold text-slate-800">{dept.headcount} Staff</td>
                       <td className="py-3.5 px-4 font-financial font-extrabold text-slate-900">
-                        ${dept.total_salary.toLocaleString()}
+                        {formatCurrency(dept.total_salary)}
                       </td>
                       <td className="py-3.5 px-4 font-financial font-medium text-teal-800">
-                        ${avg.toLocaleString()} / mo
+                        {formatCurrency(avg)} / mo
                       </td>
                     </tr>
                   );

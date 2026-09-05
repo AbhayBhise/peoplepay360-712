@@ -35,6 +35,7 @@ import { Button } from '../../components/common/Button';
 import { Spinner } from '../../components/common/Spinner';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { formatCurrency } from '../../utils/currency';
 
 export const DashboardPage: React.FC = () => {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -326,7 +327,7 @@ export const DashboardPage: React.FC = () => {
               </div>
               <div className="mt-3">
                 <div className="text-2xl font-extrabold text-slate-900 font-financial tracking-tight">
-                  ${(summary?.total_net_paid ?? 48900).toLocaleString()}
+                  {formatCurrency(summary?.total_net_paid ?? 48900)}
                 </div>
                 <div className="text-2xs text-emerald-700 font-semibold mt-1 flex items-center gap-1">
                   <TrendingUp className="w-3 h-3" /> Disbursed Net Payroll
@@ -362,7 +363,7 @@ export const DashboardPage: React.FC = () => {
               </div>
               <div className="mt-3">
                 <div className="text-2xl font-extrabold text-slate-900 font-financial tracking-tight">
-                  ${Math.round(summary?.average_salary ?? 6500).toLocaleString()}
+                  {formatCurrency(summary?.average_salary ?? 6500)}
                 </div>
                 <div className="text-2xs text-teal-700 font-semibold mt-1">
                   Mean Contract Wage
@@ -440,7 +441,7 @@ export const DashboardPage: React.FC = () => {
                           <div className="flex items-center gap-3">
                             <span className="text-2xs text-slate-500 font-medium">{dept.headcount} Staff</span>
                             <span className="font-financial font-extrabold text-slate-900">
-                              ${dept.total_salary.toLocaleString()}
+                              {formatCurrency(dept.total_salary)}
                             </span>
                           </div>
                         </div>
@@ -505,7 +506,7 @@ export const DashboardPage: React.FC = () => {
                       <div key={item.month} className="flex items-center justify-between text-xs py-1">
                         <span className="text-slate-600 font-semibold">{item.month}</span>
                         <span className="font-financial font-extrabold text-emerald-800">
-                          ${item.net_total.toLocaleString()}
+                          {formatCurrency(item.net_total)}
                         </span>
                       </div>
                     ))}

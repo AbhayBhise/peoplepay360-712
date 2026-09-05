@@ -14,6 +14,7 @@ import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { formatCurrency } from '../../utils/currency';
 
 export const ContractsPage: React.FC = () => {
   const [contracts, setContracts] = useState<Contract[]>([]);
@@ -182,7 +183,7 @@ export const ContractsPage: React.FC = () => {
                       </td>
                       <td className="py-3 px-4 font-medium text-slate-700">{c.position}</td>
                       <td className="py-3 px-4 font-mono font-bold text-slate-900">
-                        ${Number(c.wage).toLocaleString()}
+                        {formatCurrency(c.wage)}
                       </td>
                       <td className="py-3 px-4 text-indigo-900 font-medium">
                         {c.salary_structure_name || struct?.name || `Structure #${c.salary_structure_id}`}
@@ -221,39 +222,31 @@ export const ContractsPage: React.FC = () => {
         maxWidth="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Select
-              label="Employee"
-              value={employeeId}
-              onChange={(e) => handleEmployeeChange(Number(e.target.value))}
-              placeholder="Select Employee..."
-              options={employees.map((e) => ({ value: e.id, label: `${e.name} (${e.job_position})` }))}
-              required
-            />
-
-            <Select
-              label="Department"
-              value={departmentId}
-              onChange={(e) => setDepartmentId(Number(e.target.value))}
-              placeholder="Select Department..."
-              options={departments.map((d) => ({ value: d.id, label: d.name }))}
-              required
-            />
-          </div>
+          <Select
+            label="Employee"
+            value={employeeId}
+            onChange={(e) => handleEmployeeChange(Number(e.target.value))}
+            placeholder="Select Employee..."
+            options={employees.map((e) => ({
+              value: e.id,
+              label: `${e.name} (${e.job_position})`,
+            }))}
+            required
+          />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Job Position"
-              placeholder="e.g. Lead Architect"
+              label="Job Position / Role"
+              placeholder="e.g. Senior Software Engineer"
               value={position}
               onChange={(e) => setPosition(e.target.value)}
               required
             />
 
             <Input
-              label="Monthly Wage ($)"
+              label="Monthly Wage (₹)"
               type="number"
-              placeholder="e.g. 5000"
+              placeholder="e.g. 50000"
               value={wage}
               onChange={(e) => setWage(Number(e.target.value))}
               required
