@@ -1,21 +1,28 @@
 import { apiClient, apiRequest } from './client';
 import { Contract } from '../types';
-import { MOCK_CONTRACTS, MOCK_EMPLOYEES, MOCK_DEPARTMENTS, MOCK_STRUCTURES } from './mockData';
+
+function normalizeContract(raw: any): Contract {
+  return {
+    id: String(raw.id),
+    employee_id: String(raw.employeeId ?? raw.employee_id),
+    employee_name: raw.employee?.name ?? raw.employee_name,
+    department_id: raw.departmentId ?? raw.department_id ? String(raw.departmentId ?? raw.department_id) : undefined,
+    department_name: raw.department?.name ?? raw.department_name,
+    position: raw.position,
+    wage: Number(raw.wage ?? 0),
+    salary_structure_id: raw.salaryStructureId ?? raw.salary_structure_id ? String(raw.salaryStructureId ?? raw.salary_structure_id) : undefined,
+    salary_structure_name: raw.salaryStructure?.name ?? raw.salary_structure_name,
+    start_date: raw.startDate ? String(raw.startDate).slice(0, 10) : raw.start_date,
+    end_date: raw.endDate ? String(raw.endDate).slice(0, 10) : raw.end_date,
+    status: raw.status,
+    is_active_for_today: raw.isActiveForToday ?? raw.is_active_for_today ?? (raw.status === 'active'),
+  };
+}
 
 export const contractsApi = {
   getContracts: async (filters?: { employee_id?: number | string; status?: string }): Promise<Contract[]> => {
-    try {
-      return await apiRequest<Contract[]>(apiClient.get('/api/contracts', { params: filters }));
-    } catch {
-      let result = [...MOCK_CONTRACTS];
-      if (filters?.employee_id) {
-        result = result.filter((c) => String(c.employee_id) === String(filters.employee_id));
-      }
-      if (filters?.status) {
-        result = result.filter((c) => c.status === filters.status);
-      }
-      return result;
-    }
+    const rawList = await apiRequest<any[]>(apiClient.get('/api/contracts', { params: filters }));
+    return Array.isArray(rawList) ? rawList.map(normalizeContract) : [];
   },
 
   createContract: async (data: {
@@ -28,64 +35,36 @@ export const contractsApi = {
     end_date?: string | null;
     status?: string;
   }): Promise<Contract> => {
-    try {
-      const payload = {
-        employeeId: String(data.employee_id),
-        departmentId: data.department_id ? String(data.department_id) : undefined,
-        position: data.position || undefined,
-        wage: Number(data.wage),
-        salaryStructureId: data.salary_structure_id ? String(data.salary_structure_id) : undefined,
-        startDate: data.start_date,
-        endDate: data.end_date || null,
-        status: (data.status as any) || 'draft',
-      };
-      return await apiRequest<Contract>(apiClient.post('/api/contracts', payload));
-    } catch {
-      const emp = MOCK_EMPLOYEES.find((e) => String(e.id) === String(data.employee_id));
-      const dept = MOCK_DEPARTMENTS.find((d) => String(d.id) === String(data.department_id));
-      const struct = MOCK_STRUCTURES.find((s) => String(s.id) === String(data.salary_structure_id));
-      const newContract: Contract = {
-        id: String(MOCK_CONTRACTS.length + 101),
-        employee_id: String(data.employee_id || 1),
-        employee_name: emp?.name,
-        department_id: data.department_id ? String(data.department_id) : '1',
-        department_name: dept?.name,
-        position: data.position || 'Staff',
-        wage: Number(data.wage),
-        salary_structure_id: data.salary_structure_id ? String(data.salary_structure_id) : '1',
-        salary_structure_name: struct?.name,
-        start_date: data.start_date,
-        end_date: data.end_date,
-        status: (data.status as any) || 'draft',
-        is_active_for_today: true,
-      };
-      MOCK_CONTRACTS.unshift(newContract);
-      return newContract;
-    }
+    const payload = {
+      employeeId: String(data.employee_id),
+      departmentId: data.department_id ? String(data.department_id) : undefined,
+      position: data.position || undefined,
+      wage: Number(data.wage),
+      salaryStructureId: data.salary_structure_id ? String(data.salary_structure_id) : undefined,
+      startDate: data.start_date,
+      endDate: data.end_date || null,
+      status: (data.status as any) || 'draft',
+    };
+    const raw = await apiRequest<any>(apiClient.post('/api/contracts', payload));
+    return normalizeContract(raw);
   },
 
   updateContract: async (id: number | string, data: Partial<Contract>): Promise<Contract> => {
-    try {
-      return await apiRequest<Contract>(apiClient.put(`/api/contracts/${id}`, data));
-    } catch {
-      const index = MOCK_CONTRACTS.findIndex((c) => String(c.id) === String(id));
-      if (index !== -1) {
-        MOCK_CONTRACTS[index] = { ...MOCK_CONTRACTS[index], ...data };
-        return MOCK_CONTRACTS[index];
-      }
-      return { id: String(id), ...data } as Contract;
-    }
+    const payload: any = {};
+    if (data.employee_id) payload.employeeId = String(data.employee_id);
+    if (data.department_id !== undefined) payload.departmentId = data.department_id ? String(data.department_id) : null;
+    if (data.position !== undefined) payload.position = data.position;
+    if (data.wage !== undefined) payload.wage = Number(data.wage);
+    if (data.salary_structure_id !== undefined) payload.salaryStructureId = data.salary_structure_id ? String(data.salary_structure_id) : null;
+    if (data.start_date !== undefined) payload.startDate = data.start_date;
+    if (data.end_date !== undefined) payload.endDate = data.end_date;
+    if (data.status !== undefined) payload.status = data.status;
+
+    const raw = await apiRequest<any>(apiClient.put(`/api/contracts/${id}`, payload));
+    return normalizeContract(raw);
   },
 
   deleteContract: async (id: number | string): Promise<{ message?: string }> => {
-    try {
-      return await apiRequest(apiClient.delete(`/api/contracts/${id}`));
-    } catch {
-      const index = MOCK_CONTRACTS.findIndex((c) => String(c.id) === String(id));
-      if (index !== -1) {
-        MOCK_CONTRACTS.splice(index, 1);
-      }
-      return { message: 'Contract deleted' };
-    }
+    return apiRequest(apiClient.delete(`/api/contracts/${id}`));
   },
 };
