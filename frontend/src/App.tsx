@@ -26,6 +26,7 @@ const SalaryStructuresPage = lazy(() => import('./pages/payroll/SalaryStructures
 const ReportsPage = lazy(() => import('./pages/reports/ReportsPage').then((m) => ({ default: m.ReportsPage })));
 const ProfilePage = lazy(() => import('./pages/profile/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 const AdminPage = lazy(() => import('./pages/admin/AdminPage').then((m) => ({ default: m.AdminPage })));
+const SignupPage = lazy(() => import('./pages/auth/SignupPage').then((m) => ({ default: m.SignupPage })));
 
 // Route guard that checks authentication
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -75,6 +76,16 @@ export const App: React.FC = () => {
                     element={
                       <PublicOnlyRoute>
                         <LoginPage />
+                      </PublicOnlyRoute>
+                    }
+                  />
+
+                  {/* Public Signup Route */}
+                  <Route
+                    path="/signup"
+                    element={
+                      <PublicOnlyRoute>
+                        <SignupPage />
                       </PublicOnlyRoute>
                     }
                   />

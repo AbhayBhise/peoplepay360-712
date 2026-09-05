@@ -1,16 +1,19 @@
 import { apiClient, apiRequest } from './client';
 import { User, Role } from '../types';
-import { MOCK_USERS } from './mockData';
+
+export interface UserProfile extends User {
+  jobPosition?: string;
+  status?: string;
+  department?: { id: string; name: string } | null;
+  manager?: { id: string; name: string } | null;
+  memberSince?: string;
+}
 
 export interface LoginResponse {
   user: User;
   token: string;
 }
 
-// Backend returns roles as UPPER_SNAKE_CASE (docs/02_API_CONTRACTS.md) and identity fields
-// as employeeId/employeeName; the rest of the frontend (AuthContext.hasRole, Sidebar, etc.)
-// was built expecting display-format role strings and a flat `name` field. Normalize here,
-// once, at the API boundary, rather than touching every consumer.
 const ROLE_MAP: Record<string, Role> = {
   EMPLOYEE: 'Employee',
   HR_MANAGER: 'HR Manager',
@@ -19,7 +22,7 @@ const ROLE_MAP: Record<string, Role> = {
   ADMIN: 'Admin',
 };
 
-function normalizeUser(raw: any): User {
+function normalizeUser(raw: any): UserProfile {
   const roles: Role[] = Array.isArray(raw?.roles)
     ? raw.roles.map((r: string) => ROLE_MAP[r] ?? (r as Role))
     : [];
@@ -29,62 +32,39 @@ function normalizeUser(raw: any): User {
     email: raw?.email,
     name: raw?.employeeName ?? raw?.name ?? raw?.email,
     roles,
+    jobPosition: raw?.jobPosition,
+    status: raw?.status,
+    department: raw?.department,
+    manager: raw?.manager,
+    memberSince: raw?.memberSince,
   };
 }
 
 export const authApi = {
   login: async (credentials: { email: string; password: string }): Promise<LoginResponse> => {
-    try {
-      const result = await apiRequest<{ user: any; token: string }>(
-        apiClient.post('/api/auth/login', credentials)
-      );
-      return { user: normalizeUser(result.user), token: result.token };
-    } catch (err: any) {
-      // Offline / Demo Fallback
-      const normalizedEmail = credentials.email.trim().toLowerCase();
-      if (MOCK_USERS[normalizedEmail]) {
-        return MOCK_USERS[normalizedEmail];
-      }
+    const result = await apiRequest<{ user: any; token: string }>(
+      apiClient.post('/api/auth/login', credentials)
+    );
+    return { user: normalizeUser(result.user), token: result.token };
+  },
 
-      // Default fallback for any custom email during demo
-      if (credentials.email && credentials.password) {
-        return {
-          user: {
-            id: '99',
-            email: credentials.email,
-            name: credentials.email.split('@')[0].toUpperCase(),
-            roles: ['Admin'],
-          },
-          token: 'demo-fallback-jwt-token-99',
-        };
-      }
-      throw err;
-    }
+  register: async (payload: { name: string; email: string; password: string }): Promise<LoginResponse> => {
+    const result = await apiRequest<{ user: any; token: string }>(
+      apiClient.post('/api/auth/register', payload)
+    );
+    return { user: normalizeUser(result.user), token: result.token };
   },
 
   logout: async (): Promise<{ message?: string }> => {
-    try {
-      return await apiRequest(apiClient.post('/api/auth/logout'));
-    } catch {
-      return { message: 'Logged out successfully' };
-    }
+    return apiRequest(apiClient.post('/api/auth/logout'));
   },
 
-  getMe: async (): Promise<User> => {
-    try {
-      const raw = await apiRequest<any>(apiClient.get('/api/auth/me'));
-      return normalizeUser(raw);
-    } catch (err: any) {
-      const savedUser = localStorage.getItem('peoplepay_user');
-      if (savedUser) {
-        try {
-          return JSON.parse(savedUser);
-        } catch {
-          // Ignore
-        }
-      }
-      throw err;
-    }
+  getMe: async (): Promise<UserProfile> => {
+    const raw = await apiRequest<any>(apiClient.get('/api/auth/me'));
+    return normalizeUser(raw);
+  },
+
+  changePassword: async (data: { currentPassword: string; newPassword: string }): Promise<{ message: string }> => {
+    return apiRequest<{ message: string }>(apiClient.post('/api/auth/change-password', data));
   },
 };
-

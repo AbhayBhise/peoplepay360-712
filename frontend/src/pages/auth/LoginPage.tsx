@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/common/Button';
@@ -301,6 +301,14 @@ export const LoginPage: React.FC = () => {
             >
               Sign In to Workspace
             </Button>
+
+            {/* Create account link */}
+            <p className="text-center text-xs text-slate-500 mt-1">
+              New to PeoplePay360?{' '}
+              <Link to="/signup" className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">
+                Create an account
+              </Link>
+            </p>
           </form>
 
           {/* Divider */}

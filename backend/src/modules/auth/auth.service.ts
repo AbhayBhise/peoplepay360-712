@@ -45,6 +45,51 @@ export async function login(email: string, password: string) {
   };
 }
 
+// Public self-registration — creates an account with EMPLOYEE role.
+// Does NOT require an existing Admin session.
+export async function register(name: string, email: string, password: string) {
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    throw ApiError.conflict("email: an account with this email already exists");
+  }
+
+  // Resolve EMPLOYEE role id
+  const employeeRole = await prisma.role.findFirst({ where: { name: "EMPLOYEE" } });
+  if (!employeeRole) {
+    throw ApiError.internal("Role configuration error — contact your administrator");
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  const user = await prisma.user.create({
+    data: {
+      email,
+      passwordHash,
+      userRoles: {
+        create: [{ roleId: employeeRole.id, grantedBy: "self-registration" }],
+      },
+    },
+    include: { userRoles: { include: { role: true } }, employee: true },
+  });
+
+  const roles = user.userRoles.map((ur) => ur.role.name as RoleName);
+  const payload: AuthPayload = { userId: user.id, employeeId: null, roles };
+  const signOptions: jwt.SignOptions = { expiresIn: env.jwtExpiresIn as jwt.SignOptions["expiresIn"] };
+  const token = jwt.sign(payload, env.jwtSecret, signOptions);
+
+  return {
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      name,
+      employeeId: null,
+      employeeName: name,
+      roles,
+    },
+  };
+}
+
 export async function getMe(auth: AuthPayload) {
   const user = await prisma.user.findUnique({
     where: { id: auth.userId },

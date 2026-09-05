@@ -11,6 +11,12 @@ const loginSchema = z.object({
   password: z.string().min(1, { message: "is required" }),
 });
 
+const registerSchema = z.object({
+  name: z.string().min(2, { message: "must be at least 2 characters" }).max(100),
+  email: z.string().email({ message: "must be a valid email address" }),
+  password: passwordSchema,
+});
+
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, { message: "is required" }),
   newPassword: passwordSchema,
@@ -20,6 +26,12 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   const body = loginSchema.parse(req.body);
   const result = await authService.login(body.email, body.password);
   return ok(res, result);
+});
+
+export const register = asyncHandler(async (req: Request, res: Response) => {
+  const body = registerSchema.parse(req.body);
+  const result = await authService.register(body.name, body.email, body.password);
+  return ok(res, result, 201);
 });
 
 export const me = asyncHandler(async (req: Request, res: Response) => {
