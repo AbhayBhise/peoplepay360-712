@@ -175,51 +175,58 @@ async function main() {
     { id: "292d8682-8f4d-41eb-84da-20d16693bd7f", name: "Ritika Chawla", deptKey: "hr", job: "HR Executive", managerKey: "20e80ed7-ef86-43bc-93de-03d92adbd425", wage: 50000 },
 
     // --- Additional Engineering Staff ---
-    { id: randomUUID(), name: "Tanvi Shah", deptKey: "engineering", job: "Frontend Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 70000 },
-    { id: randomUUID(), name: "Harshit Patel", deptKey: "engineering", job: "Backend Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 74000 },
-    { id: randomUUID(), name: "Neha Gupta", deptKey: "engineering", job: "Full Stack Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 80000 },
-    { id: randomUUID(), name: "Amit Singhania", deptKey: "engineering", job: "Site Reliability Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 85000 },
-    { id: randomUUID(), name: "Pallavi Sen", deptKey: "engineering", job: "Data Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 78000 },
-    { id: randomUUID(), name: "Yash Chopra", deptKey: "engineering", job: "Mobile Developer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 72000 },
-    { id: randomUUID(), name: "Shweta Roy", deptKey: "engineering", job: "Cloud Architect", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 115000 },
-    { id: randomUUID(), name: "Kunal Bajaj", deptKey: "engineering", job: "Systems Analyst", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 65000 },
+    { id: "e1000000-0000-4000-8000-000000000001", name: "Tanvi Shah", deptKey: "engineering", job: "Frontend Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 70000 },
+    { id: "e1000000-0000-4000-8000-000000000002", name: "Harshit Patel", deptKey: "engineering", job: "Backend Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 74000 },
+    { id: "e1000000-0000-4000-8000-000000000003", name: "Neha Gupta", deptKey: "engineering", job: "Full Stack Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 80000 },
+    { id: "e1000000-0000-4000-8000-000000000004", name: "Amit Singhania", deptKey: "engineering", job: "Site Reliability Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 85000 },
+    { id: "e1000000-0000-4000-8000-000000000005", name: "Pallavi Sen", deptKey: "engineering", job: "Data Engineer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 78000 },
+    { id: "e1000000-0000-4000-8000-000000000006", name: "Yash Chopra", deptKey: "engineering", job: "Mobile Developer", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 72000 },
+    { id: "e1000000-0000-4000-8000-000000000007", name: "Shweta Roy", deptKey: "engineering", job: "Cloud Architect", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 115000 },
+    { id: "e1000000-0000-4000-8000-000000000008", name: "Kunal Bajaj", deptKey: "engineering", job: "Systems Analyst", managerKey: "dfa27582-9c0c-422f-8576-1ad2f8d7ba1a", wage: 65000 },
 
     // --- Additional Sales Staff ---
-    { id: randomUUID(), name: "Deepak Soni", deptKey: "sales", job: "Enterprise Sales Rep", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 68000 },
-    { id: randomUUID(), name: "Bhavna Jain", deptKey: "sales", job: "Inside Sales Specialist", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 54000 },
-    { id: randomUUID(), name: "Sameer Saxena", deptKey: "sales", job: "Business Development Rep", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 48000 },
-    { id: randomUUID(), name: "Monica Sharma", deptKey: "sales", job: "Sales Operations Analyst", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 58000 },
-    { id: randomUUID(), name: "Gaurav Kapoor", deptKey: "sales", job: "Key Account Director", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 95000 },
-    { id: randomUUID(), name: "Ritu Bansal", deptKey: "sales", job: "Pre-Sales Consultant", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 75000 },
+    { id: "e2000000-0000-4000-8000-000000000001", name: "Deepak Soni", deptKey: "sales", job: "Enterprise Sales Rep", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 68000 },
+    { id: "e2000000-0000-4000-8000-000000000002", name: "Bhavna Jain", deptKey: "sales", job: "Inside Sales Specialist", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 54000 },
+    { id: "e2000000-0000-4000-8000-000000000003", name: "Sameer Saxena", deptKey: "sales", job: "Business Development Rep", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 48000 },
+    { id: "e2000000-0000-4000-8000-000000000004", name: "Monica Sharma", deptKey: "sales", job: "Sales Operations Analyst", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 58000 },
+    { id: "e2000000-0000-4000-8000-000000000005", name: "Gaurav Kapoor", deptKey: "sales", job: "Key Account Director", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 95000 },
+    { id: "e2000000-0000-4000-8000-000000000006", name: "Ritu Bansal", deptKey: "sales", job: "Pre-Sales Consultant", managerKey: "af88a239-b90f-40cc-bb27-6143ddb22a1e", wage: 75000 },
 
     // --- Additional Marketing Staff ---
-    { id: randomUUID(), name: "Aakash Saxena", deptKey: "marketing", job: "Product Marketing Manager", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 82000 },
-    { id: randomUUID(), name: "Swati Das", deptKey: "marketing", job: "SEO & Growth Specialist", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 54000 },
-    { id: randomUUID(), name: "Nikhil Varma", deptKey: "marketing", job: "Graphic & Brand Designer", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 52000 },
-    { id: randomUUID(), name: "Prachi Mehra", deptKey: "marketing", job: "Social Media Lead", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 48000 },
-    { id: randomUUID(), name: "Mohit Ahuja", deptKey: "marketing", job: "Email Marketing Specialist", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 46000 },
-    { id: randomUUID(), name: "Tara Sundaram", deptKey: "marketing", job: "PR & Communications Manager", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 78000 },
+    { id: "e3000000-0000-4000-8000-000000000001", name: "Aakash Saxena", deptKey: "marketing", job: "Product Marketing Manager", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 82000 },
+    { id: "e3000000-0000-4000-8000-000000000002", name: "Swati Das", deptKey: "marketing", job: "SEO & Growth Specialist", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 54000 },
+    { id: "e3000000-0000-4000-8000-000000000003", name: "Nikhil Varma", deptKey: "marketing", job: "Graphic & Brand Designer", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 52000 },
+    { id: "e3000000-0000-4000-8000-000000000004", name: "Prachi Mehra", deptKey: "marketing", job: "Social Media Lead", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 48000 },
+    { id: "e3000000-0000-4000-8000-000000000005", name: "Mohit Ahuja", deptKey: "marketing", job: "Email Marketing Specialist", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 46000 },
+    { id: "e3000000-0000-4000-8000-000000000006", name: "Tara Sundaram", deptKey: "marketing", job: "PR & Communications Manager", managerKey: "bf0cc423-0294-4857-90fe-0e0f15bf45f4", wage: 78000 },
 
     // --- Additional Finance Staff ---
-    { id: randomUUID(), name: "Rajat Goel", deptKey: "finance", job: "Senior Financial Analyst", managerKey: "b9e12e10-5489-4e08-890e-17e9d0b210b3", wage: 75000 },
-    { id: randomUUID(), name: "Anjali Shrestha", deptKey: "finance", job: "Billing Specialist", managerKey: "b9e12e10-5489-4e08-890e-17e9d0b210b3", wage: 50000 },
-    { id: randomUUID(), name: "Tarun Aggarwal", deptKey: "finance", job: "Internal Auditor", managerKey: "b9e12e10-5489-4e08-890e-17e9d0b210b3", wage: 68000 },
-    { id: randomUUID(), name: "Namrata Kaul", deptKey: "finance", job: "Treasury Analyst", managerKey: "b9e12e10-5489-4e08-890e-17e9d0b210b3", wage: 62000 },
-    { id: randomUUID(), name: "Vivek Pandey", deptKey: "finance", job: "Compliance Officer", managerKey: "b9e12e10-5489-4e08-890e-17e9d0b210b3", wage: 72000 },
+    { id: "e4000000-0000-4000-8000-000000000001", name: "Rajat Goel", deptKey: "finance", job: "Senior Financial Analyst", managerKey: "b9e12e10-5489-4e08-890e-17e9d0b210b3", wage: 75000 },
+    { id: "e4000000-0000-4000-8000-000000000002", name: "Anjali Shrestha", deptKey: "finance", job: "Billing Specialist", managerKey: "b9e12e10-5489-4e08-890e-17e9d0b210b3", wage: 50000 },
+    { id: "e4000000-0000-4000-8000-000000000003", name: "Tarun Aggarwal", deptKey: "finance", job: "Internal Auditor", managerKey: "b9e12e10-5489-4e08-890e-17e9d0b210b3", wage: 68000 },
+    { id: "e4000000-0000-4000-8000-000000000004", name: "Namrata Kaul", deptKey: "finance", job: "Treasury Analyst", managerKey: "b9e12e10-5489-4e08-890e-17e9d0b210b3", wage: 62000 },
+    { id: "e4000000-0000-4000-8000-000000000005", name: "Vivek Pandey", deptKey: "finance", job: "Compliance Officer", managerKey: "b9e12e10-5489-4e08-890e-17e9d0b210b3", wage: 72000 },
 
     // --- Additional HR Staff ---
-    { id: randomUUID(), name: "Sagarika Bose", deptKey: "hr", job: "Talent Acquisition Specialist", managerKey: "20e80ed7-ef86-43bc-93de-03d92adbd425", wage: 55000 },
-    { id: randomUUID(), name: "Varun Bhatia", deptKey: "hr", job: "HR Operations Executive", managerKey: "20e80ed7-ef86-43bc-93de-03d92adbd425", wage: 48000 },
-    { id: randomUUID(), name: "Divyanshu Sinha", deptKey: "hr", job: "People & Culture Manager", managerKey: "20e80ed7-ef86-43bc-93de-03d92adbd425", wage: 78000 },
-    { id: randomUUID(), name: "Kiran Mazumdar", deptKey: "hr", job: "Learning & Development Lead", managerKey: "20e80ed7-ef86-43bc-93de-03d92adbd425", wage: 65000 },
-    { id: randomUUID(), name: "Shilpa Shetty", deptKey: "hr", job: "Compensation & Benefits Analyst", managerKey: "20e80ed7-ef86-43bc-93de-03d92adbd425", wage: 62000 },
+    { id: "e5000000-0000-4000-8000-000000000001", name: "Sagarika Bose", deptKey: "hr", job: "Talent Acquisition Specialist", managerKey: "20e80ed7-ef86-43bc-93de-03d92adbd425", wage: 55000 },
+    { id: "e5000000-0000-4000-8000-000000000002", name: "Varun Bhatia", deptKey: "hr", job: "HR Operations Executive", managerKey: "20e80ed7-ef86-43bc-93de-03d92adbd425", wage: 48000 },
+    { id: "e5000000-0000-4000-8000-000000000003", name: "Divyanshu Sinha", deptKey: "hr", job: "People & Culture Manager", managerKey: "20e80ed7-ef86-43bc-93de-03d92adbd425", wage: 78000 },
+    { id: "e5000000-0000-4000-8000-000000000004", name: "Kiran Mazumdar", deptKey: "hr", job: "Learning & Development Lead", managerKey: "20e80ed7-ef86-43bc-93de-03d92adbd425", wage: 65000 },
+    { id: "e5000000-0000-4000-8000-000000000005", name: "Shilpa Shetty", deptKey: "hr", job: "Compensation & Benefits Analyst", managerKey: "20e80ed7-ef86-43bc-93de-03d92adbd425", wage: 62000 },
   ];
 
   for (const [idx, e] of EMPLOYEES.entries()) {
     const employeeCode = `EMP-${String(idx + 1).padStart(4, "0")}`;
     await prisma.employee.upsert({
-      where: { id: e.id },
-      update: { employeeCode },
+      where: { employeeCode },
+      update: {
+        name: e.name,
+        departmentId: dept[e.deptKey],
+        jobPosition: e.job,
+        status: e.status ?? "active",
+        managerId: e.managerKey ?? null,
+        workingScheduleId: e.noSchedule ? null : schedule.id,
+      },
       create: {
         id: e.id,
         employeeCode,

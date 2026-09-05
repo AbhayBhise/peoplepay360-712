@@ -308,6 +308,18 @@ async function main() {
     );
   }
 
+  // ---- Admin User Provisioning ----
+  console.log("\nAdmin User Provisioning");
+  const provisionUser = await call(token, "POST", "/admin/users", {
+    email: `provision.test.${Date.now()}@peoplepay360.dev`,
+    password: "Password@123",
+    roleNames: ["HR_MANAGER"],
+  });
+  assert(provisionUser.status === 201, "provision new user account as Admin", provisionUser);
+
+  const listUsers = await call(token, "GET", "/admin/users");
+  assert(listUsers.status === 200 && Array.isArray(listUsers.json?.data), "list user accounts as Admin", listUsers);
+
   // ---- Dashboard ----
   console.log("\nDashboard");
   const summary = await call(token, "GET", `/dashboard/summary?department_id=${departmentId}`);
