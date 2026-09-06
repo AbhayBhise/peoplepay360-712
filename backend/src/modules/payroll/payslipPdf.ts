@@ -1,4 +1,18 @@
-import PDFDocument from "pdfkit";
+import {
+  BRAND,
+  createDoc,
+  dataTable,
+  brandedHeader,
+  formatDate,
+  formatInr,
+  kpiCards,
+  renderToBuffer,
+  sectionTitle,
+  stampFooters,
+  hairline,
+  PAGE,
+  CONTENT_WIDTH,
+} from "../../utils/pdfBrand";
 
 interface PayslipLineData {
   category: string;
@@ -18,66 +32,83 @@ interface PayslipPdfData {
   gross: number | string;
   net: number | string;
   lines: PayslipLineData[];
+  payslipNumber?: string | null;
+  employeeCode?: string | null;
 }
 
-const COMPANY_NAME = process.env.COMPANY_NAME ?? "PeoplePay360 Inc.";
-
-function formatDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
-// Real itemized PDF (Category | Rule Name | Amount) — not a blank/placeholder template,
-// per docs/roles/FRONTEND.md's PDF requirement.
+// Real itemized payslip (Category | Rule | Amount) sharing the same brand system as the
+// payroll report, per docs/roles/FRONTEND.md's PDF requirement — never a blank template
+// and never a screenshot of the web page.
 export function generatePayslipPdf(data: PayslipPdfData): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50 });
-    const chunks: Buffer[] = [];
-    doc.on("data", (chunk) => chunks.push(chunk));
-    doc.on("end", () => resolve(Buffer.concat(chunks)));
-    doc.on("error", reject);
+  const doc = createDoc();
 
-    doc.fontSize(18).text(COMPANY_NAME, { align: "left" });
-    doc.moveDown(0.2);
-    doc.fontSize(14).text("Payslip", { align: "left" });
-    doc.moveDown();
+  return renderToBuffer(doc, () => {
+    const meta = [`Pay period: ${formatDate(data.periodStart)} — ${formatDate(data.periodEnd)}`];
+    if (data.payslipNumber) meta.push(`Payslip no: ${data.payslipNumber}`);
 
-    doc.fontSize(10);
-    doc.text(`Employee: ${data.employeeName}`);
-    doc.text(`Period: ${formatDate(data.periodStart)} to ${formatDate(data.periodEnd)}`);
-    doc.text(`Status: ${data.status}`);
-    doc.text(`Worked Days: ${data.workedDays}`);
-    doc.moveDown();
+    brandedHeader(doc, {
+      title: "Payslip",
+      subtitle: data.employeeCode ? `${data.employeeName} · ${data.employeeCode}` : data.employeeName,
+      meta,
+    });
 
-    doc.fontSize(12).text("Salary Computation", { underline: true });
-    doc.moveDown(0.5);
+    kpiCards(doc, [
+      { label: "Net Pay", value: formatInr(data.net) },
+      { label: "Gross", value: formatInr(data.gross) },
+      { label: "Deductions", value: formatInr(data.deductions) },
+      { label: "Worked Days", value: String(data.workedDays) },
+    ]);
 
-    const colX = { category: 50, name: 160, amount: 420 };
-    doc.fontSize(10).text("Category", colX.category, doc.y, { continued: false });
-    doc.text("Rule", colX.name, doc.y - doc.currentLineHeight());
-    doc.text("Amount", colX.amount, doc.y - doc.currentLineHeight());
-    doc.moveDown(0.3);
-    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
-    doc.moveDown(0.3);
+    sectionTitle(doc, "Salary Computation");
+    dataTable(
+      doc,
+      [
+        { header: "Category", width: 0.24 },
+        { header: "Rule", width: 0.48 },
+        { header: "Amount", width: 0.28, align: "right" },
+      ],
+      data.lines.map((l) => [l.category, l.name, formatInr(l.amount)])
+    );
 
-    for (const line of data.lines) {
+    // Totals block, right-aligned under the table like a real payslip stub.
+    const labelX = PAGE.margin + CONTENT_WIDTH - 250;
+    const valueX = PAGE.margin + CONTENT_WIDTH - 120;
+    const totals: [string, string, boolean][] = [
+      ["Basic", formatInr(data.basic), false],
+      ["Allowances", formatInr(data.allowances), false],
+      ["Gross", formatInr(data.gross), false],
+      ["Deductions", `- ${formatInr(data.deductions)}`, false],
+      ["Net Pay", formatInr(data.net), true],
+    ];
+
+    for (const [label, value, emphasised] of totals) {
+      if (emphasised) {
+        doc.moveDown(0.2);
+        hairline(doc);
+        doc.moveDown(0.4);
+      }
       const y = doc.y;
-      doc.text(line.category, colX.category, y);
-      doc.text(line.name, colX.name, y);
-      doc.text(Number(line.amount).toFixed(2), colX.amount, y);
-      doc.moveDown(0.4);
+      doc
+        .font(emphasised ? "Helvetica-Bold" : "Helvetica")
+        .fontSize(emphasised ? 11 : 9.5)
+        .fillColor(emphasised ? BRAND.primaryDark : BRAND.body)
+        .text(label, labelX, y, { width: 120, align: "right", lineBreak: false })
+        .text(value, valueX, y, { width: 120, align: "right", lineBreak: false });
+      doc.y = y + (emphasised ? 16 : 14);
     }
 
-    doc.moveDown();
-    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
-    doc.moveDown(0.5);
+    doc.moveDown(1);
+    doc
+      .font("Helvetica-Oblique")
+      .fontSize(7.5)
+      .fillColor(BRAND.muted)
+      .text(
+        `Status: ${data.status}. This is a system-generated payslip and does not require a signature.`,
+        PAGE.margin,
+        doc.y,
+        { width: CONTENT_WIDTH }
+      );
 
-    doc.fontSize(10).text(`Basic: ${Number(data.basic).toFixed(2)}`);
-    doc.text(`Allowances: ${Number(data.allowances).toFixed(2)}`);
-    doc.text(`Deductions: ${Number(data.deductions).toFixed(2)}`);
-    doc.moveDown(0.3);
-    doc.fontSize(12).text(`Gross: ${Number(data.gross).toFixed(2)}`, { continued: false });
-    doc.fontSize(12).text(`Net: ${Number(data.net).toFixed(2)}`);
-
-    doc.end();
+    stampFooters(doc);
   });
 }

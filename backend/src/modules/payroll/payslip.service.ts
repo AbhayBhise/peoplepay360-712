@@ -64,6 +64,8 @@ export async function getPayslipPdfBuffer(auth: AuthPayload, id: string): Promis
   const payslip = await getPayslip(auth, id);
   return generatePayslipPdf({
     employeeName: payslip.employee.name,
+    employeeCode: payslip.employee.employeeCode,
+    payslipNumber: payslip.payslipNumber,
     periodStart: payslip.payrun.periodStart,
     periodEnd: payslip.payrun.periodEnd,
     status: payslip.status,
