@@ -346,7 +346,7 @@ export const HRManagerDashboardView: React.FC<HRManagerDashboardViewProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate('/workforce/contracts')}
+                onClick={() => navigate('/contracts')}
                 className="text-2xs bg-white dark:bg-slate-900 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 py-1"
               >
                 Contracts
@@ -437,7 +437,7 @@ export const HRManagerDashboardView: React.FC<HRManagerDashboardViewProps> = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate('/workforce/departments')}
+              onClick={() => navigate('/departments')}
               className="text-2xs py-1"
             >
               Departments

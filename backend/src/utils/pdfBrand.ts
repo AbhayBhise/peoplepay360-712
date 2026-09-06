@@ -139,8 +139,8 @@ export function kpiCards(doc: Doc, items: { label: string; value: string }[]) {
     doc
       .fillColor(BRAND.primaryDark)
       .font("Helvetica-Bold")
-      .fontSize(13)
-      .text(item.value, x + 10, top + 25, { width: cardW - 20, lineBreak: false });
+      .fontSize(11)
+      .text(item.value, x + 10, top + 25, { width: cardW - 20, lineBreak: false, ellipsis: true });
     doc.restore();
   });
 

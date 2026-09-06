@@ -259,7 +259,7 @@ export async function sendPayslipsForPayrun(payrunId: string) {
       subject: `Your payslip for ${payrun.periodStart.toISOString().slice(0, 10)} to ${payrun.periodEnd.toISOString().slice(0, 10)}`,
       text: `Hi ${payslip.employee.name}, your payslip is attached. Net pay: ${payslip.net}.`,
       attachments: [
-        { filename: `payslip-${payslip.id}.pdf`, content: pdf, contentType: "application/pdf" },
+        { filename: `Payslip-${payslip.employee.name.replace(/[^a-zA-Z0-9]/g, '_')}-${payrun.periodStart.toISOString().slice(0, 7)}.pdf`, content: pdf, contentType: "application/pdf" },
       ],
     });
     sent.push(payslip.employee.name);

@@ -71,8 +71,11 @@ export function generatePayslipPdf(data: PayslipPdfData): Promise<Buffer> {
     );
 
     // Totals block, right-aligned under the table like a real payslip stub.
-    const labelX = PAGE.margin + CONTENT_WIDTH - 250;
-    const valueX = PAGE.margin + CONTENT_WIDTH - 120;
+    const valWidth = 0.28 * CONTENT_WIDTH;
+    const valX = PAGE.margin + 0.72 * CONTENT_WIDTH + 7;
+    const labelWidth = 0.48 * CONTENT_WIDTH;
+    const labelX = PAGE.margin + 0.24 * CONTENT_WIDTH + 7;
+
     const totals: [string, string, boolean][] = [
       ["Basic", formatInr(data.basic), false],
       ["Allowances", formatInr(data.allowances), false],
@@ -92,8 +95,8 @@ export function generatePayslipPdf(data: PayslipPdfData): Promise<Buffer> {
         .font(emphasised ? "Helvetica-Bold" : "Helvetica")
         .fontSize(emphasised ? 11 : 9.5)
         .fillColor(emphasised ? BRAND.primaryDark : BRAND.body)
-        .text(label, labelX, y, { width: 120, align: "right", lineBreak: false })
-        .text(value, valueX, y, { width: 120, align: "right", lineBreak: false });
+        .text(label, labelX, y, { width: labelWidth - 14, align: "right", lineBreak: false, ellipsis: true })
+        .text(value, valX, y, { width: valWidth - 14, align: "right", lineBreak: false, ellipsis: true });
       doc.y = y + (emphasised ? 16 : 14);
     }
 

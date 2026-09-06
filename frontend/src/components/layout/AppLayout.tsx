@@ -16,7 +16,9 @@ export const AppLayout: React.FC = () => {
   // Generate breadcrumb items
   const pathSegments = location.pathname.split('/').filter(Boolean);
 
-  const getSegmentTitle = (segment: string) => {
+  const isUuid = (str: string) => /^[0-9a-fA-F-]{32,36}$/.test(str);
+
+  const getSegmentTitle = (segment: string, idx: number, allSegments: string[]) => {
     if (segment === 'dashboard') return 'Overview';
     if (segment === 'employees') return 'Employees';
     if (segment === 'departments') return 'Departments';
@@ -29,8 +31,23 @@ export const AppLayout: React.FC = () => {
     if (segment === 'payslips') return 'Payslips';
     if (segment === 'salary-structures') return 'Salary Structures';
     if (segment === 'reports') return 'Reports';
-    if (!isNaN(Number(segment))) return `#${segment}`;
-    return segment.charAt(0).toUpperCase() + segment.slice(1);
+    if (segment === 'profile') return 'My Profile';
+    if (segment === 'admin') return 'Administration';
+    if (segment === 'users') return 'User Management';
+
+    // Format IDs & UUIDs into elegant human-readable labels based on parent context
+    if (isUuid(segment) || !isNaN(Number(segment))) {
+      const prev = idx > 0 ? allSegments[idx - 1] : '';
+      if (prev === 'employees') return 'Employee Profile';
+      if (prev === 'payruns') return 'Payrun Batch Details';
+      if (prev === 'payslips') return 'Itemized Payslip';
+      if (prev === 'departments') return 'Department Details';
+      if (prev === 'contracts') return 'Contract Details';
+      if (prev === 'working-schedules') return 'Schedule Details';
+      return 'Details';
+    }
+
+    return segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');
   };
 
   const handleTriggerAction = (actionKey: string) => {
@@ -81,16 +98,17 @@ export const AppLayout: React.FC = () => {
               {pathSegments.map((seg, idx) => {
                 const url = `/${pathSegments.slice(0, idx + 1).join('/')}`;
                 const isLast = idx === pathSegments.length - 1;
+                const title = getSegmentTitle(seg, idx, pathSegments);
                 return (
                   <React.Fragment key={url}>
                     <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" />
                     {isLast ? (
                       <span className="font-bold text-indigo-600 dark:text-indigo-300 truncate bg-indigo-50/80 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-100 dark:border-indigo-800/60">
-                        {getSegmentTitle(seg)}
+                        {title}
                       </span>
                     ) : (
                       <Link to={url} className="hover:text-indigo-600 dark:hover:text-indigo-400 font-medium truncate transition-colors">
-                        {getSegmentTitle(seg)}
+                        {title}
                       </Link>
                     )}
                   </React.Fragment>

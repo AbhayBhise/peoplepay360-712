@@ -164,10 +164,19 @@ export const App: React.FC = () => {
                     <Route path="/payroll/payslips" element={<AllPayslipsPage />} />
                     <Route path="/payroll/payslips/:id" element={<PayslipDetailPage />} />
                     <Route path="/payroll/salary-structures" element={<RoleProtectedRoute isAllowed={(a) => a.isHRPUPlus()}><SalaryStructuresPage /></RoleProtectedRoute>} />
+                    <Route path="/payroll/structures" element={<Navigate to="/payroll/salary-structures" replace />} />
+                    <Route path="/payroll/rules" element={<Navigate to="/payroll/salary-structures" replace />} />
+                    <Route path="/payroll" element={<Navigate to="/payroll/payruns" replace />} />
                     <Route path="/reports" element={<ReportsPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/admin/users" element={<RoleProtectedRoute isAllowed={(a) => a.isAdmin()}><UsersPage /></RoleProtectedRoute>} />
                     <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
+                    <Route path="/system/users" element={<Navigate to="/admin/users" replace />} />
+                    <Route path="/system" element={<Navigate to="/admin/users" replace />} />
+                    <Route path="/workforce/contracts" element={<Navigate to="/contracts" replace />} />
+                    <Route path="/workforce/departments" element={<Navigate to="/departments" replace />} />
+                    <Route path="/workforce/schedules" element={<Navigate to="/working-schedules" replace />} />
+                    <Route path="/workforce" element={<Navigate to="/employees" replace />} />
                   </Route>
 
                   {/* Catch-all fallback */}

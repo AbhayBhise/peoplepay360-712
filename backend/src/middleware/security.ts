@@ -41,6 +41,11 @@ export function sanitizeBody(req: Request, _res: Response, next: NextFunction) {
 export function requireJsonContentType(req: Request, res: Response, next: NextFunction) {
   const mutating = ["POST", "PUT", "PATCH"];
   if (mutating.includes(req.method)) {
+    const contentLength = req.headers["content-length"];
+    // If request explicitly has 0 content length or has no body content, allow it
+    if (contentLength === "0" || (!contentLength && (!req.body || (typeof req.body === "object" && Object.keys(req.body).length === 0)))) {
+      return next();
+    }
     const ct = req.headers["content-type"] || "";
     if (!ct.includes("application/json")) {
       return res.status(415).json({
