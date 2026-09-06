@@ -22,6 +22,7 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { Pagination } from '../../components/common/Pagination';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { extractItems } from '../../utils/pagination';
 
 export const TimeOffPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'requests' | 'allocations' | 'types'>('requests');
@@ -31,9 +32,27 @@ export const TimeOffPage: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Pagination state
+  // Search & Filter state for requests
+  const [reqSearch, setReqSearch] = useState('');
+  const [reqStatus, setReqStatus] = useState<'all' | 'draft' | 'validate' | 'refused'>('all');
+
+  // Search & Filter state for allocations
+  const [allocSearch, setAllocSearch] = useState('');
+  const [allocStatus, setAllocStatus] = useState<'all' | 'validate' | 'draft'>('all');
+
+  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [allocPage, setAllocPage] = useState(1);
+  const [allocItemsPerPage, setAllocItemsPerPage] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [reqSearch, reqStatus]);
+
+  useEffect(() => {
+    setAllocPage(1);
+  }, [allocSearch, allocStatus]);
 
   // New Request Modal state
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
@@ -53,6 +72,14 @@ export const TimeOffPage: React.FC = () => {
   const [allocTo, setAllocTo] = useState(new Date().getFullYear() + '-12-31');
   const [submittingAlloc, setSubmittingAlloc] = useState(false);
 
+  // New Leave Type Modal state (HRM)
+  const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
+  const [newTypeName, setNewTypeName] = useState('');
+  const [newTypeUnit, setNewTypeUnit] = useState<'days' | 'hours'>('days');
+  const [newTypeRequiresAlloc, setNewTypeRequiresAlloc] = useState(true);
+  const [newTypePayroll, setNewTypePayroll] = useState(true);
+  const [submittingType, setSubmittingType] = useState(false);
+
   const { user, isHRMPlus } = useAuth();
   const { success, error } = useToast();
 
@@ -65,10 +92,10 @@ export const TimeOffPage: React.FC = () => {
         timeOffApi.getTypes().catch(() => []),
         employeesApi.getEmployees().catch(() => []),
       ]);
-      setRequests(reqList || []);
-      setAllocations(allocList || []);
-      setTypes(typeList || []);
-      setEmployees(empList || []);
+      setRequests(extractItems<TimeOffRequest>(reqList));
+      setAllocations(extractItems<TimeOffAllocation>(allocList));
+      setTypes(extractItems<TimeOffType>(typeList));
+      setEmployees(extractItems<Employee>(empList));
     } catch (err: any) {
       error(err.message || 'Failed to load time off data.');
     } finally {
@@ -252,6 +279,69 @@ export const TimeOffPage: React.FC = () => {
     }
   };
 
+  const handleOpenCreateType = () => {
+    setNewTypeName('');
+    setNewTypeUnit('days');
+    setNewTypeRequiresAlloc(true);
+    setNewTypePayroll(true);
+    setIsTypeModalOpen(true);
+  };
+
+  const handleCreateTypeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTypeName.trim()) {
+      error('Leave type name is required.');
+      return;
+    }
+    setSubmittingType(true);
+    try {
+      await timeOffApi.createType({
+        name: newTypeName.trim(),
+        unit: newTypeUnit,
+        requires_allocation: newTypeRequiresAlloc,
+        payroll_integration: newTypePayroll,
+      });
+      success(`Leave type "${newTypeName}" created successfully.`);
+      setIsTypeModalOpen(false);
+      loadData();
+    } catch (err: any) {
+      error(err.message || 'Failed to create leave type.');
+    } finally {
+      setSubmittingType(false);
+    }
+  };
+
+  // Filtered requests
+  const filteredRequests = requests.filter((r) => {
+    if (reqStatus !== 'all' && r.status !== reqStatus) return false;
+    if (!reqSearch) return true;
+    const q = reqSearch.toLowerCase().trim();
+    const empId = r.employee_id || (r as any).employeeId;
+    const emp = employees.find((e) => String(e.id) === String(empId));
+    const empName = ((r as any).employee?.name || r.employee_name || (r as any).employeeName || emp?.name || '').toLowerCase();
+    const reason = (r.reason || '').toLowerCase();
+    const typeName = ((r as any).type?.name || r.type_name || (r as any).typeName || '').toLowerCase();
+    return empName.includes(q) || reason.includes(q) || typeName.includes(q);
+  });
+
+  // Filtered allocations
+  const filteredAllocations = allocations.filter((a) => {
+    if (allocStatus !== 'all' && a.status !== allocStatus) return false;
+    if (!allocSearch) return true;
+    const q = allocSearch.toLowerCase().trim();
+    const empId = a.employee_id || (a as any).employeeId;
+    const emp = employees.find((e) => String(e.id) === String(empId));
+    const empName = ((a as any).employee?.name || a.employee_name || (a as any).employeeName || emp?.name || '').toLowerCase();
+    const typeName = ((a as any).type?.name || a.type_name || (a as any).typeName || '').toLowerCase();
+    return empName.includes(q) || typeName.includes(q);
+  });
+
+  const totalReqPages = Math.max(1, Math.ceil(filteredRequests.length / itemsPerPage));
+  const paginatedRequests = filteredRequests.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const totalAllocPages = Math.max(1, Math.ceil(filteredAllocations.length / allocItemsPerPage));
+  const paginatedAllocations = filteredAllocations.slice((allocPage - 1) * allocItemsPerPage, allocPage * allocItemsPerPage);
+
   return (
     <div className="space-y-6 animate-fade-in text-slate-800 dark:text-slate-100">
       {/* Header */}
@@ -266,11 +356,16 @@ export const TimeOffPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {isHRMPlus() && (
-            <Button variant="outline" icon={<Plus className="w-4 h-4" />} onClick={handleOpenAlloc}>
-              Grant Quota Allocation
-            </Button>
+            <>
+              <Button variant="outline" icon={<Plus className="w-4 h-4" />} onClick={handleOpenCreateType}>
+                New Leave Type
+              </Button>
+              <Button variant="outline" icon={<Plus className="w-4 h-4" />} onClick={handleOpenAlloc}>
+                Grant Quota Allocation
+              </Button>
+            </>
           )}
           <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={handleOpenRequest}>
             Request Time Off
@@ -358,190 +453,314 @@ export const TimeOffPage: React.FC = () => {
         <Spinner label="Loading time off records..." />
       ) : activeTab === 'requests' ? (
         /* TAB 1: REQUESTS */
-        requests.length === 0 ? (
-          <EmptyState
-            title="No Leave Requests Found"
-            description="There are currently no active or historical time off requests."
-            actionLabel="Request Time Off"
-            onAction={handleOpenRequest}
-          />
-        ) : (
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
-                  <tr>
-                    <th className="py-3.5 px-4">Employee</th>
-                    <th className="py-3.5 px-4">Leave Type</th>
-                    <th className="py-3.5 px-4">Requested Dates</th>
-                    <th className="py-3.5 px-4">Duration</th>
-                    <th className="py-3.5 px-4">Status</th>
-                    {isHRMPlus() && <th className="py-3.5 px-4 text-right">Approval Decision</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {requests.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((r) => {
-                    const empId = r.employee_id || (r as any).employeeId;
-                    const typeId = r.type_id || (r as any).typeId;
-                    const emp = employees.find((e) => String(e.id) === String(empId));
-                    const tObj = types.find((t) => String(t.id) === String(typeId));
-                    const empDisplayName = (r as any).employee?.name || r.employee_name || (r as any).employeeName || emp?.name || ((r as any).employee?.employeeCode || (emp as any)?.employeeCode || (empId && empId !== 'undefined' ? `Employee #${String(empId).substring(0, 8)}` : 'Staff Member'));
-                    const typeDisplayName = (r as any).type?.name || r.type_name || (r as any).typeName || tObj?.name || (typeId && typeId !== 'undefined' ? `Type #${String(typeId).substring(0, 8)}` : 'Leave Type');
+        <div className="space-y-4">
+          {/* Requests Filter Bar */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-xs">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <input
+                type="text"
+                placeholder="Search requests by employee name, reason, or leave type..."
+                value={reqSearch}
+                onChange={(e) => setReqSearch(e.target.value)}
+                className="w-full sm:max-w-md px-3.5 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
 
-                    return (
-                      <tr key={r.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
-                        <td className="py-3.5 px-4">
-                          <div className="font-bold text-slate-900 dark:text-white text-sm">
-                            {empDisplayName}
-                          </div>
-                          {r.reason && <div className="text-2xs text-slate-500 dark:text-slate-400 italic mt-0.5">"{r.reason}"</div>}
-                        </td>
-                        <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-200">
-                          {typeDisplayName}
-                        </td>
-                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 font-medium">
-                          {r.date_from} → {r.date_to}
-                        </td>
-                        <td className="py-3.5 px-4 font-financial font-extrabold text-slate-900 dark:text-white text-sm">
-                          {r.duration || '—'} {tObj?.unit || 'days'}
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <Badge
-                            variant={
-                              r.status === 'validate'
-                                ? 'validated'
-                                : r.status === 'refused'
-                                ? 'refused'
-                                : 'draft'
-                            }
-                          >
-                            {r.status === 'validate' ? 'Approved' : r.status}
-                          </Badge>
-                        </td>
-                        {isHRMPlus() && (
-                          <td className="py-3.5 px-4 text-right">
-                            {r.status === 'draft' ? (
-                              <div className="flex items-center justify-end gap-1.5">
-                                <Button
-                                  variant="success"
-                                  size="sm"
-                                  icon={<CheckCircle2 className="w-3.5 h-3.5" />}
-                                  onClick={() => handleApproveRequest(r.id)}
-                                >
-                                  Approve
-                                </Button>
-                                <Button
-                                  variant="danger"
-                                  size="sm"
-                                  icon={<XCircle className="w-3.5 h-3.5" />}
-                                  onClick={() => handleRefuseRequest(r.id)}
-                                >
-                                  Refuse
-                                </Button>
-                              </div>
-                            ) : (
-                              <span className="text-2xs text-slate-400 font-semibold font-mono">PROCESSED</span>
-                            )}
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <select
+                  value={reqStatus}
+                  onChange={(e) => setReqStatus(e.target.value as any)}
+                  className="w-full sm:w-48 px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                >
+                  <option value="all">All Statuses ({requests.length})</option>
+                  <option value="draft">Pending Approval ({requests.filter(r => r.status === 'draft').length})</option>
+                  <option value="validate">Approved ({requests.filter(r => r.status === 'validate').length})</option>
+                  <option value="refused">Refused ({requests.filter(r => r.status === 'refused').length})</option>
+                </select>
+
+                {(reqSearch || reqStatus !== 'all') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReqSearch('');
+                      setReqStatus('all');
+                    }}
+                    className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline shrink-0 cursor-pointer"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
             </div>
-
-            <Pagination
-              currentPage={currentPage}
-              totalPages={Math.ceil(requests.length / itemsPerPage)}
-              totalItems={requests.length}
-              itemsPerPage={itemsPerPage}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={(size) => {
-                setItemsPerPage(size);
-                setCurrentPage(1);
-              }}
-            />
           </div>
-        )
+
+          {filteredRequests.length === 0 ? (
+            <EmptyState
+              title="No Leave Requests Found"
+              description={reqSearch || reqStatus !== 'all' ? "No requests matched your filter criteria." : "There are currently no active or historical time off requests."}
+              actionLabel={reqSearch || reqStatus !== 'all' ? "Clear Filters" : "Request Time Off"}
+              onAction={reqSearch || reqStatus !== 'all' ? () => { setReqSearch(''); setReqStatus('all'); } : handleOpenRequest}
+            />
+          ) : (
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
+                    <tr>
+                      <th className="py-3.5 px-4">Employee</th>
+                      <th className="py-3.5 px-4">Leave Type</th>
+                      <th className="py-3.5 px-4">Requested Dates</th>
+                      <th className="py-3.5 px-4">Duration</th>
+                      <th className="py-3.5 px-4">Status</th>
+                      {isHRMPlus() && <th className="py-3.5 px-4 text-right">Approval Decision</th>}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {paginatedRequests.map((r) => {
+                      const empId = r.employee_id || (r as any).employeeId;
+                      const typeId = r.type_id || (r as any).typeId;
+                      const emp = employees.find((e) => String(e.id) === String(empId));
+                      const tObj = types.find((t) => String(t.id) === String(typeId));
+                      const empDisplayName = (r as any).employee?.name || r.employee_name || (r as any).employeeName || emp?.name || ((r as any).employee?.employeeCode || (emp as any)?.employeeCode || (empId && empId !== 'undefined' ? `Employee #${String(empId).substring(0, 8)}` : 'Staff Member'));
+                      const typeDisplayName = (r as any).type?.name || r.type_name || (r as any).typeName || tObj?.name || (typeId && typeId !== 'undefined' ? `Type #${String(typeId).substring(0, 8)}` : 'Leave Type');
+
+                      return (
+                        <tr key={r.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                          <td className="py-3.5 px-4">
+                            <div className="font-bold text-slate-900 dark:text-white text-sm">
+                              {empDisplayName}
+                            </div>
+                            {r.reason && <div className="text-2xs text-slate-500 dark:text-slate-400 italic mt-0.5">"{r.reason}"</div>}
+                          </td>
+                          <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-200">
+                            {typeDisplayName}
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 font-medium">
+                            {r.date_from} → {r.date_to}
+                          </td>
+                          <td className="py-3.5 px-4 font-financial font-extrabold text-slate-900 dark:text-white text-sm">
+                            {r.duration || '—'} {tObj?.unit || 'days'}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <Badge
+                              variant={
+                                r.status === 'validate'
+                                  ? 'validated'
+                                  : r.status === 'refused'
+                                  ? 'refused'
+                                  : 'draft'
+                              }
+                            >
+                              {r.status === 'validate' ? 'Approved' : r.status}
+                            </Badge>
+                          </td>
+                          {isHRMPlus() && (
+                            <td className="py-3.5 px-4 text-right">
+                              {r.status === 'draft' ? (
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <Button
+                                    variant="success"
+                                    size="sm"
+                                    icon={<CheckCircle2 className="w-3.5 h-3.5" />}
+                                    onClick={() => handleApproveRequest(r.id)}
+                                  >
+                                    Approve
+                                  </Button>
+                                  <Button
+                                    variant="danger"
+                                    size="sm"
+                                    icon={<XCircle className="w-3.5 h-3.5" />}
+                                    onClick={() => handleRefuseRequest(r.id)}
+                                  >
+                                    Refuse
+                                  </Button>
+                                </div>
+                              ) : (
+                                <span className="text-2xs text-slate-400 font-semibold font-mono">PROCESSED</span>
+                              )}
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalReqPages}
+                totalItems={filteredRequests.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(size) => {
+                  setItemsPerPage(size);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+          )}
+        </div>
       ) : activeTab === 'allocations' ? (
         /* TAB 2: ALLOCATIONS */
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
-                <tr>
-                  <th className="py-3.5 px-4">Employee</th>
-                  <th className="py-3.5 px-4">Leave Type</th>
-                  <th className="py-3.5 px-4">Allocated Quota</th>
-                  <th className="py-3.5 px-4">Consumed</th>
-                  <th className="py-3.5 px-4">Available Balance</th>
-                  <th className="py-3.5 px-4">Status</th>
-                  {isHRMPlus() && <th className="py-3.5 px-4 text-right">Action</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {allocations.map((a) => {
-                  const empId = a.employee_id || (a as any).employeeId;
-                  const typeId = a.type_id || (a as any).typeId;
-                  const emp = employees.find((e) => String(e.id) === String(empId));
-                  const tObj = types.find((t) => String(t.id) === String(typeId));
-                  const remaining = a.remaining !== undefined ? a.remaining : (Number(a.allocated) - (Number(a.taken) || 0));
-                  const empDisplayName = (a as any).employee?.name || a.employee_name || (a as any).employeeName || emp?.name || ((a as any).employee?.employeeCode || (emp as any)?.employeeCode || (empId && empId !== 'undefined' ? `Employee #${String(empId).substring(0, 8)}` : 'Staff Member'));
-                  const typeDisplayName = (a as any).type?.name || a.type_name || (a as any).typeName || tObj?.name || (typeId && typeId !== 'undefined' ? `Type #${String(typeId).substring(0, 8)}` : 'Leave Type');
+        <div className="space-y-4">
+          {/* Allocations Filter Bar */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-xs">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <input
+                type="text"
+                placeholder="Search allocations by employee or leave type..."
+                value={allocSearch}
+                onChange={(e) => setAllocSearch(e.target.value)}
+                className="w-full sm:max-w-md px-3.5 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
 
-                  return (
-                    <tr key={a.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white text-sm">
-                        {empDisplayName}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-medium">{typeDisplayName}</td>
-                      <td className="py-3.5 px-4 font-financial font-semibold text-slate-900 dark:text-white">{a.allocated} days</td>
-                      <td className="py-3.5 px-4 font-financial text-slate-500 dark:text-slate-400">{a.taken || 0} days</td>
-                      <td className="py-3.5 px-4 font-financial font-extrabold text-teal-800 dark:text-teal-300 text-sm">
-                        {remaining} days
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <Badge variant={a.status === 'validate' ? 'validated' : 'draft'}>
-                          {a.status === 'validate' ? 'Validated' : 'Draft'}
-                        </Badge>
-                      </td>
-                      {isHRMPlus() && (
-                        <td className="py-3.5 px-4 text-right">
-                          {a.status === 'draft' && (
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => handleApproveAlloc(a.id)}
-                            >
-                              Validate
-                            </Button>
-                          )}
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <select
+                  value={allocStatus}
+                  onChange={(e) => setAllocStatus(e.target.value as any)}
+                  className="w-full sm:w-48 px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                >
+                  <option value="all">All Allocations ({allocations.length})</option>
+                  <option value="validate">Validated ({allocations.filter(a => a.status === 'validate').length})</option>
+                  <option value="draft">Pending Validation ({allocations.filter(a => a.status === 'draft').length})</option>
+                </select>
+
+                {(allocSearch || allocStatus !== 'all') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAllocSearch('');
+                      setAllocStatus('all');
+                    }}
+                    className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline shrink-0 cursor-pointer"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
+
+          {filteredAllocations.length === 0 ? (
+            <EmptyState
+              title="No Allocations Found"
+              description={allocSearch || allocStatus !== 'all' ? "No quota allocations matched your filters." : "There are currently no leave quota allocations configured."}
+              actionLabel={allocSearch || allocStatus !== 'all' ? "Clear Filters" : (isHRMPlus() ? "Grant Quota Allocation" : undefined)}
+              onAction={allocSearch || allocStatus !== 'all' ? () => { setAllocSearch(''); setAllocStatus('all'); } : handleOpenAlloc}
+            />
+          ) : (
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
+                    <tr>
+                      <th className="py-3.5 px-4">Employee</th>
+                      <th className="py-3.5 px-4">Leave Type</th>
+                      <th className="py-3.5 px-4">Allocated Quota</th>
+                      <th className="py-3.5 px-4">Consumed</th>
+                      <th className="py-3.5 px-4">Available Balance</th>
+                      <th className="py-3.5 px-4">Status</th>
+                      {isHRMPlus() && <th className="py-3.5 px-4 text-right">Action</th>}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {paginatedAllocations.map((a) => {
+                      const empId = a.employee_id || (a as any).employeeId;
+                      const typeId = a.type_id || (a as any).typeId;
+                      const emp = employees.find((e) => String(e.id) === String(empId));
+                      const tObj = types.find((t) => String(t.id) === String(typeId));
+                      const remaining = a.remaining !== undefined ? a.remaining : (Number(a.allocated) - (Number(a.taken) || 0));
+                      const empDisplayName = (a as any).employee?.name || a.employee_name || (a as any).employeeName || emp?.name || ((a as any).employee?.employeeCode || (emp as any)?.employeeCode || (empId && empId !== 'undefined' ? `Employee #${String(empId).substring(0, 8)}` : 'Staff Member'));
+                      const typeDisplayName = (a as any).type?.name || a.type_name || (a as any).typeName || tObj?.name || (typeId && typeId !== 'undefined' ? `Type #${String(typeId).substring(0, 8)}` : 'Leave Type');
+
+                      return (
+                        <tr key={a.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                          <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white text-sm">
+                            {empDisplayName}
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-medium">{typeDisplayName}</td>
+                          <td className="py-3.5 px-4 font-financial font-semibold text-slate-900 dark:text-white">{a.allocated} days</td>
+                          <td className="py-3.5 px-4 font-financial text-slate-500 dark:text-slate-400">{a.taken || 0} days</td>
+                          <td className="py-3.5 px-4 font-financial font-extrabold text-teal-800 dark:text-teal-300 text-sm">
+                            {remaining} days
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <Badge variant={a.status === 'validate' ? 'validated' : 'draft'}>
+                              {a.status === 'validate' ? 'Validated' : 'Draft'}
+                            </Badge>
+                          </td>
+                          {isHRMPlus() && (
+                            <td className="py-3.5 px-4 text-right">
+                              {a.status === 'draft' && (
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => handleApproveAlloc(a.id)}
+                                >
+                                  Validate
+                                </Button>
+                              )}
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <Pagination
+                currentPage={allocPage}
+                totalPages={totalAllocPages}
+                totalItems={filteredAllocations.length}
+                itemsPerPage={allocItemsPerPage}
+                onPageChange={setAllocPage}
+                onItemsPerPageChange={(size) => {
+                  setAllocItemsPerPage(size);
+                  setAllocPage(1);
+                }}
+              />
+            </div>
+          )}
         </div>
       ) : (
         /* TAB 3: LEAVE TYPES */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {types.map((t) => (
-            <div key={t.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-xs">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <h3 className="font-bold text-slate-900 dark:text-white text-sm">{t.name}</h3>
-                <span className="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 text-2xs font-bold border border-indigo-100 dark:border-indigo-800/60 uppercase">
-                  {t.unit}
-                </span>
-              </div>
-              <p className="text-2xs text-slate-500 dark:text-slate-400 mt-1">
-                {t.requires_allocation ? 'Requires approved quota allocation' : 'Open / Unallocated leave'}
-              </p>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between pb-2">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">Configured Leave Types</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Rules determining quota requirements and payroll deduction integration</p>
             </div>
-          ))}
+            {isHRMPlus() && (
+              <Button variant="primary" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={handleOpenCreateType}>
+                New Leave Type
+              </Button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {types.map((t) => (
+              <div key={t.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-sm">{t.name}</h3>
+                    <span className="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 text-2xs font-bold border border-indigo-100 dark:border-indigo-800/60 uppercase">
+                      {t.unit}
+                    </span>
+                  </div>
+                  <p className="text-2xs text-slate-500 dark:text-slate-400 mt-1">
+                    {t.requires_allocation ? 'Requires approved quota allocation' : 'Open / Unallocated leave'}
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-2xs flex items-center justify-between text-slate-400">
+                  <span>Payroll Integration:</span>
+                  <span className="font-semibold text-teal-700 dark:text-teal-400">
+                    {t.payroll_integration ? 'Enabled' : 'Disabled'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -718,6 +937,71 @@ export const TimeOffPage: React.FC = () => {
             </Button>
             <Button type="submit" variant="primary" isLoading={submittingAlloc}>
               Grant Allocation
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Create Leave Type Modal */}
+      <Modal
+        isOpen={isTypeModalOpen}
+        onClose={() => setIsTypeModalOpen(false)}
+        title="Create New Leave Type"
+        description="Define a new policy for annual, sick, casual, or compensatory leave"
+      >
+        <form onSubmit={handleCreateTypeSubmit} className="space-y-4">
+          <Input
+            label="Leave Type Name"
+            placeholder="e.g. Parental Leave, Sabbatical, Work From Home"
+            value={newTypeName}
+            onChange={(e) => setNewTypeName(e.target.value)}
+            required
+          />
+
+          <Select
+            label="Unit of Measurement"
+            value={newTypeUnit}
+            onChange={(e) => setNewTypeUnit(e.target.value as 'days' | 'hours')}
+            options={[
+              { value: 'days', label: 'Days (Standard full/half-day requests)' },
+              { value: 'hours', label: 'Hours (Hourly time-off/permissions)' },
+            ]}
+          />
+
+          <div className="space-y-3 pt-2">
+            <label className="flex items-center gap-3 text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={newTypeRequiresAlloc}
+                onChange={(e) => setNewTypeRequiresAlloc(e.target.checked)}
+                className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-700 dark:bg-slate-800"
+              />
+              <div>
+                <span className="font-semibold block">Requires Quota Allocation</span>
+                <span className="text-2xs text-slate-500 dark:text-slate-400">Employees must be granted quota balances before they can submit requests</span>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-3 text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={newTypePayroll}
+                onChange={(e) => setNewTypePayroll(e.target.checked)}
+                className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-700 dark:bg-slate-800"
+              />
+              <div>
+                <span className="font-semibold block">Payroll Integration</span>
+                <span className="text-2xs text-slate-500 dark:text-slate-400">Factor unapproved or unpaid leave instances directly into payslip salary computations</span>
+              </div>
+            </label>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <Button type="button" variant="outline" onClick={() => setIsTypeModalOpen(false)} disabled={submittingType}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" isLoading={submittingType}>
+              Create Leave Type
             </Button>
           </div>
         </form>

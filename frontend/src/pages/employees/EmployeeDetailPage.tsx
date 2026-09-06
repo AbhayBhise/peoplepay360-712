@@ -33,6 +33,7 @@ import { EmployeeFormModal } from './EmployeeFormModal';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { formatCurrency } from '../../utils/currency';
+import { extractItems } from '../../utils/pagination';
 
 export const EmployeeDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -81,16 +82,16 @@ export const EmployeeDetailPage: React.FC = () => {
       setSubLoading(true);
       try {
         if (activeTab === 'contracts') {
-          const list = await employeesApi.getEmployeeContracts(id);
+          const list = extractItems(await employeesApi.getEmployeeContracts(id));
           setContracts(list || []);
         } else if (activeTab === 'attendance') {
-          const list = await employeesApi.getEmployeeAttendance(id);
+          const list = extractItems(await employeesApi.getEmployeeAttendance(id));
           setAttendance(list || []);
         } else if (activeTab === 'timeoff') {
-          const list = await employeesApi.getEmployeeTimeOff(id);
+          const list = extractItems(await employeesApi.getEmployeeTimeOff(id));
           setTimeOff(list || []);
         } else if (activeTab === 'payslips') {
-          const list = await employeesApi.getEmployeePayslips(id);
+          const list = extractItems(await employeesApi.getEmployeePayslips(id));
           setPayslips(list || []);
         }
       } catch (err: any) {

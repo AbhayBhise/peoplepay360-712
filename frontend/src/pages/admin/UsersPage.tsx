@@ -30,6 +30,7 @@ import { Input } from '../../components/common/Input';
 import { useAuth } from '../../context/AuthContext';
 import { Select } from '../../components/common/Select';
 import { Spinner } from '../../components/common/Spinner';
+import { extractItems } from '../../utils/pagination';
 
 // ── Role badge ────────────────────────────────────────────────────────────────
 const RoleBadge: React.FC<{ role: string }> = ({ role }) => {
@@ -417,8 +418,8 @@ export const UsersPage: React.FC = () => {
         adminApi.getUsers(),
         employeesApi.getEmployees().catch(() => []),
       ]);
-      setUsers(usersData);
-      setEmployees(empData);
+      setUsers(extractItems<AdminUser>(usersData));
+      setEmployees(extractItems<Employee>(empData));
     } catch (err: any) {
       toastError(err.message || 'Failed to retrieve workforce user registry.');
     } finally {
@@ -452,7 +453,7 @@ export const UsersPage: React.FC = () => {
   const handleOpenAuditLogs = async () => {
     try {
       const logs = await adminApi.getAuditLogs();
-      setAuditLogs(logs || []);
+      setAuditLogs(extractItems<AuditLog>(logs));
       setShowAuditModal(true);
     } catch (err: any) {
       toastError(err.message || 'Failed to fetch audit log trail.');

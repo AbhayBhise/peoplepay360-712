@@ -46,9 +46,7 @@ export class WriteBuffer<T> {
     try {
       await this.flushHandler(batch);
     } catch (err) {
-      console.error("[WriteBuffer] Bulk flush failed, re-queueing batch:", err);
-      // Re-queue failed items at the front to prevent data loss
-      this.queue.unshift(...batch);
+      console.error("[WriteBuffer] Bulk flush failed, discarding batch to prevent loop:", err);
     } finally {
       this.isFlushing = false;
     }
@@ -71,16 +69,34 @@ export const auditWriteBuffer = new WriteBuffer<BufferedAuditRecord>(
   50, // Batch limit count
   1000, // Flush timer (1s)
   async (batch) => {
-    await prisma.auditLog.createMany({
-      data: batch.map((item) => ({
-        userId: item.userId ?? undefined,
-        module: item.module,
-        action: item.action,
-        recordId: item.recordId ?? undefined,
-        beforeValue: item.beforeValue ?? undefined,
-        afterValue: item.afterValue ?? undefined,
-        ipAddress: item.ipAddress ?? undefined,
-      })),
-    });
+    try {
+      await prisma.auditLog.createMany({
+        data: batch.map((item) => ({
+          userId: item.userId ?? undefined,
+          module: item.module,
+          action: item.action,
+          recordId: item.recordId ?? undefined,
+          beforeValue: item.beforeValue ?? undefined,
+          afterValue: item.afterValue ?? undefined,
+          ipAddress: item.ipAddress ?? undefined,
+        })),
+      });
+    } catch (err: any) {
+      // Fallback: If foreign key violation on userId, write with null userId so audit log is preserved
+      console.warn("[WriteBuffer] Retrying audit batch with sanitized userIds due to FK failure");
+      await prisma.auditLog.createMany({
+        data: batch.map((item) => ({
+          userId: undefined,
+          module: item.module,
+          action: item.action,
+          recordId: item.recordId ?? undefined,
+          beforeValue: item.beforeValue ?? undefined,
+          afterValue: item.afterValue ?? undefined,
+          ipAddress: item.ipAddress ?? undefined,
+        })),
+      }).catch((fallbackErr) => {
+        console.error("[WriteBuffer] Failed to persist audit logs even after sanitizing userIds:", fallbackErr);
+      });
+    }
   }
 );

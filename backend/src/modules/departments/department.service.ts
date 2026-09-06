@@ -6,18 +6,36 @@ import { createDepartmentSchema, updateDepartmentSchema } from "./department.val
 type CreateInput = z.infer<typeof createDepartmentSchema>;
 type UpdateInput = z.infer<typeof updateDepartmentSchema>;
 
-export function listDepartments(parentId?: string) {
+export async function listDepartments(parentId?: string, pagination?: import("../../utils/pagination").PaginationParams) {
   // No pagination here — departments are a small, bounded reference list, never
   // thousands of rows — but the parent/head names still need the same include every
   // other list endpoint needed to avoid showing a raw id instead of a name.
-  return prisma.department.findMany({
-    where: parentId ? { parentDepartmentId: parentId } : undefined,
-    orderBy: { name: "asc" },
-    include: {
-      parentDepartment: { select: { id: true, name: true } },
-      headEmployee: { select: { id: true, name: true } },
-    },
-  });
+  const where = parentId ? { parentDepartmentId: parentId } : undefined;
+  if (!pagination) {
+    return prisma.department.findMany({
+      where,
+      orderBy: { name: "asc" },
+      include: {
+        parentDepartment: { select: { id: true, name: true } },
+        headEmployee: { select: { id: true, name: true } },
+      },
+    });
+  }
+  const [items, total] = await Promise.all([
+    prisma.department.findMany({
+      where,
+      orderBy: { name: "asc" },
+      include: {
+        parentDepartment: { select: { id: true, name: true } },
+        headEmployee: { select: { id: true, name: true } },
+      },
+      skip: pagination.skip,
+      take: pagination.take,
+    }),
+    prisma.department.count({ where }),
+  ]);
+  const { paginatedResult } = await import("../../utils/pagination");
+  return paginatedResult(items, total, pagination);
 }
 
 export async function getDepartment(id: string) {

@@ -35,9 +35,10 @@ export const PayrunDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Pagination state
+  // Pagination and search state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [payslipSearch, setPayslipSearch] = useState('');
 
   const loadPayrun = async () => {
     if (!id) return;
@@ -136,6 +137,14 @@ export const PayrunDetailPage: React.FC = () => {
   const currentStepIndex = steps.findIndex((s) => s.key === payrun.status);
   const payslipsList = payrun.payslips || [];
   const warningsList = payrun.warnings || [];
+
+  const filteredPayslips = payslipsList.filter((p) => {
+    if (!payslipSearch) return true;
+    const q = payslipSearch.toLowerCase().trim();
+    const name = ((p as any).employee?.name || p.employee_name || (p as any).employeeName || '').toLowerCase();
+    const id = String(p.id).toLowerCase();
+    return name.includes(q) || id.includes(q);
+  });
 
   return (
     <div className="space-y-6 animate-fade-in text-slate-800 dark:text-slate-100">
@@ -375,11 +384,24 @@ export const PayrunDetailPage: React.FC = () => {
 
       {/* Itemized Payslips Table */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs">
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h3 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
             <FileSpreadsheet className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-            <span>Generated Payslips ({payslipsList.length})</span>
+            <span>Generated Payslips ({filteredPayslips.length})</span>
           </h3>
+
+          <div className="w-full sm:w-64">
+            <input
+              type="text"
+              placeholder="Filter by employee name..."
+              value={payslipSearch}
+              onChange={(e) => {
+                setPayslipSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
         </div>
 
         {payslipsList.length === 0 ? (
@@ -402,7 +424,7 @@ export const PayrunDetailPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {payslipsList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p) => (
+                {filteredPayslips.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p) => (
                   <tr key={p.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">
                       {(p as any).employee?.name || p.employee_name || (p as any).employeeName || ((p as any).employee?.employeeCode || (p as any).employeeCode || (p.employee_id || (p as any).employeeId ? `Employee #${(p.employee_id || (p as any).employeeId).substring(0, 8)}` : 'Staff Member'))}
@@ -448,8 +470,8 @@ export const PayrunDetailPage: React.FC = () => {
 
             <Pagination
               currentPage={currentPage}
-              totalPages={Math.ceil(payslipsList.length / itemsPerPage)}
-              totalItems={payslipsList.length}
+              totalPages={Math.max(1, Math.ceil(filteredPayslips.length / itemsPerPage))}
+              totalItems={filteredPayslips.length}
               itemsPerPage={itemsPerPage}
               onPageChange={setCurrentPage}
               onItemsPerPageChange={(size) => {

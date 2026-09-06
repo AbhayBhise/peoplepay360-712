@@ -20,11 +20,24 @@ function computeWeeklyHours(lines: { startTime: string; endTime: string; breakMi
   return Math.round((totalMinutes / 60) * 100) / 100;
 }
 
-export function listWorkingSchedules() {
-  return prisma.workingSchedule.findMany({
-    include: { lines: true },
-    orderBy: { name: "asc" },
-  });
+export async function listWorkingSchedules(pagination?: import("../../utils/pagination").PaginationParams) {
+  if (!pagination) {
+    return prisma.workingSchedule.findMany({
+      include: { lines: true },
+      orderBy: { name: "asc" },
+    });
+  }
+  const [items, total] = await Promise.all([
+    prisma.workingSchedule.findMany({
+      include: { lines: true },
+      orderBy: { name: "asc" },
+      skip: pagination.skip,
+      take: pagination.take,
+    }),
+    prisma.workingSchedule.count(),
+  ]);
+  const { paginatedResult } = await import("../../utils/pagination");
+  return paginatedResult(items, total, pagination);
 }
 
 export async function getWorkingSchedule(id: string) {

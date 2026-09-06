@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Search,
   ArrowRight,
+  RotateCcw,
 } from 'lucide-react';
 import { attendanceApi } from '../../api/attendance';
 import { employeesApi } from '../../api/employees';
@@ -28,13 +29,19 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { Pagination } from '../../components/common/Pagination';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { extractItems } from '../../utils/pagination';
+
+export type AttendanceFilterMode = 'all' | 'exceptions' | 'missing' | 'late' | 'normal';
 
 export const AttendancePage: React.FC = () => {
   const [attendanceLogs, setAttendanceLogs] = useState<Attendance[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterMode, setFilterMode] = useState<'all' | 'exceptions'>('all');
+  const [filterMode, setFilterMode] = useState<AttendanceFilterMode>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -62,8 +69,8 @@ export const AttendancePage: React.FC = () => {
         attendanceApi.getAttendance().catch(() => []),
         employeesApi.getEmployees().catch(() => []),
       ]);
-      setAttendanceLogs(logs || []);
-      setEmployees(empList || []);
+      setAttendanceLogs(extractItems<Attendance>(logs));
+      setEmployees(extractItems<Employee>(empList));
     } catch (err: any) {
       error(err.message || 'Failed to fetch attendance logs.');
     } finally {
@@ -74,6 +81,27 @@ export const AttendancePage: React.FC = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Reset page whenever any filter criteria changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterMode, searchQuery, selectedEmployeeId, dateFrom, dateTo]);
+
+  const handleResetFilters = () => {
+    setFilterMode('all');
+    setSearchQuery('');
+    setSelectedEmployeeId('');
+    setDateFrom('');
+    setDateTo('');
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters =
+    filterMode !== 'all' ||
+    searchQuery.trim() !== '' ||
+    selectedEmployeeId !== '' ||
+    dateFrom !== '' ||
+    dateTo !== '';
 
   const handleOpenPunch = () => {
     const currentIso = new Date().toISOString().slice(0, 16);
@@ -156,18 +184,38 @@ export const AttendancePage: React.FC = () => {
     (l) => !l.check_out || l.exception === 'missing_checkout'
   ).length;
   const lateArrivalsCount = attendanceLogs.filter((l) => l.exception === 'late').length;
-  const normalPunchesCount = totalPunches - (missingCheckoutsCount + lateArrivalsCount);
+  const normalPunchesCount = Math.max(0, totalPunches - (missingCheckoutsCount + lateArrivalsCount));
 
   const filteredLogs = attendanceLogs.filter((log) => {
-    const isException = !log.check_out || log.exception === 'missing_checkout' || log.exception === 'late';
+    const isMissingCheckout = !log.check_out || log.exception === 'missing_checkout';
+    const isLate = log.exception === 'late';
+    const isException = isMissingCheckout || isLate;
+    const isNormal = !isException;
+
     if (filterMode === 'exceptions' && !isException) return false;
+    if (filterMode === 'missing' && !isMissingCheckout) return false;
+    if (filterMode === 'late' && !isLate) return false;
+    if (filterMode === 'normal' && !isNormal) return false;
+
+    if (selectedEmployeeId && String(log.employee_id || (log as any).employeeId) !== String(selectedEmployeeId)) {
+      return false;
+    }
+
+    if (dateFrom && log.check_in && log.check_in.slice(0, 10) < dateFrom) {
+      return false;
+    }
+    if (dateTo && log.check_in && log.check_in.slice(0, 10) > dateTo) {
+      return false;
+    }
 
     if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      (log.employee_name && log.employee_name.toLowerCase().includes(q)) ||
-      String(log.employee_id).includes(q)
-    );
+    const q = searchQuery.toLowerCase().trim();
+    const emp = employees.find((e) => String(e.id) === String(log.employee_id || (log as any).employeeId));
+    const empName = ((log as any).employee?.name || log.employee_name || (log as any).employeeName || emp?.name || '').toLowerCase();
+    const logId = String(log.id).toLowerCase();
+    const empId = String(log.employee_id || (log as any).employeeId || '').toLowerCase();
+
+    return empName.includes(q) || logId.includes(q) || empId.includes(q);
   });
 
   const paginatedLogs = filteredLogs.slice(
@@ -196,82 +244,197 @@ export const AttendancePage: React.FC = () => {
         </div>
       </div>
 
-      {/* OPERATIONAL METRICS RIBBON */}
+      {/* OPERATIONAL METRICS RIBBON - CLICKABLE CARDS */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
+        <button
+          type="button"
+          onClick={() => setFilterMode('all')}
+          className={`p-4 bg-white dark:bg-slate-900 rounded-2xl border text-left transition-all cursor-pointer shadow-xs ${
+            filterMode === 'all'
+              ? 'ring-2 ring-indigo-500 border-indigo-500 dark:border-indigo-400 bg-indigo-50/20 dark:bg-indigo-950/20'
+              : 'border-slate-200/90 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-2xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Punches</span>
             <CheckCircle2 className="w-4 h-4 text-slate-400 dark:text-slate-500" />
           </div>
           <div className="text-2xl font-black font-financial text-slate-900 dark:text-white mt-2">{totalPunches}</div>
-          <div className="text-2xs text-slate-500 dark:text-slate-400 mt-0.5">Recorded shift logs</div>
-        </div>
+          <div className="text-2xs text-slate-500 dark:text-slate-400 mt-0.5">Click to view all logs</div>
+        </button>
 
-        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-rose-200 dark:border-rose-900/40 bg-rose-50/30 dark:bg-rose-950/20 shadow-xs">
+        <button
+          type="button"
+          onClick={() => setFilterMode('missing')}
+          className={`p-4 bg-white dark:bg-slate-900 rounded-2xl border text-left transition-all cursor-pointer shadow-xs ${
+            filterMode === 'missing'
+              ? 'ring-2 ring-rose-500 border-rose-500 dark:border-rose-400 bg-rose-100/40 dark:bg-rose-950/40'
+              : 'border-rose-200 dark:border-rose-900/40 bg-rose-50/30 dark:bg-rose-950/20 hover:border-rose-300'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-2xs font-bold text-rose-800 dark:text-rose-400 uppercase tracking-wider">Missing Check-Out</span>
             <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
           </div>
           <div className="text-2xl font-black font-financial text-rose-950 dark:text-rose-200 mt-2">{missingCheckoutsCount}</div>
-          <div className="text-2xs text-rose-700 dark:text-rose-400 font-semibold mt-0.5">Requires check-out / fix</div>
-        </div>
+          <div className="text-2xs text-rose-700 dark:text-rose-400 font-semibold mt-0.5">Click to filter missing check-out</div>
+        </button>
 
-        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/30 dark:bg-amber-950/20 shadow-xs">
+        <button
+          type="button"
+          onClick={() => setFilterMode('late')}
+          className={`p-4 bg-white dark:bg-slate-900 rounded-2xl border text-left transition-all cursor-pointer shadow-xs ${
+            filterMode === 'late'
+              ? 'ring-2 ring-amber-500 border-amber-500 dark:border-amber-400 bg-amber-100/40 dark:bg-amber-950/40'
+              : 'border-amber-200 dark:border-amber-900/40 bg-amber-50/30 dark:bg-amber-950/20 hover:border-amber-300'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-2xs font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider">Late Arrivals</span>
             <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
           </div>
           <div className="text-2xl font-black font-financial text-amber-950 dark:text-amber-200 mt-2">{lateArrivalsCount}</div>
-          <div className="text-2xs text-amber-700 dark:text-amber-400 font-semibold mt-0.5">Logged past shift start</div>
-        </div>
+          <div className="text-2xs text-amber-700 dark:text-amber-400 font-semibold mt-0.5">Click to filter late arrivals</div>
+        </button>
 
-        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/30 dark:bg-emerald-950/20 shadow-xs">
+        <button
+          type="button"
+          onClick={() => setFilterMode('normal')}
+          className={`p-4 bg-white dark:bg-slate-900 rounded-2xl border text-left transition-all cursor-pointer shadow-xs ${
+            filterMode === 'normal'
+              ? 'ring-2 ring-emerald-500 border-emerald-500 dark:border-emerald-400 bg-emerald-100/40 dark:bg-emerald-950/40'
+              : 'border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/30 dark:bg-emerald-950/20 hover:border-emerald-300'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-2xs font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider">Normal Shifts</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div className="text-2xl font-black font-financial text-emerald-950 dark:text-emerald-200 mt-2">{normalPunchesCount}</div>
-          <div className="text-2xs text-emerald-700 dark:text-emerald-400 font-semibold mt-0.5">On-time & completed</div>
-        </div>
+          <div className="text-2xs text-emerald-700 dark:text-emerald-400 font-semibold mt-0.5">Click to filter completed</div>
+        </button>
       </div>
 
-      {/* FILTER TABS & SEARCH BAR */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        {/* Toggle between All vs Exceptions */}
-        <div className="flex items-center space-x-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-          <button
-            onClick={() => setFilterMode('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              filterMode === 'all'
-                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            All Logs ({attendanceLogs.length})
-          </button>
-          <button
-            onClick={() => setFilterMode('exceptions')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              filterMode === 'exceptions'
-                ? 'bg-rose-600 text-white shadow-xs'
-                : 'text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40'
-            }`}
-          >
-            <AlertCircle className="w-3.5 h-3.5" />
-            <span>Exceptions Only ({missingCheckoutsCount + lateArrivalsCount})</span>
-          </button>
+      {/* FILTER TABS & DRILLDOWN CONTROLS */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-xs space-y-3">
+        {/* Toggle between All vs Exceptions vs Specific Category */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+            <button
+              onClick={() => setFilterMode('all')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                filterMode === 'all'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              All Logs ({totalPunches})
+            </button>
+            <button
+              onClick={() => setFilterMode('exceptions')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                filterMode === 'exceptions'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40'
+              }`}
+            >
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>Exceptions Only ({missingCheckoutsCount + lateArrivalsCount})</span>
+            </button>
+            <button
+              onClick={() => setFilterMode('late')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                filterMode === 'late'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40'
+              }`}
+            >
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>Late ({lateArrivalsCount})</span>
+            </button>
+            <button
+              onClick={() => setFilterMode('missing')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                filterMode === 'missing'
+                  ? 'bg-rose-700 text-white shadow-xs'
+                  : 'text-rose-800 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40'
+              }`}
+            >
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>Missing Check-Out ({missingCheckoutsCount})</span>
+            </button>
+            <button
+              onClick={() => setFilterMode('normal')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                filterMode === 'normal'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Normal ({normalPunchesCount})</span>
+            </button>
+          </div>
+
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Reset All Filters
+            </button>
+          )}
         </div>
 
-        {/* Search */}
-        <div className="relative w-full sm:w-72">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400 dark:text-slate-500" />
-          <input
-            type="text"
-            placeholder="Search by employee name..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-400"
-          />
+        {/* Search, Employee dropdown, and Date Range */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400 dark:text-slate-500" />
+            <input
+              type="text"
+              placeholder="Search by employee name or log #..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-400"
+            />
+          </div>
+
+          <div>
+            <select
+              value={selectedEmployeeId}
+              onChange={(e) => setSelectedEmployeeId(e.target.value)}
+              className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-400 cursor-pointer"
+            >
+              <option value="">All Employees</option>
+              {employees.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.name} {e.job_position ? `(${e.job_position})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-2xs text-slate-400 uppercase font-semibold shrink-0">From:</span>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-400"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-2xs text-slate-400 uppercase font-semibold shrink-0">To:</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-400"
+            />
+          </div>
         </div>
       </div>
 

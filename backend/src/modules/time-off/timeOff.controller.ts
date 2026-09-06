@@ -14,8 +14,8 @@ import {
 } from "./timeOff.validation";
 
 // ---- Types ----
-export const listTypes = asyncHandler(async (_req: Request, res: Response) => {
-  return ok(res, await typeService.listTypes());
+export const listTypes = asyncHandler(async (req: Request, res: Response) => {
+  return ok(res, await typeService.listTypes(parsePaginationIfRequested(req)));
 });
 export const getType = asyncHandler(async (req: Request, res: Response) => {
   return ok(res, await typeService.getType(req.params.id));

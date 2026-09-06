@@ -6,6 +6,7 @@ import { previewPayrunSchema, createPayrunSchema } from "./payrun.validation";
 import { evaluateFormula } from "./formulaEvaluator";
 import { generatePayslipPdf } from "./payslipPdf";
 import { sendMail } from "../../utils/mailer";
+import { PaginationParams, paginatedResult } from "../../utils/pagination";
 
 type PreviewInput = z.infer<typeof previewPayrunSchema>;
 type CreateInput = z.infer<typeof createPayrunSchema>;
@@ -87,11 +88,20 @@ export async function getPayrun(id: string) {
   return { ...payrun, warnings };
 }
 
-export function listPayruns() {
-  return prisma.payrun.findMany({
-    include: { _count: { select: { payslips: true } }, structure: true },
-    orderBy: { createdAt: "desc" },
-  });
+export async function listPayruns(pagination?: PaginationParams) {
+  const include = { _count: { select: { payslips: true } }, structure: true };
+  const orderBy = { createdAt: "desc" as const };
+  
+  if (!pagination) {
+    return prisma.payrun.findMany({ include, orderBy });
+  }
+
+  const [items, total] = await Promise.all([
+    prisma.payrun.findMany({ include, orderBy, skip: pagination.skip, take: pagination.take }),
+    prisma.payrun.count()
+  ]);
+
+  return paginatedResult(items, total, pagination);
 }
 
 async function collectWarnings(payrunId: string): Promise<string[]> {

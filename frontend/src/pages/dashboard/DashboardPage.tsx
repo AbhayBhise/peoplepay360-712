@@ -19,6 +19,7 @@ import { HRManagerDashboardView } from './views/HRManagerDashboardView';
 import { PayrollUserDashboardView } from './views/PayrollUserDashboardView';
 import { PayrollManagerDashboardView } from './views/PayrollManagerDashboardView';
 import { AdminDashboardView } from './views/AdminDashboardView';
+import { extractItems } from '../../utils/pagination';
 
 export type DashboardRoleView = 
   | 'EMPLOYEE'
@@ -83,7 +84,7 @@ export const DashboardPage: React.FC = () => {
         ]);
 
         setSummary(sum);
-        setDepartments(depts || []);
+        setDepartments(extractItems<Department>(depts));
         setAttendanceOverview(att);
         setAlerts(alertList || []);
         if (myData) setEmployeeDashboard(myData);
@@ -107,7 +108,7 @@ export const DashboardPage: React.FC = () => {
         ]);
 
         setSummary(sum);
-        setDepartments(depts || []);
+        setDepartments(extractItems<Department>(depts));
         setSalaryByDept(deptSal || []);
         setNetTrend(trend || []);
         setAttendanceOverview(att);

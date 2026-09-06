@@ -1,5 +1,5 @@
 import { apiClient, apiRequest } from './client';
-import { TimeOffType, TimeOffAllocation, TimeOffRequest } from '../types';
+import { TimeOffType, TimeOffAllocation, TimeOffRequest, PaginationFilters, PaginatedResult } from '../types';
 
 // Map between backend camelCase and frontend snake_case
 function normalizeType(raw: any): TimeOffType {
@@ -70,8 +70,14 @@ function normalizeRequest(raw: any): TimeOffRequest {
 }
 
 export const timeOffApi = {
-  getTypes: async (): Promise<TimeOffType[]> => {
-    const raw = await apiRequest<any[]>(apiClient.get('/api/time-off/types'));
+  getTypes: async (filters?: PaginationFilters): Promise<PaginatedResult<TimeOffType> | TimeOffType[]> => {
+    const raw = await apiRequest<any>(apiClient.get('/api/time-off/types', { params: filters }));
+    if (raw && !Array.isArray(raw) && Array.isArray(raw.items)) {
+      return {
+        ...raw,
+        items: raw.items.map(normalizeType)
+      };
+    }
     return Array.isArray(raw) ? raw.map(normalizeType) : [];
   },
 
@@ -103,14 +109,20 @@ export const timeOffApi = {
     type_id?: number | string;
     typeId?: number | string;
     status?: string;
-  }): Promise<TimeOffAllocation[]> => {
-    const params: any = {};
+  } & PaginationFilters): Promise<PaginatedResult<TimeOffAllocation> | TimeOffAllocation[]> => {
+    const params: any = { ...filters };
     const empId = filters?.employee_id ?? filters?.employeeId;
     if (empId) params.employee_id = String(empId);
     const typeId = filters?.type_id ?? filters?.typeId;
     if (typeId) params.type_id = String(typeId);
     if (filters?.status) params.status = filters.status;
-    const raw = await apiRequest<any[]>(apiClient.get('/api/time-off/allocations', { params }));
+    const raw = await apiRequest<any>(apiClient.get('/api/time-off/allocations', { params }));
+    if (raw && !Array.isArray(raw) && Array.isArray(raw.items)) {
+      return {
+        ...raw,
+        items: raw.items.map(normalizeAllocation)
+      };
+    }
     return Array.isArray(raw) ? raw.map(normalizeAllocation) : [];
   },
 
@@ -145,12 +157,18 @@ export const timeOffApi = {
     employee_id?: number | string;
     employeeId?: number | string;
     status?: string;
-  }): Promise<TimeOffRequest[]> => {
-    const params: any = {};
+  } & PaginationFilters): Promise<PaginatedResult<TimeOffRequest> | TimeOffRequest[]> => {
+    const params: any = { ...filters };
     const empId = filters?.employee_id ?? filters?.employeeId;
     if (empId) params.employee_id = String(empId);
     if (filters?.status) params.status = filters.status;
-    const raw = await apiRequest<any[]>(apiClient.get('/api/time-off/requests', { params }));
+    const raw = await apiRequest<any>(apiClient.get('/api/time-off/requests', { params }));
+    if (raw && !Array.isArray(raw) && Array.isArray(raw.items)) {
+      return {
+        ...raw,
+        items: raw.items.map(normalizeRequest)
+      };
+    }
     return Array.isArray(raw) ? raw.map(normalizeRequest) : [];
   },
 

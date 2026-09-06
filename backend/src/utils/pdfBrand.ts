@@ -158,9 +158,16 @@ export interface TableColumn {
 // Zebra-striped table with a shaded header that repeats on every page break.
 export function dataTable(doc: Doc, columns: TableColumn[], rows: string[][]) {
   const widths = columns.map((c) => c.width * CONTENT_WIDTH);
-  const xs = widths.reduce<number[]>((acc, w, i) => [...acc, (acc[i] ?? PAGE.margin) + (i ? widths[i - 1] : 0)], [
-    PAGE.margin,
-  ]);
+  // Running left-edge of each column: [margin, margin+w0, margin+w0+w1, ...].
+  // (A previous reduce-based version off-by-one'd this — every column but the
+  // first ended up reusing the previous column's x, which is what rendered as
+  // every row's cells stacked on top of each other.)
+  const xs: number[] = [];
+  let cursor = PAGE.margin;
+  for (const w of widths) {
+    xs.push(cursor);
+    cursor += w;
+  }
   const rowH = 19;
 
   const drawHeader = () => {
@@ -212,29 +219,50 @@ export function dataTable(doc: Doc, columns: TableColumn[], rows: string[][]) {
 export function barChart(
   doc: Doc,
   data: { label: string; value: number }[],
-  opts: { height?: number; valueFormatter?: (n: number) => string } = {}
+  opts: { valueFormatter?: (n: number) => string; maxBars?: number } = {}
 ) {
-  if (!data.length) {
+  // A zero/negative/invalid value draws an invisible (or non-existent) bar but still
+  // claims a full label row. Real data can carry these — e.g. a freshly created
+  // department with no headcount yet, or a stray test row nobody's cleaned up — and
+  // once there are enough of them the row pitch below used to shrink to fit them all,
+  // which is what made every label bleed into its neighbours. Dropping them is safe
+  // for any caller: a bar with nothing to show conveys nothing either way, and it's
+  // still listed in the detail table this chart sits above.
+  const rows = data.filter((d) => Number.isFinite(d.value) && d.value > 0);
+
+  if (!rows.length) {
     doc.font("Helvetica-Oblique").fontSize(9).fillColor(BRAND.muted).text("No data for the selected filters.");
     doc.moveDown(0.6);
     doc.fillColor(BRAND.body);
     return;
   }
 
-  const height = opts.height ?? 150;
+  // Legibility, not the dataset size, sets how many bars a chart draws. Order is left
+  // exactly as the caller provided it — chronological for a trend line, whatever order
+  // for a category breakdown — rather than re-sorted here, since only the caller knows
+  // which order is meaningful; the table underneath always has the full, uncapped list.
+  const maxBars = opts.maxBars ?? 15;
+  const shown = rows.slice(0, maxBars);
+  const hiddenCount = rows.length - shown.length;
+
   const fmt = opts.valueFormatter ?? ((n: number) => n.toLocaleString("en-IN"));
   const labelGutter = 96;
-  ensureSpace(doc, height + 30);
+  // Fixed row pitch — this never shrinks to cram more rows into a budget, so labels
+  // can never visually overlap no matter how many bars end up being drawn.
+  const barH = 13;
+  const rowGap = 8;
+  const rowPitch = barH + rowGap;
+  const chartHeight = shown.length * rowPitch;
+
+  ensureSpace(doc, chartHeight + (hiddenCount ? 16 : 0) + 20);
 
   const top = doc.y;
   const plotX = PAGE.margin + labelGutter;
   const plotW = CONTENT_WIDTH - labelGutter - 70;
-  const max = Math.max(...data.map((d) => d.value), 1);
-  const barH = Math.min(16, (height - (data.length - 1) * 6) / data.length);
-  const gap = 6;
+  const max = Math.max(...shown.map((d) => d.value), 1);
 
-  data.forEach((d, i) => {
-    const y = top + i * (barH + gap);
+  shown.forEach((d, i) => {
+    const y = top + i * rowPitch;
     const w = Math.max(1, (d.value / max) * plotW);
 
     doc
@@ -251,10 +279,21 @@ export function barChart(
       .font("Helvetica-Bold")
       .fontSize(8)
       .fillColor(BRAND.ink)
-      .text(fmt(d.value), plotX + plotW + 8, y + barH / 2 - 4, { width: 62, lineBreak: false });
+      .text(fmt(d.value), plotX + plotW + 8, y + barH / 2 - 4, { width: 62, lineBreak: false, ellipsis: true });
   });
 
-  doc.y = top + data.length * (barH + gap) + 8;
+  doc.y = top + chartHeight;
+
+  if (hiddenCount) {
+    doc.moveDown(0.3);
+    doc
+      .font("Helvetica-Oblique")
+      .fontSize(7.5)
+      .fillColor(BRAND.muted)
+      .text(`+${hiddenCount} more — see the table below for the full list.`, PAGE.margin, doc.y);
+  }
+
+  doc.moveDown(0.6);
   doc.fillColor(BRAND.body);
 }
 

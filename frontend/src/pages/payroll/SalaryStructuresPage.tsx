@@ -12,6 +12,7 @@ import { Pagination } from '../../components/common/Pagination';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { formatCurrency } from '../../utils/currency';
+import { extractItems } from '../../utils/pagination';
 
 export const SalaryStructuresPage: React.FC = () => {
   const [structures, setStructures] = useState<SalaryStructure[]>([]);
@@ -52,7 +53,7 @@ export const SalaryStructuresPage: React.FC = () => {
   const loadStructures = async () => {
     setLoading(true);
     try {
-      const list = await payrollApi.getStructures();
+      const list = extractItems(await payrollApi.getStructures());
       setStructures(list || []);
       if (list && list.length > 0 && !selectedStructure) {
         setSelectedStructure(list[0]);
@@ -74,7 +75,7 @@ export const SalaryStructuresPage: React.FC = () => {
     const loadRules = async () => {
       setRulesLoading(true);
       try {
-        const ruleList = await payrollApi.getRules(selectedStructure.id);
+        const ruleList = extractItems(await payrollApi.getRules(selectedStructure.id));
         // Ensure strictly sorted by sequence
         const sorted = (ruleList || []).sort((a, b) => a.sequence - b.sequence);
         setRules(sorted);
@@ -156,7 +157,7 @@ export const SalaryStructuresPage: React.FC = () => {
       success(`Salary rule "${ruleName}" added in sequence #${ruleSequence}.`);
       setIsRuleModalOpen(false);
       // Refresh rules
-      const ruleList = await payrollApi.getRules(selectedStructure.id);
+      const ruleList = extractItems(await payrollApi.getRules(selectedStructure.id));
       setRules((ruleList || []).sort((a, b) => a.sequence - b.sequence));
     } catch (err: any) {
       error(err.message || 'Failed to save salary rule.');

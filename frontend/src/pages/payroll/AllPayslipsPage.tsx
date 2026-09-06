@@ -11,11 +11,13 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { Pagination } from '../../components/common/Pagination';
 import { useToast } from '../../context/ToastContext';
 import { formatCurrency } from '../../utils/currency';
+import { extractItems } from '../../utils/pagination';
 
 export const AllPayslipsPage: React.FC = () => {
   const [payslips, setPayslips] = useState<PayslipDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'validated' | 'computed' | 'draft'>('all');
   const { error } = useToast();
 
   // Pagination state
@@ -26,7 +28,7 @@ export const AllPayslipsPage: React.FC = () => {
     const load = async () => {
       setLoading(true);
       try {
-        const data = await payrollApi.getPayslips();
+        const data = extractItems(await payrollApi.getPayslips());
         setPayslips(data || []);
       } catch (err: any) {
         error(err.message || 'Failed to load payslips.');
@@ -37,14 +39,22 @@ export const AllPayslipsPage: React.FC = () => {
     load();
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter]);
+
   const filtered = payslips.filter((p) => {
+    if (statusFilter !== 'all' && p.status !== statusFilter) return false;
     if (!search) return true;
     const q = search.toLowerCase();
-    return (
-      (p.employee_name && p.employee_name.toLowerCase().includes(q)) ||
-      String(p.id).includes(q)
-    );
+    const empName = (p.employee_name || (p as any).employee?.name || (p as any).employeeName || '').toLowerCase();
+    return empName.includes(q) || String(p.id).toLowerCase().includes(q);
   });
+
+  const totalNet = payslips.reduce((sum, p) => sum + (Number(p.net) || 0), 0);
+  const paidCount = payslips.filter((p) => p.status === 'paid').length;
+  const validatedCount = payslips.filter((p) => p.status === 'validated').length;
+  const draftComputedCount = payslips.filter((p) => p.status === 'draft' || p.status === 'computed').length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -60,16 +70,90 @@ export const AllPayslipsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Summary KPI metric ribbon with click-filtering */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div
+          onClick={() => setStatusFilter('all')}
+          className={`bg-white dark:bg-slate-900 p-4 rounded-xl border transition-all cursor-pointer ${
+            statusFilter === 'all'
+              ? 'border-indigo-600 ring-2 ring-indigo-500/20 dark:border-indigo-500'
+              : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+          }`}
+        >
+          <div className="text-2xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Payslips</div>
+          <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">{payslips.length}</div>
+          <div className="text-2xs text-slate-400 mt-1">Disbursement: {formatCurrency(totalNet)}</div>
+        </div>
+
+        <div
+          onClick={() => setStatusFilter('paid')}
+          className={`bg-white dark:bg-slate-900 p-4 rounded-xl border transition-all cursor-pointer ${
+            statusFilter === 'paid'
+              ? 'border-teal-600 ring-2 ring-teal-500/20 dark:border-teal-500'
+              : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+          }`}
+        >
+          <div className="text-2xs font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400">Paid Out</div>
+          <div className="text-2xl font-black text-teal-600 dark:text-teal-400 mt-1">{paidCount}</div>
+          <div className="text-2xs text-teal-500/80 mt-1">Completed disbursement</div>
+        </div>
+
+        <div
+          onClick={() => setStatusFilter('validated')}
+          className={`bg-white dark:bg-slate-900 p-4 rounded-xl border transition-all cursor-pointer ${
+            statusFilter === 'validated'
+              ? 'border-blue-600 ring-2 ring-blue-500/20 dark:border-blue-500'
+              : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+          }`}
+        >
+          <div className="text-2xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Validated</div>
+          <div className="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">{validatedCount}</div>
+          <div className="text-2xs text-blue-500/80 mt-1">Ready for payment release</div>
+        </div>
+
+        <div
+          onClick={() => setStatusFilter('computed')}
+          className={`bg-white dark:bg-slate-900 p-4 rounded-xl border transition-all cursor-pointer ${
+            statusFilter === 'computed' || statusFilter === 'draft'
+              ? 'border-amber-600 ring-2 ring-amber-500/20 dark:border-amber-500'
+              : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+          }`}
+        >
+          <div className="text-2xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Draft / In Review</div>
+          <div className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">{draftComputedCount}</div>
+          <div className="text-2xs text-amber-500/80 mt-1">Pending validation</div>
+        </div>
+      </div>
+
+      {/* Filter and Search Bar */}
       <Card className="p-4! shadow-2xs">
-        <div className="relative max-w-md">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400 dark:text-slate-500" />
-          <input
-            type="text"
-            placeholder="Search payslips by employee name or ID..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-400"
-          />
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="relative w-full sm:max-w-md">
+            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400 dark:text-slate-500" />
+            <input
+              type="text"
+              placeholder="Search payslips by employee name or ID..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-400"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+            {(['all', 'paid', 'validated', 'computed', 'draft'] as const).map((st) => (
+              <button
+                key={st}
+                onClick={() => setStatusFilter(st)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-colors cursor-pointer shrink-0 ${
+                  statusFilter === st
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                {st}
+              </button>
+            ))}
+          </div>
         </div>
       </Card>
 
@@ -78,7 +162,7 @@ export const AllPayslipsPage: React.FC = () => {
       ) : filtered.length === 0 ? (
         <EmptyState
           title="No Payslips Found"
-          description="Payslips are generated when you launch and compute a Payrun batch."
+          description="Try adjusting your search query or status filter."
         />
       ) : (
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">

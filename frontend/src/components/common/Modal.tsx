@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 export interface ModalProps {
@@ -40,7 +41,7 @@ export const Modal: React.FC<ModalProps> = ({
     '4xl': 'max-w-4xl',
   };
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="min-h-screen px-4 text-center flex items-start justify-center pt-16 pb-16">
         {/* Backdrop */}
@@ -70,4 +71,6 @@ export const Modal: React.FC<ModalProps> = ({
       </div>
     </div>
   );
+
+  return document.body ? createPortal(modalContent, document.body) : null;
 };

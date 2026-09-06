@@ -12,12 +12,17 @@ import { PayrunWizardModal } from './PayrunWizardModal';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { formatCurrency } from '../../utils/currency';
+import { extractItems } from '../../utils/pagination';
 
 export const PayrunsPage: React.FC = () => {
   const [payruns, setPayruns] = useState<Payrun[]>([]);
   const [structures, setStructures] = useState<SalaryStructure[]>([]);
   const [loading, setLoading] = useState(true);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+
+  // Filter and search state
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'computed' | 'validated' | 'paid'>('all');
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -34,8 +39,8 @@ export const PayrunsPage: React.FC = () => {
         payrollApi.getPayruns().catch(() => []),
         payrollApi.getStructures().catch(() => []),
       ]);
-      setPayruns(runList || []);
-      setStructures(structList || []);
+      setPayruns(extractItems<Payrun>(runList));
+      setStructures(extractItems<SalaryStructure>(structList));
     } catch (err: any) {
       error(err.message || 'Failed to load payruns.');
     } finally {
@@ -46,6 +51,24 @@ export const PayrunsPage: React.FC = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter]);
+
+  const filteredPayruns = payruns.filter((pr) => {
+    if (statusFilter !== 'all' && pr.status !== statusFilter) return false;
+    if (!search) return true;
+    const q = search.toLowerCase();
+    const name = (pr.name || '').toLowerCase();
+    const struct = (pr.structure_name || '').toLowerCase();
+    const id = String(pr.id).toLowerCase();
+    return name.includes(q) || struct.includes(q) || id.includes(q);
+  });
+
+  const totalDisbursed = payruns.filter(p => p.status === 'paid').reduce((sum, p) => sum + (Number(p.total_net) || 0), 0);
+  const validatedCount = payruns.filter(p => p.status === 'validated').length;
+  const inProgressCount = payruns.filter(p => p.status === 'draft' || p.status === 'computed').length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -72,13 +95,97 @@ export const PayrunsPage: React.FC = () => {
         )}
       </div>
 
+      {/* KPI Ribbon */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div
+          onClick={() => setStatusFilter('all')}
+          className={`bg-white dark:bg-slate-900 p-4 rounded-xl border transition-all cursor-pointer ${
+            statusFilter === 'all'
+              ? 'border-indigo-600 ring-2 ring-indigo-500/20 dark:border-indigo-500'
+              : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+          }`}
+        >
+          <div className="text-2xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Batches</div>
+          <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">{payruns.length}</div>
+          <div className="text-2xs text-slate-400 mt-1">Payroll periods</div>
+        </div>
+
+        <div
+          onClick={() => setStatusFilter('paid')}
+          className={`bg-white dark:bg-slate-900 p-4 rounded-xl border transition-all cursor-pointer ${
+            statusFilter === 'paid'
+              ? 'border-teal-600 ring-2 ring-teal-500/20 dark:border-teal-500'
+              : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+          }`}
+        >
+          <div className="text-2xs font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400">Total Paid Out</div>
+          <div className="text-2xl font-black text-teal-600 dark:text-teal-400 mt-1">{payruns.filter(p => p.status === 'paid').length}</div>
+          <div className="text-2xs text-teal-500/80 mt-1">{formatCurrency(totalDisbursed)}</div>
+        </div>
+
+        <div
+          onClick={() => setStatusFilter('validated')}
+          className={`bg-white dark:bg-slate-900 p-4 rounded-xl border transition-all cursor-pointer ${
+            statusFilter === 'validated'
+              ? 'border-blue-600 ring-2 ring-blue-500/20 dark:border-blue-500'
+              : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+          }`}
+        >
+          <div className="text-2xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Validated Batches</div>
+          <div className="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">{validatedCount}</div>
+          <div className="text-2xs text-blue-500/80 mt-1">Ready for finance release</div>
+        </div>
+
+        <div
+          onClick={() => setStatusFilter('computed')}
+          className={`bg-white dark:bg-slate-900 p-4 rounded-xl border transition-all cursor-pointer ${
+            statusFilter === 'computed' || statusFilter === 'draft'
+              ? 'border-amber-600 ring-2 ring-amber-500/20 dark:border-amber-500'
+              : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+          }`}
+        >
+          <div className="text-2xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">In Computation / Draft</div>
+          <div className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">{inProgressCount}</div>
+          <div className="text-2xs text-amber-500/80 mt-1">Awaiting review/validation</div>
+        </div>
+      </div>
+
+      {/* Filter and Search Bar */}
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <input
+            type="text"
+            placeholder="Search payrun batches by name, structure, or ID..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full sm:max-w-md px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+
+          <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+            {(['all', 'draft', 'computed', 'validated', 'paid'] as const).map((st) => (
+              <button
+                key={st}
+                onClick={() => setStatusFilter(st)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-colors cursor-pointer shrink-0 ${
+                  statusFilter === st
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                {st}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Payrun List */}
       {loading ? (
         <Spinner label="Loading payrun batches..." />
-      ) : payruns.length === 0 ? (
+      ) : filteredPayruns.length === 0 ? (
         <EmptyState
           title="No Payruns Found"
-          description="Launch the 2-Step Payrun Wizard to calculate and generate draft payslips."
+          description={search || statusFilter !== 'all' ? 'No batches match your filter criteria.' : 'Launch the 2-Step Payrun Wizard to calculate and generate draft payslips.'}
           actionLabel={isHRPUPlus() ? 'Launch Payrun Wizard' : undefined}
           onAction={() => setIsWizardOpen(true)}
         />
@@ -98,7 +205,7 @@ export const PayrunsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {payruns.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((pr) => (
+                {filteredPayruns.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((pr) => (
                   <tr
                     key={pr.id}
                     onClick={() => navigate(`/payroll/payruns/${pr.id}`)}
@@ -150,8 +257,8 @@ export const PayrunsPage: React.FC = () => {
 
           <Pagination
             currentPage={currentPage}
-            totalPages={Math.ceil(payruns.length / itemsPerPage)}
-            totalItems={payruns.length}
+            totalPages={Math.max(1, Math.ceil(filteredPayruns.length / itemsPerPage))}
+            totalItems={filteredPayruns.length}
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
             onItemsPerPageChange={(size) => {

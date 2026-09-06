@@ -144,22 +144,54 @@ export async function deactivateEmployee(id: string) {
   return prisma.employee.update({ where: { id }, data: { status: "inactive" } });
 }
 
-export async function getRelatedContracts(auth: AuthPayload, employeeId: string) {
+export async function getRelatedContracts(auth: AuthPayload, employeeId: string, pagination?: PaginationParams) {
   assertCanView(auth, employeeId);
-  return prisma.contract.findMany({ where: { employeeId }, orderBy: { startDate: "desc" } });
+  const where = { employeeId };
+  if (!pagination) {
+    return prisma.contract.findMany({ where, orderBy: { startDate: "desc" } });
+  }
+  const [items, total] = await Promise.all([
+    prisma.contract.findMany({ where, orderBy: { startDate: "desc" }, skip: pagination.skip, take: pagination.take }),
+    prisma.contract.count({ where }),
+  ]);
+  return paginatedResult(items, total, pagination);
 }
 
-export async function getRelatedAttendance(auth: AuthPayload, employeeId: string) {
+export async function getRelatedAttendance(auth: AuthPayload, employeeId: string, pagination?: PaginationParams) {
   assertCanView(auth, employeeId);
-  return prisma.attendance.findMany({ where: { employeeId }, orderBy: { checkIn: "desc" } });
+  const where = { employeeId };
+  if (!pagination) {
+    return prisma.attendance.findMany({ where, orderBy: { checkIn: "desc" } });
+  }
+  const [items, total] = await Promise.all([
+    prisma.attendance.findMany({ where, orderBy: { checkIn: "desc" }, skip: pagination.skip, take: pagination.take }),
+    prisma.attendance.count({ where }),
+  ]);
+  return paginatedResult(items, total, pagination);
 }
 
-export async function getRelatedTimeOff(auth: AuthPayload, employeeId: string) {
+export async function getRelatedTimeOff(auth: AuthPayload, employeeId: string, pagination?: PaginationParams) {
   assertCanView(auth, employeeId);
-  return prisma.timeOffRequest.findMany({ where: { employeeId }, orderBy: { dateFrom: "desc" } });
+  const where = { employeeId };
+  if (!pagination) {
+    return prisma.timeOffRequest.findMany({ where, orderBy: { dateFrom: "desc" } });
+  }
+  const [items, total] = await Promise.all([
+    prisma.timeOffRequest.findMany({ where, orderBy: { dateFrom: "desc" }, skip: pagination.skip, take: pagination.take }),
+    prisma.timeOffRequest.count({ where }),
+  ]);
+  return paginatedResult(items, total, pagination);
 }
 
-export async function getRelatedPayslips(auth: AuthPayload, employeeId: string) {
+export async function getRelatedPayslips(auth: AuthPayload, employeeId: string, pagination?: PaginationParams) {
   assertCanView(auth, employeeId);
-  return prisma.payslip.findMany({ where: { employeeId }, orderBy: { createdAt: "desc" } });
+  const where = { employeeId };
+  if (!pagination) {
+    return prisma.payslip.findMany({ where, orderBy: { createdAt: "desc" } });
+  }
+  const [items, total] = await Promise.all([
+    prisma.payslip.findMany({ where, orderBy: { createdAt: "desc" }, skip: pagination.skip, take: pagination.take }),
+    prisma.payslip.count({ where }),
+  ]);
+  return paginatedResult(items, total, pagination);
 }

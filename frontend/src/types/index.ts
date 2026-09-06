@@ -266,3 +266,16 @@ export interface ApiResponse<T = any> {
   error?: string;
   message?: string;
 }
+
+export interface PaginatedResult<T> {
+  items: T[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginationFilters {
+  page?: number;
+  limit?: number;
+}

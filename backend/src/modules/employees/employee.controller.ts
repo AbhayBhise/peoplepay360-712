@@ -46,17 +46,17 @@ export const remove = asyncHandler(async (req: Request, res: Response) => {
 
 // Smart-button endpoints backing the Employee Form (docs/roles/FRONTEND.md)
 export const contracts = asyncHandler(async (req: Request, res: Response) => {
-  return ok(res, await employeeService.getRelatedContracts(req.auth!, req.params.id));
+  return ok(res, await employeeService.getRelatedContracts(req.auth!, req.params.id, parsePaginationIfRequested(req)));
 });
 
 export const attendance = asyncHandler(async (req: Request, res: Response) => {
-  return ok(res, await employeeService.getRelatedAttendance(req.auth!, req.params.id));
+  return ok(res, await employeeService.getRelatedAttendance(req.auth!, req.params.id, parsePaginationIfRequested(req)));
 });
 
 export const timeOff = asyncHandler(async (req: Request, res: Response) => {
-  return ok(res, await employeeService.getRelatedTimeOff(req.auth!, req.params.id));
+  return ok(res, await employeeService.getRelatedTimeOff(req.auth!, req.params.id, parsePaginationIfRequested(req)));
 });
 
 export const payslips = asyncHandler(async (req: Request, res: Response) => {
-  return ok(res, await employeeService.getRelatedPayslips(req.auth!, req.params.id));
+  return ok(res, await employeeService.getRelatedPayslips(req.auth!, req.params.id, parsePaginationIfRequested(req)));
 });

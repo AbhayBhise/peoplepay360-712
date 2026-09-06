@@ -14,15 +14,22 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { Pagination } from '../../components/common/Pagination';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { extractItems } from '../../utils/pagination';
 
 export const DepartmentsPage: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [searchQuery, setSearchQuery] = useState('');
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,8 +53,8 @@ export const DepartmentsPage: React.FC = () => {
         departmentsApi.getDepartments(),
         employeesApi.getEmployees().catch(() => []),
       ]);
-      setDepartments(deptList || []);
-      setEmployees(empList || []);
+      setDepartments(extractItems<Department>(deptList));
+      setEmployees(extractItems<Employee>(empList));
     } catch (err: any) {
       error(err.message || 'Failed to load departments.');
     } finally {
@@ -127,6 +134,30 @@ export const DepartmentsPage: React.FC = () => {
     }
   };
 
+  // Filtered departments
+  const filteredDepartments = departments.filter((dept) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase().trim();
+    const headEmp = employees.find((e) => String(e.id) === String(dept.head_employee_id));
+    const parentDept = departments.find((d) => String(d.id) === String(dept.parent_department_id));
+
+    const nameMatch = dept.name.toLowerCase().includes(q);
+    const idMatch = String(dept.id).toLowerCase().includes(q);
+    const headMatch = (dept.head_employee_name || headEmp?.name || '').toLowerCase().includes(q);
+    const parentMatch = (dept.parent_department_name || parentDept?.name || '').toLowerCase().includes(q);
+
+    return nameMatch || idMatch || headMatch || parentMatch;
+  });
+
+  // Metrics
+  const totalDepts = departments.length;
+  const withHeadDepts = departments.filter((d) => d.head_employee_id).length;
+  const subDepts = departments.filter((d) => d.parent_department_id).length;
+  const totalEmpsInDepts = employees.filter((e) => e.department_id).length;
+
+  const totalPages = Math.max(1, Math.ceil(filteredDepartments.length / itemsPerPage));
+  const paginatedDepts = filteredDepartments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   return (
     <div className="space-y-6 animate-fade-in text-slate-800 dark:text-slate-100">
       {/* Page Header */}
@@ -152,15 +183,64 @@ export const DepartmentsPage: React.FC = () => {
         )}
       </div>
 
+      {/* Metrics Ribbon */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
+          <div className="text-2xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Units</div>
+          <div className="text-2xl font-black font-financial text-slate-900 dark:text-white mt-1">{totalDepts}</div>
+          <div className="text-2xs text-slate-500 dark:text-slate-400 mt-0.5">Operating departments</div>
+        </div>
+
+        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
+          <div className="text-2xs font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wider">With Manager</div>
+          <div className="text-2xl font-black font-financial text-teal-800 dark:text-teal-300 mt-1">{withHeadDepts}</div>
+          <div className="text-2xs text-teal-700 dark:text-teal-400 mt-0.5">Designated leadership</div>
+        </div>
+
+        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
+          <div className="text-2xs font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider">Sub-Departments</div>
+          <div className="text-2xl font-black font-financial text-indigo-900 dark:text-indigo-300 mt-1">{subDepts}</div>
+          <div className="text-2xs text-indigo-700 dark:text-indigo-400 mt-0.5">Nested hierarchy</div>
+        </div>
+
+        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
+          <div className="text-2xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Assigned Staff</div>
+          <div className="text-2xl font-black font-financial text-amber-900 dark:text-amber-300 mt-1">{totalEmpsInDepts}</div>
+          <div className="text-2xs text-amber-700 dark:text-amber-400 mt-0.5">Employees mapped</div>
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <input
+            type="text"
+            placeholder="Search departments by name, manager, parent, or ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full sm:max-w-md px-3.5 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+            >
+              Clear Search
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Main List Table */}
       {loading ? (
         <Spinner label="Loading departments..." />
-      ) : departments.length === 0 ? (
+      ) : filteredDepartments.length === 0 ? (
         <EmptyState
           title="No Departments Found"
-          description="No organizational departments exist in the database."
-          actionLabel={isHRMPlus() ? 'Add First Department' : undefined}
-          onAction={handleOpenCreate}
+          description={searchQuery ? "No departments matched your search query. Try clearing the search." : "No organizational departments exist in the database."}
+          actionLabel={searchQuery ? "Clear Search" : (isHRMPlus() ? 'Add First Department' : undefined)}
+          onAction={searchQuery ? () => setSearchQuery('') : handleOpenCreate}
         />
       ) : (
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs">
@@ -171,14 +251,16 @@ export const DepartmentsPage: React.FC = () => {
                   <th className="py-3 px-4">Department Name</th>
                   <th className="py-3 px-4">Parent Department</th>
                   <th className="py-3 px-4">Head of Department</th>
+                  <th className="py-3 px-4">Team Size</th>
                   <th className="py-3 px-4">Dept ID</th>
                   {isHRMPlus() && <th className="py-3 px-4 text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {departments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((dept) => {
+                {paginatedDepts.map((dept) => {
                   const parentDept = departments.find((d) => String(d.id) === String(dept.parent_department_id));
                   const headEmp = employees.find((e) => String(e.id) === String(dept.head_employee_id));
+                  const teamCount = employees.filter((e) => String(e.department_id) === String(dept.id)).length;
 
                   return (
                     <tr key={dept.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
@@ -197,6 +279,12 @@ export const DepartmentsPage: React.FC = () => {
                       </td>
                       <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
                         {dept.head_employee_name || (headEmp ? `${headEmp.name} (${headEmp.job_position})` : '—')}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                          <Users className="w-3 h-3 text-slate-400" />
+                          {teamCount} members
+                        </span>
                       </td>
                       <td className="py-3 px-4 font-mono text-slate-400 dark:text-slate-500">#{dept.id}</td>
                       {isHRMPlus() && (
@@ -228,8 +316,8 @@ export const DepartmentsPage: React.FC = () => {
 
           <Pagination
             currentPage={currentPage}
-            totalPages={Math.ceil(departments.length / itemsPerPage)}
-            totalItems={departments.length}
+            totalPages={totalPages}
+            totalItems={filteredDepartments.length}
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
             onItemsPerPageChange={(size) => {

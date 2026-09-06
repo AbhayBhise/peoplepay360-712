@@ -26,6 +26,7 @@ import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import { Badge } from '../../components/common/Badge';
 import { useAuth } from '../../context/AuthContext';
+import { extractItems } from '../../utils/pagination';
 
 // ── Role badge ────────────────────────────────────────────────────────────────
 const RoleBadge: React.FC<{ role: string }> = ({ role }) => {
@@ -326,8 +327,8 @@ export const AdminPage: React.FC = () => {
         adminApi.listUsers(),
         employeesApi.getEmployees(),
       ]);
-      setUsers(usersData);
-      setEmployees(empData);
+      setUsers(extractItems<AdminUser>(usersData));
+      setEmployees(extractItems<Employee>(empData));
     } catch (err: any) {
       toastError(err.message || 'Failed to load users.');
     } finally {

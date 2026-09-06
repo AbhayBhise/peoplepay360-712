@@ -4,9 +4,11 @@ import { ok } from "../../utils/response";
 import * as departmentService from "./department.service";
 import { createDepartmentSchema, updateDepartmentSchema } from "./department.validation";
 
+import { parsePaginationIfRequested } from "../../utils/pagination";
+
 export const list = asyncHandler(async (req: Request, res: Response) => {
   const parentId = typeof req.query.parent_id === "string" ? req.query.parent_id : undefined;
-  const departments = await departmentService.listDepartments(parentId);
+  const departments = await departmentService.listDepartments(parentId, parsePaginationIfRequested(req));
   return ok(res, departments);
 });
 

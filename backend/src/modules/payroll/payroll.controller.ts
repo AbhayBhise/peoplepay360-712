@@ -15,8 +15,8 @@ import { previewPayrunSchema, createPayrunSchema } from "./payrun.validation";
 import { recordAudit } from "../../utils/audit";
 
 // ---- Salary Structures ----
-export const listStructures = asyncHandler(async (_req: Request, res: Response) => {
-  return ok(res, await structureService.listStructures());
+export const listStructures = asyncHandler(async (req: Request, res: Response) => {
+  return ok(res, await structureService.listStructures(parsePaginationIfRequested(req)));
 });
 export const getStructure = asyncHandler(async (req: Request, res: Response) => {
   return ok(res, await structureService.getStructure(req.params.id));
@@ -32,7 +32,7 @@ export const updateStructure = asyncHandler(async (req: Request, res: Response) 
 
 // ---- Salary Rules ----
 export const listRules = asyncHandler(async (req: Request, res: Response) => {
-  return ok(res, await structureService.listRules(req.params.structureId));
+  return ok(res, await structureService.listRules(req.params.structureId, parsePaginationIfRequested(req)));
 });
 export const createRule = asyncHandler(async (req: Request, res: Response) => {
   const body = createSalaryRuleSchema.parse(req.body);
@@ -52,8 +52,8 @@ export const createPayrun = asyncHandler(async (req: Request, res: Response) => 
   const body = createPayrunSchema.parse(req.body);
   return ok(res, await payrunService.createPayrun(req.auth!, body), 201);
 });
-export const listPayruns = asyncHandler(async (_req: Request, res: Response) => {
-  return ok(res, await payrunService.listPayruns());
+export const listPayruns = asyncHandler(async (req: Request, res: Response) => {
+  return ok(res, await payrunService.listPayruns(parsePaginationIfRequested(req)));
 });
 export const getPayrun = asyncHandler(async (req: Request, res: Response) => {
   return ok(res, await payrunService.getPayrun(req.params.id));

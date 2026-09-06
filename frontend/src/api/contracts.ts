@@ -1,5 +1,5 @@
 import { apiClient, apiRequest } from './client';
-import { Contract } from '../types';
+import { Contract, PaginationFilters, PaginatedResult } from '../types';
 
 function normalizeContract(raw: any): Contract {
   return {
@@ -20,8 +20,14 @@ function normalizeContract(raw: any): Contract {
 }
 
 export const contractsApi = {
-  getContracts: async (filters?: { employee_id?: number | string; status?: string }): Promise<Contract[]> => {
-    const rawList = await apiRequest<any[]>(apiClient.get('/api/contracts', { params: filters }));
+  getContracts: async (filters?: { employee_id?: number | string; status?: string } & PaginationFilters): Promise<PaginatedResult<Contract> | Contract[]> => {
+    const rawList = await apiRequest<any>(apiClient.get('/api/contracts', { params: filters }));
+    if (rawList && !Array.isArray(rawList) && Array.isArray(rawList.items)) {
+      return {
+        ...rawList,
+        items: rawList.items.map(normalizeContract)
+      };
+    }
     return Array.isArray(rawList) ? rawList.map(normalizeContract) : [];
   },
 
