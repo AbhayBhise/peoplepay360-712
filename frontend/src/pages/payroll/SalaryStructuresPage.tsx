@@ -8,6 +8,7 @@ import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
+import { Pagination } from '../../components/common/Pagination';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { formatCurrency } from '../../utils/currency';
@@ -18,6 +19,14 @@ export const SalaryStructuresPage: React.FC = () => {
   const [rules, setRules] = useState<SalaryRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [rulesLoading, setRulesLoading] = useState(false);
+
+  // Pagination state for rules
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedStructure]);
 
   // Modal: New Structure
   const [isStructModalOpen, setIsStructModalOpen] = useState(false);
@@ -272,7 +281,7 @@ export const SalaryStructuresPage: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {rules.map((r) => (
+                      {rules.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((r) => (
                         <tr key={r.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
                           <td className="py-2.5 px-3 font-mono font-bold text-indigo-600 dark:text-indigo-400">
                             #{r.sequence}
@@ -306,6 +315,18 @@ export const SalaryStructuresPage: React.FC = () => {
                       ))}
                     </tbody>
                   </table>
+
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={Math.max(1, Math.ceil(rules.length / itemsPerPage))}
+                    totalItems={rules.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    onItemsPerPageChange={(size) => {
+                      setItemsPerPage(size);
+                      setCurrentPage(1);
+                    }}
+                  />
                 </div>
               )}
             </div>

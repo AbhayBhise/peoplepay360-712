@@ -8,6 +8,7 @@ import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
+import { Pagination } from '../../components/common/Pagination';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 
@@ -16,6 +17,10 @@ const DEFAULT_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 export const WorkingSchedulesPage: React.FC = () => {
   const [schedules, setSchedules] = useState<WorkingSchedule[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(9);
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -158,31 +163,45 @@ export const WorkingSchedulesPage: React.FC = () => {
           onAction={handleOpenCreate}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {schedules.map((s) => (
-            <div key={s.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <h3 className="font-bold text-slate-900 dark:text-white text-base">{s.name}</h3>
-                  <span className="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-2xs font-bold border border-indigo-100 dark:border-indigo-800">
-                    {s.type}
-                  </span>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {schedules.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((s) => (
+              <div key={s.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-base">{s.name}</h3>
+                    <span className="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-2xs font-bold border border-indigo-100 dark:border-indigo-800">
+                      {s.type}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 text-xs mt-3">
+                    <Clock className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                    <span>
+                      Auto-computed weekly hours:{' '}
+                      <strong className="text-slate-900 dark:text-white font-bold">{s.weekly_hours} hrs/week</strong>
+                    </span>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 text-xs mt-3">
-                  <Clock className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-                  <span>
-                    Auto-computed weekly hours:{' '}
-                    <strong className="text-slate-900 dark:text-white font-bold">{s.weekly_hours} hrs/week</strong>
-                  </span>
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-2xs text-slate-400 dark:text-slate-500">
+                  Schedule ID: #{s.id}
                 </div>
               </div>
+            ))}
+          </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-2xs text-slate-400 dark:text-slate-500">
-                Schedule ID: #{s.id}
-              </div>
-            </div>
-          ))}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.max(1, Math.ceil(schedules.length / itemsPerPage))}
+            totalItems={schedules.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(size) => {
+              setItemsPerPage(size);
+              setCurrentPage(1);
+            }}
+          />
         </div>
       )}
 

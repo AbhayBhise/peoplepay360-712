@@ -28,6 +28,7 @@ import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Spinner } from '../../components/common/Spinner';
+import { Pagination } from '../../components/common/Pagination';
 import { useToast } from '../../context/ToastContext';
 import { formatCurrency } from '../../utils/currency';
 
@@ -42,6 +43,14 @@ export const ReportsPage: React.FC = () => {
   const [attendances, setAttendances] = useState<Attendance[]>([]);
   const [allocations, setAllocations] = useState<TimeOffAllocation[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeReport]);
 
   const loadReports = async () => {
     setLoading(true);
@@ -341,7 +350,7 @@ export const ReportsPage: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {attendances.length > 0 ? (
-                    attendances.map((a) => (
+                    attendances.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((a) => (
                       <tr key={a.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
                         <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">{a.employee_name || user?.name}</td>
                         <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 font-mono text-2xs">{a.check_in}</td>
@@ -363,6 +372,18 @@ export const ReportsPage: React.FC = () => {
                   )}
                 </tbody>
               </table>
+
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.max(1, Math.ceil(attendances.length / itemsPerPage))}
+                totalItems={attendances.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(size) => {
+                  setItemsPerPage(size);
+                  setCurrentPage(1);
+                }}
+              />
             </div>
           </div>
         </div>
@@ -388,7 +409,7 @@ export const ReportsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {payruns.map((pr) => (
+                {payruns.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((pr) => (
                   <tr key={pr.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
                     <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">{pr.name || `Batch #${pr.id}`}</td>
                     <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">{pr.period_start} → {pr.period_end}</td>
@@ -405,6 +426,18 @@ export const ReportsPage: React.FC = () => {
                 ))}
               </tbody>
             </table>
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.max(1, Math.ceil(payruns.length / itemsPerPage))}
+              totalItems={payruns.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(size) => {
+                setItemsPerPage(size);
+                setCurrentPage(1);
+              }}
+            />
           </div>
         </div>
       ) : (
@@ -427,7 +460,7 @@ export const ReportsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {salaryByDept.map((dept) => {
+                {salaryByDept.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((dept) => {
                   const avg = dept.headcount > 0 ? Math.round(dept.total_salary / dept.headcount) : 0;
                   return (
                     <tr key={dept.department_id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
@@ -444,6 +477,18 @@ export const ReportsPage: React.FC = () => {
                 })}
               </tbody>
             </table>
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.max(1, Math.ceil(salaryByDept.length / itemsPerPage))}
+              totalItems={salaryByDept.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(size) => {
+                setItemsPerPage(size);
+                setCurrentPage(1);
+              }}
+            />
           </div>
         </div>
       )}
