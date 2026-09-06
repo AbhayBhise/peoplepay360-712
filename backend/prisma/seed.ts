@@ -301,6 +301,47 @@ async function main() {
   }));
   await prisma.userRole.createMany({ data: userRoleRecords });
 
+  // Update Departments Hierarchy and Heads
+  console.log("Linking department hierarchies and assigning heads...");
+  const engDeptId = deptMap["engineering"];
+  const prodDeptId = deptMap["product"];
+  const salesDeptId = deptMap["sales"];
+  const supportDeptId = deptMap["support"];
+  
+  await prisma.department.update({ where: { id: engDeptId }, data: { parentDepartmentId: prodDeptId } });
+  await prisma.department.update({ where: { id: supportDeptId }, data: { parentDepartmentId: salesDeptId } });
+
+  for (const deptKey of deptKeys) {
+    const deptId = deptMap[deptKey];
+    const headEmp = seededEmployees.find(e => e.deptKey === deptKey && (e.jobTitle.includes("Head") || e.jobTitle.includes("Director") || e.jobTitle.includes("VP") || e.jobTitle.includes("Lead") || e.jobTitle.includes("Chief") || e.jobTitle.includes("Manager")));
+    if (headEmp) {
+      await prisma.department.update({ where: { id: deptId }, data: { headEmployeeId: headEmp.id } });
+    }
+  }
+
+  console.log("Assigning managers to employees...");
+  const updatedDepts = await prisma.department.findMany();
+  for (const emp of seededEmployees) {
+    const empDeptId = deptMap[emp.deptKey];
+    const dept = updatedDepts.find(d => d.id === empDeptId);
+    let managerId = null;
+    
+    if (dept && dept.headEmployeeId) {
+       if (dept.headEmployeeId !== emp.id) {
+         managerId = dept.headEmployeeId;
+       } else if (dept.parentDepartmentId) {
+         const parentDept = updatedDepts.find(d => d.id === dept.parentDepartmentId);
+         if (parentDept && parentDept.headEmployeeId) {
+           managerId = parentDept.headEmployeeId;
+         }
+       }
+    }
+    
+    if (managerId) {
+      await prisma.employee.update({ where: { id: emp.id }, data: { managerId } });
+    }
+  }
+
   // ---------- 6. Contracts for all 250 Employees ----------
   console.log("Seeding 250 active employment contracts...");
   const contractRecords = seededEmployees.map((emp) => ({
