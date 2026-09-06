@@ -165,18 +165,21 @@ async function main() {
   assert(overlap.status === 409, "reject overlapping active contract", overlap);
 
   // ---- Attendance ----
+  // Self-service check-in/check-out no longer accepts a client-supplied timestamp
+  // (see attendance.validation.ts) — an employee's own clock is not a trustworthy
+  // source for "when did you actually show up," so the server always stamps its own
+  // time regardless of what's in the request body. That means this smoke test can no
+  // longer fabricate a fixed duration to assert against; it checks workedHours is a
+  // valid non-negative number instead of a specific value.
   console.log("\nAttendance");
   const checkIn = await call(token, "POST", "/attendance/check-in", {
     employeeId: employee1Id,
-    checkIn: "2026-08-05T09:00:00.000Z",
   });
   assert(checkIn.status === 201, "check-in employee 1", checkIn);
   const attendanceId = checkIn.json?.data?.id;
 
-  const checkOut = await call(token, "POST", `/attendance/${attendanceId}/check-out`, {
-    checkOut: "2026-08-05T09:01:00.000Z",
-  });
-  assert(checkOut.status === 200 && Number(checkOut.json?.data?.workedHours) > 0, "check-out computes workedHours", checkOut);
+  const checkOut = await call(token, "POST", `/attendance/${attendanceId}/check-out`, {});
+  assert(checkOut.status === 200 && Number(checkOut.json?.data?.workedHours) >= 0, "check-out computes workedHours", checkOut);
 
   // ---- Time Off: allocation -> approve -> balance -> request -> approve -> balance again ----
   console.log("\nTime Off");

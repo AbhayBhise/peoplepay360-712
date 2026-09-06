@@ -21,14 +21,15 @@ export async function listPayslips(
   filters: { payrunId?: string; employeeId?: string },
   pagination?: PaginationParams
 ) {
-  const visibilityFilter = isHrmPlus(auth.roles)
-    ? {}
-    : { employeeId: auth.employeeId ?? "__no_self_employee__" };
-
+  // employeeId is built exactly once, here — a non-HRM+ caller is always locked to
+  // their own employeeId regardless of what they pass in filters.employeeId (an
+  // earlier version spread a "self" restriction and then unconditionally overwrote
+  // it with filters.employeeId below, which silently discarded the restriction on
+  // every request that didn't explicitly filter by employee — the normal case for
+  // an employee just viewing their own payslips).
   const where = {
-    ...visibilityFilter,
+    employeeId: isHrmPlus(auth.roles) ? filters.employeeId || undefined : auth.employeeId ?? "__no_self_employee__",
     payrunId: filters.payrunId || undefined,
-    employeeId: filters.employeeId || undefined,
   };
 
   if (!pagination) {

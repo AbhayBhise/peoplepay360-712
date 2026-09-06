@@ -16,7 +16,7 @@ PeoplePay360 solves enterprise payroll complexity and access governance through:
 1. **Autonomous Salary Computation Engine**: Sequenced rule dependency evaluation (`BASIC` $\rightarrow$ `HRA` $\rightarrow$ `TRANSPORT` $\rightarrow$ `GROSS` $\rightarrow$ `PF` $\rightarrow$ `TAX` $\rightarrow$ `NET`).
 2. **Maker-Checker Financial Controls**: Double-authorization governance preventing the same user who computes a payrun from validating or disbursing it.
 3. **Smart Anti-Overlap Contract Guard**: Real-time contract overlap detection with 1-click automatic contract expiration.
-4. **4-Layer RBAC Security Pipeline**: Defense-in-depth permission enforcement across UI navigation, React route guards, Express action middleware, and PostgreSQL relational constraints.
+4. **4-Layer RBAC Security Pipeline**: Defense-in-depth permission enforcement across UI navigation, React route guards, Express action middleware, and backend data-scoping (row-level filtering by role in the service layer).
 
 ---
 

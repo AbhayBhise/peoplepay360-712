@@ -34,13 +34,11 @@ export async function listRequests(
   filters: { employeeId?: string; status?: string },
   pagination?: PaginationParams
 ) {
-  const visibilityFilter = isHrmPlus(auth.roles)
-    ? {}
-    : { employeeId: auth.employeeId ?? "__no_self_employee__" };
-
+  // employeeId is built exactly once, here — a non-HRM+ caller is always locked to
+  // their own employeeId regardless of filters.employeeId (a duplicate key further
+  // down used to silently overwrite this restriction on every unfiltered request).
   const where = {
-    ...visibilityFilter,
-    employeeId: filters.employeeId || undefined,
+    employeeId: isHrmPlus(auth.roles) ? filters.employeeId || undefined : auth.employeeId ?? "__no_self_employee__",
     status: (filters.status as "draft" | "validate" | "refused") || undefined,
   };
   const relations = {

@@ -39,9 +39,11 @@ export async function listAttendance(
   filters: { employeeId?: string; dateFrom?: Date; dateTo?: Date; status?: string },
   pagination?: PaginationParams
 ) {
+  // employeeId is built exactly once, here — a non-HRM+ caller is always locked to
+  // their own employeeId regardless of filters.employeeId (a duplicate key further
+  // down used to silently overwrite this restriction on every unfiltered request).
   const where = {
-    ...(isHrmPlus(auth.roles) ? {} : { employeeId: auth.employeeId ?? "__no_self_employee__" }),
-    employeeId: filters.employeeId || undefined,
+    employeeId: isHrmPlus(auth.roles) ? filters.employeeId || undefined : auth.employeeId ?? "__no_self_employee__",
     status: (filters.status as "present" | "late" | "absent" | "manual_edit") || undefined,
     checkIn:
       filters.dateFrom || filters.dateTo ? { gte: filters.dateFrom, lte: filters.dateTo } : undefined,
@@ -83,7 +85,9 @@ export async function checkIn(auth: AuthPayload, input: CheckInInput) {
     );
   }
 
-  const checkInTime = input.checkIn ?? new Date();
+  // Always server time — see attendance.validation.ts for why a client-supplied
+  // timestamp is never trusted here.
+  const checkInTime = new Date();
   return prisma.attendance.create({
     data: { employeeId: input.employeeId, checkIn: checkInTime, workedHours: 0, status: "present" },
   });
@@ -96,12 +100,11 @@ export async function checkOut(auth: AuthPayload, id: string, input: CheckOutInp
   }
   assertSelfOrHrmPlus(auth, existing.employeeId);
 
-  const checkOutTime = input.checkOut ?? new Date();
+  // Always server time — see attendance.validation.ts for why a client-supplied
+  // timestamp is never trusted here.
+  const checkOutTime = new Date();
   if (checkOutTime <= existing.checkIn) {
     throw ApiError.badRequest("checkOut: must be after checkIn");
-  }
-  if (checkOutTime > new Date()) {
-    throw ApiError.badRequest("checkOut: cannot be in the future");
   }
 
   return prisma.attendance.update({
