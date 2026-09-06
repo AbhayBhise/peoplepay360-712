@@ -1,0 +1,94 @@
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { Modal } from './Modal';
+import { Users, Clock, CalendarDays, CircleDollarSign, Plus, ArrowRight } from 'lucide-react';
+
+interface QuickActionsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSelectAction: (actionKey: string) => void;
+}
+
+export const QuickActionsModal: React.FC<QuickActionsModalProps> = ({
+  isOpen,
+  onClose,
+  onSelectAction,
+}) => {
+  const { isHRMPlus, isHRPUPlus, hasRole } = useAuth();
+  const navigate = useNavigate();
+
+  const actions = [
+    {
+      key: 'new_employee',
+      title: 'Add Employee',
+      description: 'Register a new employee, assign job position and department',
+      icon: <Users className="w-5 h-5 text-indigo-600" />,
+      roleAllowed: isHRMPlus(),
+      path: '/employees',
+    },
+    {
+      key: 'record_punch',
+      title: 'Record Attendance Punch',
+      description: 'Log time check-in / check-out with automatic hour calculation',
+      icon: <Clock className="w-5 h-5 text-amber-600" />,
+      roleAllowed: true,
+      path: '/attendance',
+    },
+    {
+      key: 'request_leave',
+      title: 'Request Time Off',
+      description: 'Submit annual or sick leave request with live balance check',
+      icon: <CalendarDays className="w-5 h-5 text-emerald-600" />,
+      roleAllowed: true,
+      path: '/time-off',
+    },
+    {
+      key: 'launch_payrun',
+      title: 'Launch Payrun Wizard',
+      description: 'Start 2-step payroll batch calculation for active employees',
+      icon: <CircleDollarSign className="w-5 h-5 text-indigo-600" />,
+      roleAllowed: isHRPUPlus(),
+      path: '/payroll/payruns',
+    },
+  ];
+
+  const allowedActions = actions.filter((a) => a.roleAllowed);
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Workforce Quick Actions"
+      description="Trigger fast operational actions based on your active role permissions"
+      maxWidth="lg"
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {allowedActions.map((act) => (
+          <div
+            key={act.key}
+            onClick={() => {
+              onClose();
+              onSelectAction(act.key);
+            }}
+            className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/30 transition-all cursor-pointer group flex flex-col justify-between shadow-2xs"
+          >
+            <div>
+              <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                {act.icon}
+              </div>
+              <h4 className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                {act.title}
+              </h4>
+              <p className="text-2xs text-slate-500 dark:text-slate-400 mt-1 leading-snug">{act.description}</p>
+            </div>
+            <div className="mt-3 flex items-center gap-1 text-2xs font-semibold text-indigo-600 dark:text-indigo-400">
+              <span>Open Action</span>
+              <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </Modal>
+  );
+};

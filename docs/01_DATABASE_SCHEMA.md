@@ -13,9 +13,10 @@ Transcribed from `dev resources/disha 1st draft db schema.png`. Treat this as th
 roles            (id PK, name, is_system_role)
 permissions      (id PK, module, action)
 role_permissions (role_id FK -> roles, permission_id FK -> permissions, scope)
-users            (id PK, employee_id FK -> employees, email, password_hash, is_active)
-user_roles       (id PK, user_id FK -> users, role_id FK -> roles, effective_from, effective_to, granted_by)
-audit_log        (id PK, user_id FK -> users, module, action, record_id, before_value, after_value, created_at)
+users                  (id PK, employee_id FK -> employees, email, password_hash, is_active, last_login)
+password_reset_tokens  (id PK, token, user_id FK -> users, expires_at, used, created_at)
+user_roles             (id PK, user_id FK -> users, role_id FK -> roles, effective_from, effective_to, granted_by)
+audit_log              (id PK, user_id FK -> users, module, action, record_id, before_value, after_value, created_at)
 ```
 
 ## HR core

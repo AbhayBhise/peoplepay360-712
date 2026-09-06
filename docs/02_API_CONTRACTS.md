@@ -84,7 +84,7 @@ Every endpoint marked with a role requirement must reject at the **route/middlew
 - **Validation (reject with 409/422, not a 500):**
   - `end_date` null or `end_date > start_date`.
   - No existing **active** contract for the same `employee_id` with an overlapping `[start_date, end_date]` range. Error: `"contract: overlaps with active contract #<id> (<start_date> – <end_date>)"`.
-- Role above HRM (HRPU/HRPM) has read-only access to this endpoint's GET per the RBAC matrix — HRPU/HRPM do not get write access to Contracts (that stays HRM+Admin per the problem statement's role table; confirm against `00_PROJECT_BRIEF.md` if extending).
+- Write access is HRM+ (HR Manager, HR Payroll User, HR Payroll Manager, Admin) — the problem statement's role table says HR Payroll User/Manager get "all HR Manager permissions plus" payroll extras, i.e. they inherit full Contract CRUD, they aren't restricted to read-only here. **Resolved & implemented** — see `backend/src/modules/contracts/`.
 
 ### `DELETE /api/contracts/:id`
 - Role: A only, and only if the contract has never been referenced by a computed payslip (payroll history integrity).
@@ -251,7 +251,8 @@ Every endpoint marked with a role requirement must reject at the **route/middlew
 
 ---
 
-## Open decisions the Architect must pin down and update here
+## Decisions (resolved during implementation)
 
-- Exact role split for `validate`/`mark-paid` between HRPU and HRPM (marked above with a TODO-style note — resolve before backend implements those two endpoints).
-- Whether `/api/dashboard/summary` is one endpoint with role-based field filtering or two endpoints (HR-only vs Payroll-inclusive) — pick one, document it, don't let frontend and backend guess independently.
+- **Payrun `validate`/`mark-paid` role split**: HRPU+ can create/compute/read payruns; **HRPM+ only** can validate and mark-paid — this pairs with the maker-checker DB constraint (a payrun's `computedBy` and `validatedBy` must differ), giving a real two-person-integrity workflow rather than one role doing everything. Implemented in `backend/src/modules/payroll/payroll.routes.ts` and enforced again in `payrun.service.ts` (clear error if the same user tries both steps).
+- **Dashboard endpoint shape (revised)**: the original "one shared set, no field-splitting" decision was wrong — it meant HR Manager got the exact same payroll financial dashboard as HR Payroll Manager, violating the role table. Now: `GET /api/dashboard/me` is available to every authenticated user (personal attendance/leave/payslip view, no company data) for Employee. `/summary`, `/attendance-overview`, `/alerts` are HRM+ but `/summary` strips payroll fields (totalNetPaid, payslipsGenerated, averageSalary) unless the caller is HRPU+. `/salary-by-department` and `/net-salary-trend` are HRPU+ only — pure financial data, blocked from HR Manager entirely. Implemented in `backend/src/modules/dashboard/`.
+- **`employee_type` dashboard filter**: accepted as a query param for forward compatibility but currently a no-op — no `employmentType`/similar field exists on `Employee`/`Contract` yet. Add a migration for it if this filter needs to be real before the demo; flagged in `dashboard.service.ts`.

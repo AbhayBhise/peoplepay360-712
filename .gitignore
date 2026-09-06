@@ -10,3 +10,11 @@ Thumbs.db
 .vscode/
 .idea/
 coverage/
+
+# Security hardening - prevent contamination
+dev\ resources/
+.code-review-graph/
+*.zip
+*.mjs
+scratch_check.mjs
+*.tsbuildinfo

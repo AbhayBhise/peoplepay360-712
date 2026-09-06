@@ -1,0 +1,54 @@
+import React from 'react';
+import { 
+  Users, 
+  FileText, 
+  Calendar, 
+  Clock, 
+  Calculator, 
+  BarChart3 
+} from 'lucide-react';
+
+export const EcosystemSection: React.FC = () => {
+  const nodes = [
+    { title: 'Employees', desc: 'Master Profiles', icon: Users, color: 'text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10' },
+    { title: 'Contracts', desc: 'Wages in ₹', icon: FileText, color: 'text-teal-600 dark:text-teal-400 border-teal-200 dark:border-teal-500/30 bg-teal-50 dark:bg-teal-500/10' },
+    { title: 'Working Schedules', desc: 'Shifts & Hours', icon: Calendar, color: 'text-cyan-600 dark:text-cyan-400 border-cyan-200 dark:border-cyan-500/30 bg-cyan-50 dark:bg-cyan-500/10' },
+    { title: 'Attendance & Time Off', desc: 'Worked Days', icon: Clock, color: 'text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10' },
+    { title: 'Payroll Engine', desc: '2-Step Payruns', icon: Calculator, color: 'text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10' },
+    { title: 'Payslips & Reports', desc: 'Disbursal & PDFs', icon: BarChart3, color: 'text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-500/30 bg-purple-50 dark:bg-purple-500/10' },
+  ];
+
+  return (
+    <section className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="text-center max-w-3xl mx-auto mb-14">
+        <h2 className="text-xs sm:text-sm uppercase tracking-widest text-teal-600 dark:text-teal-400 font-semibold mb-3">
+          Connected Architecture
+        </h2>
+        <p className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          The Connected PeoplePay360 Ecosystem
+        </p>
+        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 mt-3">
+          Every workforce event flows seamlessly into automated payroll calculations.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 relative">
+        {nodes.map((n, idx) => {
+          const Icon = n.icon;
+          return (
+            <div 
+              key={idx}
+              className="p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200/90 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 backdrop-blur-xl shadow-xs flex flex-col items-center text-center justify-center transition-all group"
+            >
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center border mb-3 transition-transform group-hover:scale-110 ${n.color}`}>
+                <Icon className="w-5 h-5" />
+              </div>
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">{n.title}</h4>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">{n.desc}</p>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+};
