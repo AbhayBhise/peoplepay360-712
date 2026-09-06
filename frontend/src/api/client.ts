@@ -13,6 +13,21 @@ export const apiClient = axios.create({
   timeout: 10000,
 });
 
+// Never let a request body reach the console with its secrets intact — this is a
+// dev-only debug log, but the field names it would print (password, token, etc.)
+// are exactly the ones that must never appear in devtools, screen recordings, or a
+// support/error-reporting tool that scrapes console output.
+const SENSITIVE_FIELDS = ['password', 'newPassword', 'currentPassword', 'token', 'confirmPassword'];
+
+function redactSensitive(data: unknown): unknown {
+  if (!data || typeof data !== 'object') return data;
+  const clone: Record<string, unknown> = { ...(data as Record<string, unknown>) };
+  for (const key of Object.keys(clone)) {
+    if (SENSITIVE_FIELDS.includes(key)) clone[key] = '[REDACTED]';
+  }
+  return clone;
+}
+
 // Request interceptor: attach Bearer token and JSON headers
 apiClient.interceptors.request.use(
   (config) => {
@@ -29,7 +44,7 @@ apiClient.interceptors.request.use(
         config.data = {};
       }
     }
-    logger.debug(`[API Request] ${config.method?.toUpperCase()} ${config.url}`, config.data || '');
+    logger.debug(`[API Request] ${config.method?.toUpperCase()} ${config.url}`, redactSensitive(config.data) || '');
     return config;
   },
   (error) => {
