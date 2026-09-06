@@ -21,6 +21,7 @@ import {
 } from '../../../types';
 import { Badge } from '../../../components/common/Badge';
 import { Button } from '../../../components/common/Button';
+import { Select } from '../../../components/common/Select';
 
 interface HRManagerDashboardViewProps {
   userName: string;
@@ -91,40 +92,42 @@ export const HRManagerDashboardView: React.FC<HRManagerDashboardViewProps> = ({
         </div>
 
         {/* Operational Filter Strip */}
-        <div className="flex flex-wrap items-center gap-2 bg-slate-50 dark:bg-slate-800/80 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs">
+        <div className="flex flex-wrap items-center gap-3 bg-slate-50 dark:bg-slate-800/80 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs">
           <div className="flex items-center gap-1.5 px-2 py-1 text-slate-500 dark:text-slate-400 font-bold uppercase text-2xs">
             <Filter className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
             Filters:
           </div>
 
-          <select
-            value={departmentId}
-            onChange={(e) => setDepartmentId(e.target.value)}
-            className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-teal-600 shadow-2xs font-medium"
-          >
-            <option value="">All Departments</option>
-            {departments.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
+          <div className="w-44">
+            <Select
+              value={departmentId}
+              onChange={(e) => setDepartmentId(e.target.value)}
+              options={[
+                { value: '', label: 'All Departments' },
+                ...departments.map((d) => ({ value: d.id, label: d.name })),
+              ]}
+              placeholder="All Departments"
+            />
+          </div>
 
-          <select
-            value={employeeType}
-            onChange={(e) => setEmployeeType(e.target.value)}
-            className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-teal-600 shadow-2xs font-medium"
-          >
-            <option value="">All Employee Types</option>
-            <option value="Full Time">Full Time</option>
-            <option value="Part Time">Part Time</option>
-          </select>
+          <div className="w-44">
+            <Select
+              value={employeeType}
+              onChange={(e) => setEmployeeType(e.target.value)}
+              options={[
+                { value: '', label: 'All Employee Types' },
+                { value: 'Full Time', label: 'Full Time' },
+                { value: 'Part Time', label: 'Part Time' },
+              ]}
+              placeholder="All Employee Types"
+            />
+          </div>
 
           <input
             type="date"
             value={periodStart}
             onChange={(e) => setPeriodStart(e.target.value)}
-            className="px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-2xs text-slate-700 dark:text-slate-200 font-medium shadow-2xs"
+            className="px-2.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-700 dark:text-slate-200 font-medium shadow-2xs"
             title="Start date"
           />
         </div>

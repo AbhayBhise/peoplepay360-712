@@ -23,67 +23,77 @@ import { Pagination } from '../../components/common/Pagination';
 import { EmployeeFormModal } from './EmployeeFormModal';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { Select } from '../../components/common/Select';
 
 export const EmployeesPage: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDept, setSelectedDept] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
   const [loading, setLoading] = useState(true);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(9);
 
-  // Filters
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDept, setSelectedDept] = useState<string>('');
-  const [selectedStatus, setSelectedStatus] = useState<string>('');
-
-  // Modal
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-  const { isHRMPlus } = useAuth();
-  const { error } = useToast();
   const navigate = useNavigate();
+  const { isHRMPlus } = useAuth();
+  const { error: toastError } = useToast();
 
-  const loadData = async () => {
-    setLoading(true);
+  const fetchEmployees = async () => {
     try {
-      const [empList, deptList] = await Promise.all([
-        employeesApi.getEmployees({
-          department_id: selectedDept || undefined,
-          status: selectedStatus || undefined,
-          search: searchQuery || undefined,
-        }),
-        departmentsApi.getDepartments().catch(() => []),
-      ]);
-      setEmployees(empList || []);
-      setDepartments(deptList || []);
+      setLoading(true);
+      const params: any = {};
+      if (selectedDept) params.department_id = selectedDept;
+      if (selectedStatus) params.status = selectedStatus;
+      if (searchQuery) params.search = searchQuery;
+
+      const data = await employeesApi.getEmployees(params);
+      setEmployees(data || []);
     } catch (err: any) {
-      error(err.message || 'Failed to fetch employees from backend');
+      toastError(err.message || 'Failed to load employees');
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchDepartments = async () => {
+    try {
+      const data = await departmentsApi.getDepartments();
+      setDepartments(data || []);
+    } catch (err) {
+      console.error('Failed to load departments', err);
+    }
+  };
+
   useEffect(() => {
-    loadData();
+    fetchDepartments();
+  }, []);
+
+  useEffect(() => {
+    fetchEmployees();
+    setCurrentPage(1);
   }, [selectedDept, selectedStatus]);
 
-  // Client-side search debounce / filter
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    loadData();
+    fetchEmployees();
+    setCurrentPage(1);
   };
 
   const filteredEmployees = employees.filter((emp) => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      emp.name.toLowerCase().includes(q) ||
-      emp.job_position.toLowerCase().includes(q) ||
-      (emp.department_name && emp.department_name.toLowerCase().includes(q))
-    );
+    const matchesSearch =
+      !searchQuery ||
+      emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      emp.job_position?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesDept = !selectedDept || emp.department_id === selectedDept;
+    const matchesStatus = !selectedStatus || emp.status === selectedStatus;
+
+    return matchesSearch && matchesDept && matchesStatus;
   });
 
   const paginatedEmployees = filteredEmployees.slice(
@@ -106,7 +116,6 @@ export const EmployeesPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2.5">
-          {/* View Mode Toggle */}
           <div className="bg-slate-100 p-1 rounded-lg border border-slate-200 flex items-center">
             <button
               onClick={() => setViewMode('kanban')}
@@ -115,7 +124,6 @@ export const EmployeesPage: React.FC = () => {
                   ? 'bg-white text-indigo-600 shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
-              title="Kanban View"
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
@@ -126,7 +134,6 @@ export const EmployeesPage: React.FC = () => {
                   ? 'bg-white text-indigo-600 shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
-              title="List View"
             >
               <List className="w-4 h-4" />
             </button>
@@ -147,8 +154,7 @@ export const EmployeesPage: React.FC = () => {
 
       {/* Filter and Search Bar */}
       <Card className="p-4! shadow-2xs">
-        <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {/* Search Input */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-3 items-end">
           <form onSubmit={handleSearchSubmit} className="sm:col-span-2 relative">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400 dark:text-slate-500" />
@@ -162,38 +168,34 @@ export const EmployeesPage: React.FC = () => {
             </div>
           </form>
 
-          {/* Department Filter */}
           <div>
-            <select
+            <Select
               value={selectedDept}
               onChange={(e) => setSelectedDept(e.target.value)}
-              className="w-full py-2 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-700 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-indigo-600"
-            >
-              <option value="">All Departments</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: 'All Departments' },
+                ...departments.map((d) => ({ value: d.id, label: d.name })),
+              ]}
+              placeholder="All Departments"
+            />
           </div>
 
-          {/* Status Filter */}
           <div>
-            <select
+            <Select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full py-2 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-700 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-indigo-600"
-            >
-              <option value="">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
+              options={[
+                { value: '', label: 'All Statuses' },
+                { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' },
+              ]}
+              placeholder="All Statuses"
+            />
           </div>
         </div>
       </Card>
 
-      {/* Employee Content (Kanban or List) */}
+      {/* Employee Content */}
       {loading ? (
         <Spinner label="Loading employees from live database..." />
       ) : filteredEmployees.length === 0 ? (

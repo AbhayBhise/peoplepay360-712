@@ -23,6 +23,7 @@ import { Employee } from '../../types';
 import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
+import { Select } from '../../components/common/Select';
 import { Badge } from '../../components/common/Badge';
 import { useAuth } from '../../context/AuthContext';
 
@@ -152,21 +153,19 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ employees, onClose, o
 
           {/* Link to employee */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-              <span className="flex items-center gap-1"><Link2 className="w-3.5 h-3.5" /> Link to Employee Record <span className="text-slate-400 font-normal">(optional)</span></span>
-            </label>
-            <select
+            <Select
+              label="Link to Employee Record"
               value={employeeId}
               onChange={(e) => setEmployeeId(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-            >
-              <option value="">— Not linked to an employee —</option>
-              {employees.map((emp) => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.name} {emp.job_position ? `(${emp.job_position})` : ''}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: '— Not linked to an employee —' },
+                ...employees.map((emp) => ({
+                  value: emp.id,
+                  label: `${emp.name} ${emp.job_position ? `(${emp.job_position})` : ''}`,
+                })),
+              ]}
+              placeholder="— Not linked to an employee —"
+            />
           </div>
 
           {/* Role assignment */}

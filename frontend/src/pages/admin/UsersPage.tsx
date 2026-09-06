@@ -28,6 +28,7 @@ import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { useAuth } from '../../context/AuthContext';
+import { Select } from '../../components/common/Select';
 import { Spinner } from '../../components/common/Spinner';
 
 // ── Role badge ────────────────────────────────────────────────────────────────
@@ -184,23 +185,19 @@ const ProvisionUserModal: React.FC<ProvisionUserModalProps> = ({
 
           {/* Linked Employee */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Link2 className="w-3.5 h-3.5 text-indigo-500" />
-              <span>Link to Workforce Employee</span>
-              <span className="text-slate-400 font-normal">(optional)</span>
-            </label>
-            <select
+            <Select
+              label="Link to Workforce Employee"
               value={employeeId}
               onChange={(e) => setEmployeeId(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-            >
-              <option value="">— Unlinked System Account —</option>
-              {employees.map((emp) => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.name} {emp.job_position ? `(${emp.job_position})` : ''}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: '— Unlinked System Account —' },
+                ...employees.map((emp) => ({
+                  value: emp.id,
+                  label: `${emp.name} ${emp.job_position ? `(${emp.job_position})` : ''}`,
+                })),
+              ]}
+              placeholder="— Unlinked System Account —"
+            />
           </div>
 
           {/* Select Roles */}
