@@ -93,8 +93,10 @@ export const getPayslip = asyncHandler(async (req: Request, res: Response) => {
   return ok(res, await payslipService.getPayslip(req.auth!, req.params.id));
 });
 export const getPayslipPdf = asyncHandler(async (req: Request, res: Response) => {
+  const payslip = await payslipService.getPayslip(req.auth!, req.params.id);
   const pdf = await payslipService.getPayslipPdfBuffer(req.auth!, req.params.id);
+  const filename = `Payslip-${payslip.employee.name.replace(/[^a-zA-Z0-9]/g, '_')}-${payslip.payrun.periodStart.toISOString().slice(0, 7)}.pdf`;
   res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", `attachment; filename="payslip-${req.params.id}.pdf"`);
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
   res.send(pdf);
 });

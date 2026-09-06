@@ -325,7 +325,7 @@ export const PayrollUserDashboardView: React.FC<PayrollUserDashboardViewProps> =
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate('/payroll/structures')}
+              onClick={() => navigate('/payroll/salary-structures')}
               className="w-full text-xs font-semibold py-2"
             >
               Verify Salary Structures & Rules

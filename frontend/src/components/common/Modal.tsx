@@ -42,7 +42,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="min-h-screen px-4 text-center flex items-center justify-center">
+      <div className="min-h-screen px-4 text-center flex items-start justify-center pt-16 pb-16">
         {/* Backdrop */}
         <div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity animate-fade-in"
@@ -51,7 +51,7 @@ export const Modal: React.FC<ModalProps> = ({
 
         {/* Modal Dialog */}
         <div
-          className={`inline-block w-full ${maxWidthStyles[maxWidth]} my-8 p-6 text-left align-middle transition-all transform bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-2xl rounded-2xl border border-slate-200 dark:border-slate-800 z-10 animate-scale-in`}
+          className={`inline-block w-full ${maxWidthStyles[maxWidth]} p-6 text-left align-middle transition-all transform bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-2xl rounded-2xl border border-slate-200 dark:border-slate-800 z-10 animate-scale-in`}
         >
           <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-5">
             <div>

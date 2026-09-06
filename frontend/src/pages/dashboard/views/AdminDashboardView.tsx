@@ -163,7 +163,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate('/system/users')}
+              onClick={() => navigate('/admin/users')}
               className="text-2xs py-1"
             >
               Users Directory
@@ -220,7 +220,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <button
-              onClick={() => navigate('/workforce/departments')}
+              onClick={() => navigate('/departments')}
               className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left transition-all cursor-pointer group"
             >
               <div className="flex items-center justify-between text-indigo-600 dark:text-indigo-400 mb-2">
@@ -236,7 +236,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </button>
 
             <button
-              onClick={() => navigate('/workforce/schedules')}
+              onClick={() => navigate('/working-schedules')}
               className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left transition-all cursor-pointer group"
             >
               <div className="flex items-center justify-between text-teal-600 dark:text-teal-400 mb-2">
@@ -252,7 +252,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </button>
 
             <button
-              onClick={() => navigate('/payroll/structures')}
+              onClick={() => navigate('/payroll/salary-structures')}
               className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left transition-all cursor-pointer group"
             >
               <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 mb-2">
@@ -268,7 +268,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </button>
 
             <button
-              onClick={() => navigate('/payroll/rules')}
+              onClick={() => navigate('/payroll/salary-structures')}
               className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left transition-all cursor-pointer group"
             >
               <div className="flex items-center justify-between text-amber-600 dark:text-amber-400 mb-2">

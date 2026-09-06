@@ -13,12 +13,21 @@ export const apiClient = axios.create({
   timeout: 10000,
 });
 
-// Request interceptor: attach Bearer token from localStorage
+// Request interceptor: attach Bearer token and JSON headers
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('peoplepay_token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    const method = config.method?.toLowerCase();
+    if (['post', 'put', 'patch'].includes(method || '')) {
+      if (config.headers) {
+        config.headers['Content-Type'] = 'application/json';
+      }
+      if (config.data === undefined) {
+        config.data = {};
+      }
     }
     logger.debug(`[API Request] ${config.method?.toUpperCase()} ${config.url}`, config.data || '');
     return config;
