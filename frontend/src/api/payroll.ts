@@ -1,5 +1,5 @@
 import { apiClient, apiRequest } from './client';
-import { SalaryStructure, SalaryRule, Payrun, PayslipDetail, PayslipSummary, Employee } from '../types';
+import { SalaryStructure, SalaryRule, Payrun, PayslipDetail, PayslipSummary, Employee, PaginationFilters, PaginatedResult } from '../types';
 
 // Backend returns camelCase fields and nested relations (e.g. employee: { name }, payrun: { periodStart })
 // Normalize into the expected frontend snake_case structure.
@@ -112,8 +112,14 @@ function normalizePayrun(raw: any): Payrun {
 
 export const payrollApi = {
   // Salary Structures
-  getStructures: async (): Promise<SalaryStructure[]> => {
-    const raw = await apiRequest<any[]>(apiClient.get('/api/salary-structures'));
+  getStructures: async (filters?: PaginationFilters): Promise<PaginatedResult<SalaryStructure> | SalaryStructure[]> => {
+    const raw = await apiRequest<any>(apiClient.get('/api/salary-structures', { params: filters }));
+    if (raw && !Array.isArray(raw) && Array.isArray(raw.items)) {
+      return {
+        ...raw,
+        items: raw.items.map(normalizeStructure)
+      };
+    }
     return Array.isArray(raw) ? raw.map(normalizeStructure) : [];
   },
 
@@ -133,8 +139,14 @@ export const payrollApi = {
   },
 
   // Salary Rules
-  getRules: async (structureId: number | string): Promise<SalaryRule[]> => {
-    const raw = await apiRequest<any[]>(apiClient.get(`/api/salary-structures/${structureId}/rules`));
+  getRules: async (structureId: number | string, filters?: PaginationFilters): Promise<PaginatedResult<SalaryRule> | SalaryRule[]> => {
+    const raw = await apiRequest<any>(apiClient.get(`/api/salary-structures/${structureId}/rules`, { params: filters }));
+    if (raw && !Array.isArray(raw) && Array.isArray(raw.items)) {
+      return {
+        ...raw,
+        items: raw.items.map(normalizeSalaryRule).sort((a, b) => a.sequence - b.sequence)
+      };
+    }
     return Array.isArray(raw) ? raw.map(normalizeSalaryRule).sort((a, b) => a.sequence - b.sequence) : [];
   },
 
@@ -217,8 +229,14 @@ export const payrollApi = {
     return normalizePayrun(raw);
   },
 
-  getPayruns: async (): Promise<Payrun[]> => {
-    const raw = await apiRequest<any[]>(apiClient.get('/api/payruns'));
+  getPayruns: async (filters?: PaginationFilters): Promise<PaginatedResult<Payrun> | Payrun[]> => {
+    const raw = await apiRequest<any>(apiClient.get('/api/payruns', { params: filters }));
+    if (raw && !Array.isArray(raw) && Array.isArray(raw.items)) {
+      return {
+        ...raw,
+        items: raw.items.map(normalizePayrun)
+      };
+    }
     return Array.isArray(raw) ? raw.map(normalizePayrun) : [];
   },
 
@@ -247,11 +265,17 @@ export const payrollApi = {
   },
 
   // Payslips
-  getPayslips: async (filters?: { employee_id?: number | string; payrun_id?: number | string }): Promise<PayslipDetail[]> => {
-    const params: any = {};
+  getPayslips: async (filters?: { employee_id?: number | string; payrun_id?: number | string } & PaginationFilters): Promise<PaginatedResult<PayslipDetail> | PayslipDetail[]> => {
+    const params: any = { ...filters };
     if (filters?.employee_id) params.employeeId = String(filters.employee_id);
     if (filters?.payrun_id) params.payrunId = String(filters.payrun_id);
-    const raw = await apiRequest<any[]>(apiClient.get('/api/payslips', { params }));
+    const raw = await apiRequest<any>(apiClient.get('/api/payslips', { params }));
+    if (raw && !Array.isArray(raw) && Array.isArray(raw.items)) {
+      return {
+        ...raw,
+        items: raw.items.map(normalizePayslipDetail)
+      };
+    }
     return Array.isArray(raw) ? raw.map(normalizePayslipDetail) : [];
   },
 
@@ -266,3 +290,4 @@ export const payrollApi = {
     return `${baseURL}/api/payslips/${id}/pdf?token=${encodeURIComponent(token || '')}`;
   },
 };
+

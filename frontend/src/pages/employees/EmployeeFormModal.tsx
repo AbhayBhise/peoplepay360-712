@@ -8,6 +8,7 @@ import { employeesApi } from '../../api/employees';
 import { departmentsApi } from '../../api/departments';
 import { schedulesApi } from '../../api/schedules';
 import { useToast } from '../../context/ToastContext';
+import { extractItems } from '../../utils/pagination';
 
 interface EmployeeFormModalProps {
   isOpen: boolean;
@@ -64,13 +65,14 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
             employeesApi.getEmployees().catch(() => []),
             schedulesApi.getSchedules().catch(() => []),
           ]);
-          setDepartments(deptList || []);
+          setDepartments(extractItems<Department>(deptList));
           // Exclude self from manager list
-          const filteredManagers = empList.filter(
+          const managerList = extractItems<Employee>(empList);
+          const filteredManagers = managerList.filter(
             (e) => !employeeToEdit || String(e.id) !== String(employeeToEdit.id)
           );
           setPotentialManagers(filteredManagers);
-          setSchedules(schedList || []);
+          setSchedules(extractItems<WorkingSchedule>(schedList));
         } catch {
           // Handled silently
         } finally {

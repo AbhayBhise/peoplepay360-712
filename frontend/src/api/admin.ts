@@ -1,4 +1,5 @@
 import { apiClient, apiRequest } from './client';
+import { PaginationFilters, PaginatedResult } from '../types';
 
 export interface AdminUser {
   id: string;
@@ -59,13 +60,17 @@ export interface AuditLog {
 
 export const adminApi = {
   /** GET /api/admin/users — List all workforce users */
-  getUsers: async (): Promise<AdminUser[]> => {
-    return apiRequest<AdminUser[]>(apiClient.get('/api/admin/users'));
+  getUsers: async (filters?: PaginationFilters): Promise<PaginatedResult<AdminUser> | AdminUser[]> => {
+    const raw = await apiRequest<any>(apiClient.get('/api/admin/users', { params: filters }));
+    if (raw && !Array.isArray(raw) && Array.isArray(raw.items)) {
+      return raw as PaginatedResult<AdminUser>;
+    }
+    return Array.isArray(raw) ? raw : [];
   },
 
   /** Alias for backwards-compatibility */
-  listUsers: async (): Promise<AdminUser[]> => {
-    return apiRequest<AdminUser[]>(apiClient.get('/api/admin/users'));
+  listUsers: async (filters?: PaginationFilters): Promise<PaginatedResult<AdminUser> | AdminUser[]> => {
+    return adminApi.getUsers(filters);
   },
 
   /** POST /api/admin/users — provision new user */
@@ -121,14 +126,26 @@ export const adminApi = {
     return apiRequest<AdminUser>(apiClient.post(`/api/admin/users/${userId}/reactivate`));
   },
 
-  /** GET /api/admin/audit-logs — returns paginated result; unwrap .data array */
-  getAuditLogs: async (): Promise<AuditLog[]> => {
-    const result = await apiRequest<{ data: AuditLog[]; pagination: any } | AuditLog[]>(
-      apiClient.get('/api/admin/audit-logs?page=1&limit=100')
+  /** GET /api/admin/audit-logs — returns paginated result */
+  getAuditLogs: async (filters?: PaginationFilters): Promise<PaginatedResult<AuditLog> | AuditLog[]> => {
+    const result = await apiRequest<any>(
+      apiClient.get('/api/admin/audit-logs', { params: { page: 1, limit: 100, ...filters } })
     );
-    // Backend returns a paginated wrapper: { data: [...], pagination: {...} }
-    if (result && !Array.isArray(result) && Array.isArray((result as any).data)) {
-      return (result as any).data as AuditLog[];
+    // Backend returns a paginated wrapper: { data: [...], pagination: {...} } or { items: [...], total: ... }
+    if (result && !Array.isArray(result)) {
+      if (Array.isArray(result.items)) {
+        return result as PaginatedResult<AuditLog>;
+      } else if (Array.isArray(result.data)) {
+        const totalItems = result.pagination?.totalItems || result.data.length;
+        const pageSize = result.pagination?.pageSize || 100;
+        return {
+          items: result.data as AuditLog[],
+          total: totalItems,
+          page: result.pagination?.currentPage || 1,
+          limit: pageSize,
+          totalPages: Math.max(1, Math.ceil(totalItems / pageSize)),
+        };
+      }
     }
     return Array.isArray(result) ? result : [];
   },

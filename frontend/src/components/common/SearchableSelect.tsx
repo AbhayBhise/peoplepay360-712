@@ -12,6 +12,7 @@ export interface SearchableSelectProps {
   error?: string;
   helperText?: string;
   required?: boolean;
+  disabled?: boolean;
   className?: string;
 }
 
@@ -24,6 +25,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   error,
   helperText,
   required,
+  disabled,
   className = '',
 }) => {
   return (
@@ -36,6 +38,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       error={error}
       helperText={helperText}
       required={required}
+      disabled={disabled}
       className={className}
       searchable={true}
     />

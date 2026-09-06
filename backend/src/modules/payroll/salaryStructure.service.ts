@@ -7,22 +7,38 @@ import {
   createSalaryRuleSchema,
   updateSalaryRuleSchema,
 } from "./salaryStructure.validation";
+import { PaginationParams, paginatedResult } from "../../utils/pagination";
 
 type CreateStructureInput = z.infer<typeof createSalaryStructureSchema>;
 type UpdateStructureInput = z.infer<typeof updateSalaryStructureSchema>;
 type CreateRuleInput = z.infer<typeof createSalaryRuleSchema>;
 type UpdateRuleInput = z.infer<typeof updateSalaryRuleSchema>;
 
-export async function listStructures() {
-  const structures = await prisma.salaryStructure.findMany({
-    include: { _count: { select: { rules: true, contracts: true } } },
-    orderBy: { name: "asc" },
-  });
-  return structures.map((s) => ({
+export async function listStructures(pagination?: PaginationParams) {
+  const include = { _count: { select: { rules: true, contracts: true } } };
+  const orderBy = { name: "asc" as const };
+  
+  if (!pagination) {
+    const structures = await prisma.salaryStructure.findMany({ include, orderBy });
+    return structures.map((s) => ({
+      ...s,
+      ruleCount: s._count.rules,
+      employeeCount: s._count.contracts,
+    }));
+  }
+
+  const [items, total] = await Promise.all([
+    prisma.salaryStructure.findMany({ include, orderBy, skip: pagination.skip, take: pagination.take }),
+    prisma.salaryStructure.count()
+  ]);
+  
+  const mappedItems = items.map((s) => ({
     ...s,
     ruleCount: s._count.rules,
     employeeCount: s._count.contracts,
   }));
+  
+  return paginatedResult(mappedItems, total, pagination);
 }
 
 export async function getStructure(id: string) {
@@ -40,8 +56,17 @@ export async function updateStructure(id: string, input: UpdateStructureInput) {
   return prisma.salaryStructure.update({ where: { id }, data: input });
 }
 
-export function listRules(structureId: string) {
-  return prisma.salaryRule.findMany({ where: { structureId }, orderBy: { sequence: "asc" } });
+export async function listRules(structureId: string, pagination?: PaginationParams) {
+  if (!pagination) {
+    return prisma.salaryRule.findMany({ where: { structureId }, orderBy: { sequence: "asc" } });
+  }
+  
+  const [items, total] = await Promise.all([
+    prisma.salaryRule.findMany({ where: { structureId }, orderBy: { sequence: "asc" }, skip: pagination.skip, take: pagination.take }),
+    prisma.salaryRule.count({ where: { structureId } })
+  ]);
+  
+  return paginatedResult(items, total, pagination);
 }
 
 function assertComputationInputsMakeSense(input: { computationMethod: string; fixedAmount?: number | null; percentage?: number | null; formula?: string | null }) {

@@ -1,5 +1,5 @@
 import { apiClient, apiRequest } from './client';
-import { WorkingSchedule } from '../types';
+import { WorkingSchedule, PaginationFilters, PaginatedResult } from '../types';
 
 function normalizeSchedule(raw: any): WorkingSchedule {
   return {
@@ -19,8 +19,14 @@ function normalizeSchedule(raw: any): WorkingSchedule {
 }
 
 export const schedulesApi = {
-  getSchedules: async (): Promise<WorkingSchedule[]> => {
-    const raw = await apiRequest<any[]>(apiClient.get('/api/working-schedules'));
+  getSchedules: async (filters?: PaginationFilters): Promise<PaginatedResult<WorkingSchedule> | WorkingSchedule[]> => {
+    const raw = await apiRequest<any>(apiClient.get('/api/working-schedules', { params: filters }));
+    if (raw && !Array.isArray(raw) && Array.isArray(raw.items)) {
+      return {
+        ...raw,
+        items: raw.items.map(normalizeSchedule)
+      };
+    }
     return Array.isArray(raw) ? raw.map(normalizeSchedule) : [];
   },
 

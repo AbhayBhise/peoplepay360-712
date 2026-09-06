@@ -1,5 +1,5 @@
 import { apiClient, apiRequest } from './client';
-import { Attendance } from '../types';
+import { Attendance, PaginationFilters, PaginatedResult } from '../types';
 
 function normalizeAttendance(raw: any): Attendance {
   if (!raw) return raw;
@@ -31,7 +31,7 @@ export const attendanceApi = {
     date_to?: string;
     dateTo?: string;
     status?: string;
-  }): Promise<Attendance[]> => {
+  } & PaginationFilters): Promise<PaginatedResult<Attendance> | Attendance[]> => {
     const params: any = {};
     const empId = filters?.employee_id ?? filters?.employeeId;
     if (empId) params.employee_id = String(empId);
@@ -40,8 +40,16 @@ export const attendanceApi = {
     const dTo = filters?.date_to ?? filters?.dateTo;
     if (dTo) params.date_to = dTo;
     if (filters?.status) params.status = filters.status;
+    if (filters?.page) params.page = filters.page;
+    if (filters?.limit) params.limit = filters.limit;
 
-    const raw = await apiRequest<any[]>(apiClient.get('/api/attendance', { params }));
+    const raw = await apiRequest<any>(apiClient.get('/api/attendance', { params }));
+    if (raw && !Array.isArray(raw) && Array.isArray(raw.items)) {
+      return {
+        ...raw,
+        items: raw.items.map(normalizeAttendance)
+      };
+    }
     return Array.isArray(raw) ? raw.map(normalizeAttendance) : [];
   },
 

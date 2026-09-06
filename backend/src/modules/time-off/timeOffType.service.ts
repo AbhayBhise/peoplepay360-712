@@ -2,12 +2,20 @@ import { z } from "zod";
 import { prisma } from "../../prisma";
 import { ApiError } from "../../utils/ApiError";
 import { createTimeOffTypeSchema, updateTimeOffTypeSchema } from "./timeOff.validation";
+import { PaginationParams, paginatedResult } from "../../utils/pagination";
 
 type CreateInput = z.infer<typeof createTimeOffTypeSchema>;
 type UpdateInput = z.infer<typeof updateTimeOffTypeSchema>;
 
-export function listTypes() {
-  return prisma.timeOffType.findMany({ orderBy: { name: "asc" } });
+export async function listTypes(pagination?: PaginationParams) {
+  if (!pagination) {
+    return prisma.timeOffType.findMany({ orderBy: { name: "asc" } });
+  }
+  const [items, total] = await Promise.all([
+    prisma.timeOffType.findMany({ orderBy: { name: "asc" }, skip: pagination.skip, take: pagination.take }),
+    prisma.timeOffType.count(),
+  ]);
+  return paginatedResult(items, total, pagination);
 }
 
 export async function getType(id: string) {

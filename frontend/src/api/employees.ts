@@ -1,7 +1,7 @@
 import { apiClient, apiRequest } from './client';
-import { Employee, Contract, Attendance, TimeOffRequest, PayslipSummary } from '../types';
+import { Employee, Contract, Attendance, TimeOffRequest, PayslipSummary, PaginationFilters, PaginatedResult } from '../types';
 
-export interface EmployeeFilters {
+export interface EmployeeFilters extends PaginationFilters {
   department_id?: string | number;
   status?: string;
   search?: string;
@@ -34,8 +34,14 @@ function normalizeEmployee(raw: any): Employee {
 }
 
 export const employeesApi = {
-  getEmployees: async (filters?: EmployeeFilters): Promise<Employee[]> => {
-    const raw = await apiRequest<any[]>(apiClient.get('/api/employees', { params: filters }));
+  getEmployees: async (filters?: EmployeeFilters): Promise<PaginatedResult<Employee> | Employee[]> => {
+    const raw = await apiRequest<any>(apiClient.get('/api/employees', { params: filters }));
+    if (raw && !Array.isArray(raw) && Array.isArray(raw.items)) {
+      return {
+        ...raw,
+        items: raw.items.map(normalizeEmployee)
+      };
+    }
     return Array.isArray(raw) ? raw.map(normalizeEmployee) : [];
   },
 
@@ -92,19 +98,19 @@ export const employeesApi = {
   },
 
   // Smart button backing endpoints:
-  getEmployeeContracts: async (id: number | string): Promise<Contract[]> => {
-    return apiRequest<Contract[]>(apiClient.get(`/api/employees/${id}/contracts`));
+  getEmployeeContracts: async (id: number | string, filters?: PaginationFilters): Promise<PaginatedResult<Contract> | Contract[]> => {
+    return apiRequest<PaginatedResult<Contract> | Contract[]>(apiClient.get(`/api/employees/${id}/contracts`, { params: filters }));
   },
 
-  getEmployeeAttendance: async (id: number | string): Promise<Attendance[]> => {
-    return apiRequest<Attendance[]>(apiClient.get(`/api/employees/${id}/attendance`));
+  getEmployeeAttendance: async (id: number | string, filters?: PaginationFilters): Promise<PaginatedResult<Attendance> | Attendance[]> => {
+    return apiRequest<PaginatedResult<Attendance> | Attendance[]>(apiClient.get(`/api/employees/${id}/attendance`, { params: filters }));
   },
 
-  getEmployeeTimeOff: async (id: number | string): Promise<TimeOffRequest[]> => {
-    return apiRequest<TimeOffRequest[]>(apiClient.get(`/api/employees/${id}/time-off`));
+  getEmployeeTimeOff: async (id: number | string, filters?: PaginationFilters): Promise<PaginatedResult<TimeOffRequest> | TimeOffRequest[]> => {
+    return apiRequest<PaginatedResult<TimeOffRequest> | TimeOffRequest[]>(apiClient.get(`/api/employees/${id}/time-off`, { params: filters }));
   },
 
-  getEmployeePayslips: async (id: number | string): Promise<PayslipSummary[]> => {
-    return apiRequest<PayslipSummary[]>(apiClient.get(`/api/employees/${id}/payslips`));
+  getEmployeePayslips: async (id: number | string, filters?: PaginationFilters): Promise<PaginatedResult<PayslipSummary> | PayslipSummary[]> => {
+    return apiRequest<PaginatedResult<PayslipSummary> | PayslipSummary[]>(apiClient.get(`/api/employees/${id}/payslips`, { params: filters }));
   },
 };

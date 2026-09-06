@@ -1,5 +1,5 @@
 import { apiClient, apiRequest } from './client';
-import { Department } from '../types';
+import { Department, PaginationFilters, PaginatedResult } from '../types';
 
 // Backend returns camelCase (docs/02_API_CONTRACTS.md); frontend types use snake_case.
 function normalizeDepartment(raw: any): Department {
@@ -13,9 +13,16 @@ function normalizeDepartment(raw: any): Department {
 }
 
 export const departmentsApi = {
-  getDepartments: async (parentId?: string | number): Promise<Department[]> => {
-    const params = parentId !== undefined ? { parent_id: String(parentId) } : {};
-    const raw = await apiRequest<any[]>(apiClient.get('/api/departments', { params }));
+  getDepartments: async (parentId?: string | number | null, filters?: PaginationFilters): Promise<PaginatedResult<Department> | Department[]> => {
+    const params: any = { ...filters };
+    if (parentId !== undefined && parentId !== null) params.parent_id = String(parentId);
+    const raw = await apiRequest<any>(apiClient.get('/api/departments', { params }));
+    if (raw && !Array.isArray(raw) && Array.isArray(raw.items)) {
+      return {
+        ...raw,
+        items: raw.items.map(normalizeDepartment)
+      };
+    }
     return Array.isArray(raw) ? raw.map(normalizeDepartment) : [];
   },
 

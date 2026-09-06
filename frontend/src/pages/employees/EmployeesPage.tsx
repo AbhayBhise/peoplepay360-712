@@ -24,6 +24,7 @@ import { EmployeeFormModal } from './EmployeeFormModal';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { Select } from '../../components/common/Select';
+import { extractItems } from '../../utils/pagination';
 
 export const EmployeesPage: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -51,8 +52,8 @@ export const EmployeesPage: React.FC = () => {
       if (selectedStatus) params.status = selectedStatus;
       if (searchQuery) params.search = searchQuery;
 
-      const data = await employeesApi.getEmployees(params);
-      setEmployees(data || []);
+      const data = extractItems(await employeesApi.getEmployees(params));
+      setEmployees(extractItems(data) || []);
     } catch (err: any) {
       toastError(err.message || 'Failed to load employees');
     } finally {
@@ -62,7 +63,7 @@ export const EmployeesPage: React.FC = () => {
 
   const fetchDepartments = async () => {
     try {
-      const data = await departmentsApi.getDepartments();
+      const data = extractItems(await departmentsApi.getDepartments());
       setDepartments(data || []);
     } catch (err) {
       console.error('Failed to load departments', err);
@@ -77,6 +78,10 @@ export const EmployeesPage: React.FC = () => {
     fetchEmployees();
     setCurrentPage(1);
   }, [selectedDept, selectedStatus]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

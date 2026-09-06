@@ -4,8 +4,10 @@ import { ok } from "../../utils/response";
 import * as workingScheduleService from "./workingSchedule.service";
 import { createWorkingScheduleSchema, updateWorkingScheduleSchema } from "./workingSchedule.validation";
 
-export const list = asyncHandler(async (_req: Request, res: Response) => {
-  const schedules = await workingScheduleService.listWorkingSchedules();
+import { parsePaginationIfRequested } from "../../utils/pagination";
+
+export const list = asyncHandler(async (req: Request, res: Response) => {
+  const schedules = await workingScheduleService.listWorkingSchedules(parsePaginationIfRequested(req));
   return ok(res, schedules);
 });
 
