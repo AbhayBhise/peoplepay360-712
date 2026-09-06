@@ -17,3 +17,4 @@ dev\ resources/
 *.zip
 *.mjs
 scratch_check.mjs
+*.tsbuildinfo

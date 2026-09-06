@@ -17,9 +17,43 @@ import {
   SalaryByDepartment,
   NetSalaryTrend
 } from '../../../types';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from 'recharts';
 import { Button } from '../../../components/common/Button';
 import { Badge } from '../../../components/common/Badge';
 import { formatCurrency } from '../../../utils/currency';
+
+const ChartTooltip: React.FC<any> = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-slate-900/95 dark:bg-slate-950/95 text-white p-3 rounded-xl shadow-xl border border-slate-700/80 text-xs backdrop-blur-md">
+        <p className="font-bold text-slate-200 mb-1">{label}</p>
+        {payload.map((entry: any, index: number) => (
+          <p
+            key={`item-${index}`}
+            className="flex items-center gap-2 text-2xs font-medium"
+            style={{ color: entry.color || entry.fill || '#38bdf8' }}
+          >
+            <span>{entry.name || 'Value'}:</span>
+            <span className="font-bold font-financial">
+              {formatCurrency(entry.value)}
+            </span>
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
 
 interface PayrollManagerDashboardViewProps {
   userName: string;
@@ -285,25 +319,48 @@ export const PayrollManagerDashboardView: React.FC<PayrollManagerDashboardViewPr
             </p>
           </div>
 
-          <div className="space-y-3 pt-1">
-            {netTrend.map((item) => (
-              <div key={item.month} className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-slate-800 dark:text-slate-200 font-mono">
-                    {item.month}
-                  </span>
-                  <span className="font-financial font-extrabold text-emerald-700 dark:text-emerald-400">
-                    {formatCurrency(item.net_total)}
-                  </span>
-                </div>
-                <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div
-                    className="bg-emerald-500 h-full rounded-full"
-                    style={{ width: '85%' }}
+          <div className="h-56 w-full pt-1">
+            {netTrend && netTrend.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={netTrend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="pmNetSalaryGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:opacity-15" />
+                  <XAxis
+                    dataKey="month"
+                    stroke="#94a3b8"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={{ stroke: '#cbd5e1' }}
                   />
-                </div>
+                  <YAxis
+                    stroke="#94a3b8"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={{ stroke: '#cbd5e1' }}
+                    tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="net_total"
+                    name="Net Disbursed"
+                    stroke="#10b981"
+                    strokeWidth={2.5}
+                    fillOpacity={1}
+                    fill="url(#pmNetSalaryGrad)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-xs text-slate-400">
+                No ledger trend records found
               </div>
-            ))}
+            )}
           </div>
         </div>
 
@@ -319,21 +376,41 @@ export const PayrollManagerDashboardView: React.FC<PayrollManagerDashboardViewPr
             </p>
           </div>
 
-          <div className="space-y-3 pt-1">
-            {salaryByDept.slice(0, 4).map((dept) => (
-              <div
-                key={dept.department_id}
-                className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700 flex items-center justify-between text-xs"
-              >
-                <div>
-                  <div className="font-bold text-slate-900 dark:text-white">{dept.department_name}</div>
-                  <div className="text-2xs text-slate-500 dark:text-slate-400">{dept.headcount} Staff</div>
-                </div>
-                <div className="font-financial font-extrabold text-slate-900 dark:text-white">
-                  {formatCurrency(dept.total_salary)}
-                </div>
+          <div className="h-56 w-full pt-1">
+            {salaryByDept && salaryByDept.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={salaryByDept} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:opacity-15" />
+                  <XAxis
+                    dataKey="department_name"
+                    stroke="#94a3b8"
+                    fontSize={10}
+                    tickLine={false}
+                    axisLine={{ stroke: '#cbd5e1' }}
+                    angle={-15}
+                    textAnchor="end"
+                  />
+                  <YAxis
+                    stroke="#94a3b8"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={{ stroke: '#cbd5e1' }}
+                    tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Bar
+                    dataKey="total_salary"
+                    name="Total Salary"
+                    fill="#6366f1"
+                    radius={[5, 5, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-xs text-slate-400">
+                No department allocation records found
               </div>
-            ))}
+            )}
           </div>
         </div>
 
