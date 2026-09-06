@@ -775,15 +775,24 @@ export const UsersPage: React.FC = () => {
                     className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 text-xs space-y-1"
                   >
                     <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200">
-                      <span className="text-indigo-600 dark:text-indigo-400 uppercase tracking-wide text-2xs">
-                        {log.action}
+                      <span className="flex items-center gap-2">
+                        <span className="text-indigo-600 dark:text-indigo-400 uppercase tracking-wide text-2xs">
+                          {log.action}
+                        </span>
+                        {log.module && (
+                          <span className="text-slate-400 dark:text-slate-500 text-2xs">
+                            · {log.module}
+                          </span>
+                        )}
                       </span>
                       <span className="text-2xs text-slate-400 font-mono">
                         {new Date(log.createdAt).toLocaleString()}
                       </span>
                     </div>
                     <div className="text-slate-600 dark:text-slate-300 font-mono text-2xs">
-                      User: {log.userId || 'System'} | IP: {log.ipAddress || '127.0.0.1'} | Entity: {log.entityType || 'User'} #{log.entityId || ''}
+                      By: {log.user?.email || log.userId || 'System'}
+                      {log.ipAddress ? ` · IP: ${log.ipAddress}` : ''}
+                      {log.recordId ? ` · ID: ${log.recordId.slice(0, 8)}…` : ''}
                     </div>
                   </div>
                 ))

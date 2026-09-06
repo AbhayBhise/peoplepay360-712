@@ -102,6 +102,23 @@ Security is enforced independently across 4 distinct architectural layers:
 
 ---
 
+## 🔒 Security Hardening Highlights
+
+PeoplePay360 goes beyond basic RBAC to include enterprise-grade API defenses:
+
+- **Strict CSP & Security Headers**: Enforced via custom Helmet directives.
+- **XSS Sanitisation Pipeline**: Recursively cleans all incoming JSON request bodies, stripping executable tags and prototype pollution payloads (`__proto__`, `constructor`) without breaking valid data structures.
+- **Strict Content-Type Enforcement**: Rejects any mutating request (`POST`/`PUT`/`PATCH`) that does not declare `application/json`, preventing blind text parsing.
+- **HTTP Parameter Pollution (HPP)**: Safely collapses duplicate query parameters to scalar values, protecting against type-confusion logic flaws.
+- **Tiered Rate Limiting**:
+  - `Global`: 100 req/15min to prevent mass scraping and DoS.
+  - `Login`: 5 req/15min to prevent brute-force and credential stuffing.
+  - `Sensitive Ops`: 5 req/15min for password resets/changes.
+  - `Admin Provisioning`: 20 req/15min to protect privileged actions.
+- **Hardened Cryptography**: Pins JWT signing to `HS256` only, enforces `bcrypt` rounds (default 12 for payroll systems), and strictly validates CORS origins (no wildcards).
+
+---
+
 ## 🛠️ Technology Stack
 
 - **Frontend**: React 19, TypeScript, Vite 6, Tailwind CSS v4, Lucide Icons, React Router v7

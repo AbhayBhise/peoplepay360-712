@@ -8,8 +8,9 @@ import { AuthPayload, RoleName } from "../../middleware/auth";
 import { sendMail } from "../../utils/mailer";
 
 export async function login(email: string, password: string) {
+  const safeEmail = email.trim().toLowerCase();
   const user = await prisma.user.findUnique({
-    where: { email },
+    where: { email: safeEmail },
     include: { userRoles: { include: { role: true } }, employee: true },
   });
 
@@ -32,7 +33,7 @@ export async function login(email: string, password: string) {
     roles,
   };
 
-  const signOptions: jwt.SignOptions = { expiresIn: env.jwtExpiresIn as jwt.SignOptions["expiresIn"] };
+  const signOptions: jwt.SignOptions = { expiresIn: env.jwtExpiresIn as jwt.SignOptions["expiresIn"], algorithm: env.jwtAlgorithm };
   const token = jwt.sign(payload, env.jwtSecret, signOptions);
 
   return {
@@ -50,7 +51,8 @@ export async function login(email: string, password: string) {
 // Public self-registration — creates an account with EMPLOYEE role.
 // Does NOT require an existing Admin session.
 export async function register(name: string, email: string, password: string) {
-  const existing = await prisma.user.findUnique({ where: { email } });
+  const safeEmail = email.trim().toLowerCase();
+  const existing = await prisma.user.findUnique({ where: { email: safeEmail } });
   if (existing) {
     throw ApiError.conflict("email: an account with this email already exists");
   }
@@ -61,11 +63,11 @@ export async function register(name: string, email: string, password: string) {
     throw ApiError.internal("Role configuration error — contact your administrator");
   }
 
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await bcrypt.hash(password, env.bcryptRounds);
 
   const user = await prisma.user.create({
     data: {
-      email,
+      email: safeEmail,
       passwordHash,
       userRoles: {
         create: [{ roleId: employeeRole.id, grantedBy: "self-registration" }],
@@ -76,7 +78,7 @@ export async function register(name: string, email: string, password: string) {
 
   const roles = user.userRoles.map((ur) => ur.role.name as RoleName);
   const payload: AuthPayload = { userId: user.id, employeeId: null, roles };
-  const signOptions: jwt.SignOptions = { expiresIn: env.jwtExpiresIn as jwt.SignOptions["expiresIn"] };
+  const signOptions: jwt.SignOptions = { expiresIn: env.jwtExpiresIn as jwt.SignOptions["expiresIn"], algorithm: env.jwtAlgorithm };
   const token = jwt.sign(payload, env.jwtSecret, signOptions);
 
   return {
@@ -129,12 +131,13 @@ export async function changePassword(auth: AuthPayload, currentPassword: string,
     throw ApiError.unauthorized("current password is incorrect");
   }
 
-  const passwordHash = await bcrypt.hash(newPassword, 10);
+  const passwordHash = await bcrypt.hash(newPassword, env.bcryptRounds);
   await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
 }
 
 export async function forgotPassword(email: string) {
-  const user = await prisma.user.findUnique({ where: { email } });
+  const safeEmail = email.trim().toLowerCase();
+  const user = await prisma.user.findUnique({ where: { email: safeEmail } });
   // Deliberately fail silently if user not found to prevent email enumeration
   if (!user || !user.isActive) {
     return;
@@ -154,7 +157,7 @@ export async function forgotPassword(email: string) {
   const resetLink = `${env.frontendUrl}/reset-password?token=${token}`;
   
   await sendMail({
-    to: email,
+    to: safeEmail,
     subject: "Password Reset Request",
     text: `You requested a password reset. Click the link to reset your password: ${resetLink}\nThis link expires in 1 hour.`,
   });
@@ -170,7 +173,7 @@ export async function resetPassword(token: string, newPassword: string) {
     throw ApiError.badRequest("invalid or expired password reset token");
   }
 
-  const passwordHash = await bcrypt.hash(newPassword, 10);
+  const passwordHash = await bcrypt.hash(newPassword, env.bcryptRounds);
 
   // Update password and mark token as used in a transaction
   await prisma.$transaction([

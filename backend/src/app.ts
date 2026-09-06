@@ -2,10 +2,14 @@ import compression from "compression";
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
+import hpp from "hpp";
 import morgan from "morgan";
 import { apiRouter } from "./routes";
 import { errorHandler } from "./middleware/errorHandler";
 import { morganStream } from "./utils/logger";
+import { globalRateLimit } from "./middleware/rateLimit";
+import { sanitizeBody, requireJsonContentType, antiHPP, additionalSecurityHeaders } from "./middleware/security";
+import { env } from "./config/env";
 
 export const app = express();
 
@@ -14,14 +18,42 @@ export const app = express();
   return Number(this);
 };
 
-app.use(helmet());
-// Origin restricted via env in anything resembling production; permissive in dev so the
-// frontend on :3000 talking to the backend on :4000 (or a teammate's machine) just works.
-app.use(cors({ origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : true }));
+// ── Security Middleware ────────────────────────────────────────────────────────
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'none'"],
+      baseUri: ["'none'"],
+      formAction: ["'none'"],
+      frameAncestors: ["'none'"],
+    },
+  },
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+}));
+app.use(additionalSecurityHeaders);
+
+// CORS — locked to explicit frontend origin, never wildcard
+app.use(cors({ origin: env.corsOrigins }));
+
+// Global rate limiting
+app.use(globalRateLimit);
+
 app.use(compression());
 app.use(morgan("combined", { stream: morganStream }));
-app.use(express.json({ limit: "1mb" }));
 
+// ── Body Parsing & Sanitisation ────────────────────────────────────────────────
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+
+app.use(requireJsonContentType);
+app.use(sanitizeBody);
+
+// HTTP Parameter Pollution protection
+app.use(hpp());
+app.use(antiHPP);
+
+// ── Routes ─────────────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) => res.json({ success: true, data: { status: "ok" } }));
 
 app.use("/api", apiRouter);

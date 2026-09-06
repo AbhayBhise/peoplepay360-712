@@ -47,12 +47,14 @@ export interface UpdateRolesPayload {
 export interface AuditLog {
   id: string;
   userId?: string | null;
+  module: string;
   action: string;
-  entityType?: string | null;
-  entityId?: string | null;
-  details?: any;
+  recordId?: string | null;
+  before?: any;
+  after?: any;
   ipAddress?: string | null;
   createdAt: string;
+  user?: { id: string; email: string } | null;
 }
 
 export const adminApi = {
@@ -119,9 +121,16 @@ export const adminApi = {
     return apiRequest<AdminUser>(apiClient.post(`/api/admin/users/${userId}/reactivate`));
   },
 
-  /** GET /api/admin/audit-logs */
+  /** GET /api/admin/audit-logs — returns paginated result; unwrap .data array */
   getAuditLogs: async (): Promise<AuditLog[]> => {
-    return apiRequest<AuditLog[]>(apiClient.get('/api/admin/audit-logs'));
+    const result = await apiRequest<{ data: AuditLog[]; pagination: any } | AuditLog[]>(
+      apiClient.get('/api/admin/audit-logs?page=1&limit=100')
+    );
+    // Backend returns a paginated wrapper: { data: [...], pagination: {...} }
+    if (result && !Array.isArray(result) && Array.isArray((result as any).data)) {
+      return (result as any).data as AuditLog[];
+    }
+    return Array.isArray(result) ? result : [];
   },
 };
 

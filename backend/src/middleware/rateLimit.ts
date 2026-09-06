@@ -1,25 +1,45 @@
 import rateLimit from "express-rate-limit";
 
-// Closes a gap flagged but never implemented: auth.service.ts deliberately returns an
-// identical error for "no such user" and "wrong password" (security.md), but without a
-// rate limit that still allows unlimited password guesses against one account. 10 attempts
-// per 15 minutes per IP is generous enough for a real user who mistypes, tight enough to
-// make brute-forcing impractical.
-export const loginRateLimit = rateLimit({
+// ── Global API rate limit ──────────────────────────────────────────────────────
+// 100 requests per 15 minutes per IP — generous for normal use, blocks scrapers
+// and DoS attempts. Applied to every /api/* route in app.ts.
+export const globalRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 10,
-  standardHeaders: true,
+  limit: 100,
+  standardHeaders: "draft-7",
   legacyHeaders: false,
-  message: { success: false, error: "auth: too many login attempts, try again in a few minutes" },
+  message: { success: false, error: "rate: too many requests, please slow down" },
+  skip: (req) => req.path === "/health", // never rate-limit the health check
 });
 
-// Same reasoning as loginRateLimit, applied to the other endpoints that involve
-// guessing a secret (current password) or a token (password reset): change-password,
-// forgot-password, reset-password.
-export const accountSecurityRateLimit = rateLimit({
+// ── Auth rate limit ─────────────────────────────────────────────────────────────
+// 5 attempts per 15 minutes per IP on login — tight enough to stop brute-force
+// while still allowing a user who has forgotten their password a few tries.
+export const loginRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 10,
-  standardHeaders: true,
+  limit: 5,
+  standardHeaders: "draft-7",
   legacyHeaders: false,
-  message: { success: false, error: "too many attempts, try again in a few minutes" },
+  message: { success: false, error: "auth: too many login attempts, try again in 15 minutes" },
+});
+
+// ── Sensitive account ops rate limit ───────────────────────────────────────────
+// 5 attempts per 15 min for change-password, forgot-password, reset-password.
+// Lower ceiling than login because these endpoints change credentials, not just read them.
+export const sensitiveRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { success: false, error: "too many credential change attempts, try again in 15 minutes" },
+});
+
+// ── Admin provisioning rate limit ─────────────────────────────────────────────
+// 20 per 15 min — enough to batch-create a new department's accounts in one sitting.
+export const adminRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { success: false, error: "admin: too many provisioning requests" },
 });

@@ -42,7 +42,7 @@ export function authenticate(req: Request, _res: Response, next: NextFunction) {
   }
 
   try {
-    const payload = jwt.verify(token, env.jwtSecret) as AuthPayload;
+    const payload = jwt.verify(token, env.jwtSecret, { algorithms: [env.jwtAlgorithm] }) as AuthPayload;
     req.auth = payload;
     next();
   } catch {
