@@ -48,7 +48,13 @@ export async function buildPayrollReport(
               periodEnd: filters.periodStart ? { gte: filters.periodStart } : undefined,
             }
           : undefined,
-      include: { structure: { select: { name: true } }, payslips: { select: { net: true } } },
+      include: {
+        structure: { select: { name: true } },
+        payslips: {
+          where: filters.departmentId ? { employee: { departmentId: filters.departmentId } } : undefined,
+          select: { net: true },
+        },
+      },
       orderBy: { periodStart: "desc" },
     }),
     filters.departmentId
