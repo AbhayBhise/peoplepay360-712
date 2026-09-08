@@ -30,6 +30,11 @@ export const updateType = asyncHandler(async (req: Request, res: Response) => {
   return ok(res, await typeService.updateType(req.params.id, body));
 });
 
+export const deleteType = asyncHandler(async (req: Request, res: Response) => {
+  await typeService.deleteType(req.params.id);
+  return ok(res, { success: true });
+});
+
 // ---- Allocations ----
 export const listAllocations = asyncHandler(async (req: Request, res: Response) => {
   const rows = await allocationService.listAllocations(

@@ -32,3 +32,8 @@ export async function updateType(id: string, input: UpdateInput) {
   await getType(id);
   return prisma.timeOffType.update({ where: { id }, data: input });
 }
+
+export async function deleteType(id: string) {
+  await getType(id);
+  return prisma.timeOffType.delete({ where: { id } });
+}

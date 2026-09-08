@@ -11,6 +11,7 @@ timeOffRouter.get("/types", timeOffController.listTypes);
 timeOffRouter.get("/types/:id", timeOffController.getType);
 timeOffRouter.post("/types", requireRole(...HRM_PLUS), timeOffController.createType);
 timeOffRouter.put("/types/:id", requireRole(...HRM_PLUS), timeOffController.updateType);
+timeOffRouter.delete("/types/:id", requireRole(...HRM_PLUS), timeOffController.deleteType);
 
 // Allocations: HRM+ manage; read visibility (self vs all) enforced in the service layer
 timeOffRouter.get("/allocations", timeOffController.listAllocations);

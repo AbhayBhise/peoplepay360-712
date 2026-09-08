@@ -103,6 +103,10 @@ export const timeOffApi = {
     return normalizeType(raw);
   },
 
+  deleteType: async (id: number | string): Promise<void> => {
+    await apiRequest<any>(apiClient.delete(`/api/time-off/types/${id}`));
+  },
+
   getAllocations: async (filters?: {
     employee_id?: number | string;
     employeeId?: number | string;
