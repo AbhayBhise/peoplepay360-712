@@ -224,17 +224,22 @@ enum AttendanceStatus {
   late
   absent
   manual_edit
+  emergency_checkout
 }
 
 model Attendance {
-  id          String           @id @default(uuid()) @db.Uuid
-  employeeId  String           @map("employee_id") @db.Uuid
-  checkIn     DateTime         @map("check_in")
-  checkOut    DateTime?        @map("check_out")
-  workedHours Decimal          @default(0) @map("worked_hours") @db.Decimal(5, 2)
-  status      AttendanceStatus @default(present)
-  correctedBy String?          @map("corrected_by") @db.Uuid
-  createdAt   DateTime         @default(now()) @map("created_at")
+  id               String           @id @default(uuid()) @db.Uuid
+  employeeId       String           @map("employee_id") @db.Uuid
+  checkIn          DateTime         @map("check_in")
+  checkOut         DateTime?        @map("check_out")
+  workedHours      Decimal          @default(0) @map("worked_hours") @db.Decimal(5, 2)
+  status           AttendanceStatus @default(present)
+  correctedBy      String?          @map("corrected_by") @db.Uuid
+  notes            String?          // general HR notes field
+  emergencyReason  String?          @map("emergency_reason") // medical|personal|security|family
+  evidencePath     String?          @map("evidence_path")   // relative path to uploaded file
+  emergencyStatus  String?          @map("emergency_status") // pending|approved|rejected
+  createdAt        DateTime         @default(now()) @map("created_at")
 
   employee Employee @relation(fields: [employeeId], references: [id])
 
@@ -287,13 +292,15 @@ enum TimeOffRequestStatus {
 }
 
 model TimeOffRequest {
-  id         String               @id @default(uuid()) @db.Uuid
-  employeeId String               @map("employee_id") @db.Uuid
-  typeId     String               @map("type_id") @db.Uuid
-  dateFrom   DateTime             @map("date_from") @db.Date
-  dateTo     DateTime             @map("date_to") @db.Date
-  duration   Decimal              @db.Decimal(6, 2)
-  status     TimeOffRequestStatus @default(draft)
+  id              String               @id @default(uuid()) @db.Uuid
+  employeeId      String               @map("employee_id") @db.Uuid
+  typeId          String               @map("type_id") @db.Uuid
+  dateFrom        DateTime             @map("date_from") @db.Date
+  dateTo          DateTime             @map("date_to") @db.Date
+  requestUnit     String               @default("full_day") @map("request_unit")
+  requestUnitHalf String?              @map("request_unit_half")
+  duration        Decimal              @db.Decimal(6, 2)
+  status          TimeOffRequestStatus @default(draft)
 
   employee Employee    @relation(fields: [employeeId], references: [id])
   type     TimeOffType @relation(fields: [typeId], references: [id])
