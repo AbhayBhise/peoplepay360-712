@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { TopHeader } from './TopHeader';
 import { CommandPalette } from '../common/CommandPalette';
 import { QuickActionsModal } from '../common/QuickActionsModal';
 import { ChevronRight, Home } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const AppLayout: React.FC = () => {
   const [sidebarMobileOpen, setSidebarMobileOpen] = useState(false);
@@ -12,6 +13,17 @@ export const AppLayout: React.FC = () => {
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Generate breadcrumb items
   const pathSegments = location.pathname.split('/').filter(Boolean);
@@ -119,12 +131,18 @@ export const AppLayout: React.FC = () => {
         </div>
 
         {/* Main Routed Page Container */}
-        <main
-          key={location.pathname}
-          className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 animate-slide-up"
-        >
-          <Outlet />
-        </main>
+        <AnimatePresence mode="wait">
+          <motion.main
+            key={location.pathname}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6"
+          >
+            <Outlet />
+          </motion.main>
+        </AnimatePresence>
 
         {/* Footer */}
         <footer className="bg-white/60 backdrop-blur-xs border-t border-slate-200/80 py-3.5 text-center text-2xs text-slate-400 font-medium">

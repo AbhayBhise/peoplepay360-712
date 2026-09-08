@@ -4,6 +4,15 @@ import { Loader2 } from 'lucide-react';
 export const PageLoader: React.FC<{ label?: string }> = ({
   label = 'Loading workforce intelligence...',
 }) => {
+  const [show, setShow] = React.useState(false);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setShow(true), 250);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!show) return <div className="min-h-[65vh]" />;
+
   return (
     <div className="min-h-[65vh] flex flex-col items-center justify-center p-8 space-y-5 animate-fade-in">
       <div className="relative flex items-center justify-center">
@@ -33,6 +42,15 @@ export const PageLoader: React.FC<{ label?: string }> = ({
 };
 
 export const RouteFallbackLoader: React.FC = () => {
+  const [show, setShow] = React.useState(false);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setShow(true), 250);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!show) return <div className="min-h-screen bg-slate-950" />;
+
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 space-y-5 animate-fade-in text-white">
       <div className="relative flex items-center justify-center">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users,
@@ -11,8 +11,8 @@ import {
   ChevronRight,
   Filter,
 } from 'lucide-react';
-import { employeesApi } from '../../api/employees';
-import { departmentsApi } from '../../api/departments';
+import { useEmployees } from '../../hooks/useEmployees';
+import { useDepartments } from '../../hooks/useDepartments';
 import { Employee, Department } from '../../types';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
@@ -23,17 +23,16 @@ import { Pagination } from '../../components/common/Pagination';
 import { EmployeeFormModal } from './EmployeeFormModal';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useDebounce } from '../../hooks/useDebounce';
 import { Select } from '../../components/common/Select';
 import { extractItems } from '../../utils/pagination';
 
 export const EmployeesPage: React.FC = () => {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedDept, setSelectedDept] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
-  const [loading, setLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Pagination state
@@ -44,62 +43,41 @@ export const EmployeesPage: React.FC = () => {
   const { isHRMPlus } = useAuth();
   const { error: toastError } = useToast();
 
-  const fetchEmployees = async () => {
-    try {
-      setLoading(true);
-      const params: any = {};
-      if (selectedDept) params.department_id = selectedDept;
-      if (selectedStatus) params.status = selectedStatus;
-      if (searchQuery) params.search = searchQuery;
+  const filters: any = {};
+  if (selectedDept) filters.department_id = selectedDept;
+  if (selectedStatus) filters.status = selectedStatus;
+  if (debouncedSearchQuery) filters.search = debouncedSearchQuery;
 
-      const data = extractItems(await employeesApi.getEmployees(params));
-      setEmployees(extractItems(data) || []);
-    } catch (err: any) {
-      toastError(err.message || 'Failed to load employees');
-    } finally {
-      setLoading(false);
+  const { data: employeesData, isLoading: loadingEmployees, error: employeesError } = useEmployees(filters);
+  const { data: departmentsData } = useDepartments();
+
+  const employees = extractItems(employeesData) || [];
+  const departments = extractItems(departmentsData) || [];
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedDept, selectedStatus, debouncedSearchQuery]);
+
+  useEffect(() => {
+    if (employeesError) {
+      toastError(employeesError.message || 'Failed to load employees');
     }
-  };
+  }, [employeesError, toastError]);
 
-  const fetchDepartments = async () => {
-    try {
-      const data = extractItems(await departmentsApi.getDepartments());
-      setDepartments(data || []);
-    } catch (err) {
-      console.error('Failed to load departments', err);
-    }
-  };
+  const loading = loadingEmployees;
 
-  useEffect(() => {
-    fetchDepartments();
-  }, []);
+  const filteredEmployees = useMemo(() => {
+    return employees.filter((emp) => {
+      const matchesDept = selectedDept ? String(emp.department_id) === String(selectedDept) : true;
+      const matchesStatus = selectedStatus ? emp.status === selectedStatus : true;
+      const matchesSearch =
+        !debouncedSearchQuery ||
+        emp.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        emp.job_position?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
 
-  useEffect(() => {
-    fetchEmployees();
-    setCurrentPage(1);
-  }, [selectedDept, selectedStatus]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchEmployees();
-    setCurrentPage(1);
-  };
-
-  const filteredEmployees = employees.filter((emp) => {
-    const matchesSearch =
-      !searchQuery ||
-      emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      emp.job_position?.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesDept = !selectedDept || emp.department_id === selectedDept;
-    const matchesStatus = !selectedStatus || emp.status === selectedStatus;
-
-    return matchesSearch && matchesDept && matchesStatus;
-  });
+      return matchesSearch && matchesDept && matchesStatus;
+    });
+  }, [employees, debouncedSearchQuery, selectedDept, selectedStatus]);
 
   const paginatedEmployees = filteredEmployees.slice(
     (currentPage - 1) * itemsPerPage,
@@ -160,7 +138,7 @@ export const EmployeesPage: React.FC = () => {
       {/* Filter and Search Bar */}
       <Card className="p-4! shadow-2xs">
         <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-3 items-end">
-          <form onSubmit={handleSearchSubmit} className="sm:col-span-2 relative">
+          <form onSubmit={(e) => e.preventDefault()} className="sm:col-span-2 relative">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400 dark:text-slate-500" />
               <input
@@ -345,9 +323,7 @@ export const EmployeesPage: React.FC = () => {
       <EmployeeFormModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={(newEmp) => {
-          setEmployees((prev) => [newEmp, ...prev]);
-        }}
+        onSuccess={() => setIsCreateModalOpen(false)}
       />
     </div>
   );

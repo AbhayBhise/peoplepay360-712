@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { AttendanceWidget } from './AttendanceWidget';
 import {
   Search,
   Plus,
@@ -102,6 +103,11 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             <span>Quick Action</span>
           </button>
         )}
+
+        {/* Attendance Widget */}
+        <div className="hidden sm:block">
+          <AttendanceWidget />
+        </div>
 
         {/* Global Light / Dark Theme Toggle */}
         <ThemeToggle />

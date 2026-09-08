@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider, useToast } from './context/ToastContext';
@@ -95,6 +96,90 @@ const RoleProtectedRoute: React.FC<{
   return <>{children}</>;
 };
 
+const AnimatedRoutes: React.FC = () => {
+  return (
+      <Routes>
+        {/* Public Landing Page */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* Public Login Route */}
+        <Route
+          path="/login"
+          element={
+            <PublicOnlyRoute>
+              <LoginPage />
+            </PublicOnlyRoute>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <PublicOnlyRoute>
+              <ForgotPasswordPage />
+            </PublicOnlyRoute>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <PublicOnlyRoute>
+              <ResetPasswordPage />
+            </PublicOnlyRoute>
+          }
+        />
+
+        {/* Public Signup Route */}
+        <Route
+          path="/signup"
+          element={
+            <PublicOnlyRoute>
+              <SignupPage />
+            </PublicOnlyRoute>
+          }
+        />
+
+        {/* Protected App Routes */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/employees" element={<RoleProtectedRoute isAllowed={(a) => a.isHRMPlus()}><EmployeesPage /></RoleProtectedRoute>} />
+          <Route path="/employees/:id" element={<EmployeeDetailPage />} />
+          <Route path="/departments" element={<RoleProtectedRoute isAllowed={(a) => a.isHRMPlus()}><DepartmentsPage /></RoleProtectedRoute>} />
+          <Route path="/contracts" element={<RoleProtectedRoute isAllowed={(a) => a.isHRMPlus() || a.hasRole('Employee')}><ContractsPage /></RoleProtectedRoute>} />
+          <Route path="/working-schedules" element={<RoleProtectedRoute isAllowed={(a) => a.isHRMPlus()}><WorkingSchedulesPage /></RoleProtectedRoute>} />
+          <Route path="/attendance" element={<AttendancePage />} />
+          <Route path="/time-off" element={<TimeOffPage />} />
+          <Route path="/payroll/payruns" element={<RoleProtectedRoute isAllowed={(a) => a.isHRPUPlus()}><PayrunsPage /></RoleProtectedRoute>} />
+          <Route path="/payroll/payruns/:id" element={<RoleProtectedRoute isAllowed={(a) => a.isHRPUPlus()}><PayrunDetailPage /></RoleProtectedRoute>} />
+          <Route path="/payroll/payslips" element={<AllPayslipsPage />} />
+          <Route path="/payroll/payslips/:id" element={<PayslipDetailPage />} />
+          <Route path="/payroll/salary-structures" element={<RoleProtectedRoute isAllowed={(a) => a.isHRPUPlus()}><SalaryStructuresPage /></RoleProtectedRoute>} />
+          <Route path="/payroll/structures" element={<Navigate to="/payroll/salary-structures" replace />} />
+          <Route path="/payroll/rules" element={<Navigate to="/payroll/salary-structures" replace />} />
+          <Route path="/payroll" element={<Navigate to="/payroll/payruns" replace />} />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/admin/users" element={<RoleProtectedRoute isAllowed={(a) => a.isAdmin()}><UsersPage /></RoleProtectedRoute>} />
+          <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
+          <Route path="/system/users" element={<Navigate to="/admin/users" replace />} />
+          <Route path="/system" element={<Navigate to="/admin/users" replace />} />
+          <Route path="/workforce/contracts" element={<Navigate to="/contracts" replace />} />
+          <Route path="/workforce/departments" element={<Navigate to="/departments" replace />} />
+          <Route path="/workforce/schedules" element={<Navigate to="/working-schedules" replace />} />
+          <Route path="/workforce" element={<Navigate to="/employees" replace />} />
+        </Route>
+
+        {/* Catch-all fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+  );
+};
+
 export const App: React.FC = () => {
   return (
     <ThemeProvider>
@@ -103,85 +188,7 @@ export const App: React.FC = () => {
           <BrowserRouter>
             <ErrorBoundary>
               <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  {/* Public Landing Page */}
-                  <Route path="/" element={<LandingPage />} />
-
-                  {/* Public Login Route */}
-                  <Route
-                    path="/login"
-                    element={
-                      <PublicOnlyRoute>
-                        <LoginPage />
-                      </PublicOnlyRoute>
-                    }
-                  />
-                  <Route
-                    path="/forgot-password"
-                    element={
-                      <PublicOnlyRoute>
-                        <ForgotPasswordPage />
-                      </PublicOnlyRoute>
-                    }
-                  />
-                  <Route
-                    path="/reset-password"
-                    element={
-                      <PublicOnlyRoute>
-                        <ResetPasswordPage />
-                      </PublicOnlyRoute>
-                    }
-                  />
-
-                  {/* Public Signup Route */}
-                  <Route
-                    path="/signup"
-                    element={
-                      <PublicOnlyRoute>
-                        <SignupPage />
-                      </PublicOnlyRoute>
-                    }
-                  />
-
-                  {/* Protected App Routes */}
-                  <Route
-                    element={
-                      <ProtectedRoute>
-                        <AppLayout />
-                      </ProtectedRoute>
-                    }
-                  >
-                    <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/employees" element={<EmployeesPage />} />
-                    <Route path="/employees/:id" element={<EmployeeDetailPage />} />
-                    <Route path="/departments" element={<RoleProtectedRoute isAllowed={(a) => a.isHRMPlus()}><DepartmentsPage /></RoleProtectedRoute>} />
-                    <Route path="/contracts" element={<RoleProtectedRoute isAllowed={(a) => a.isHRMPlus() || a.hasRole('Employee')}><ContractsPage /></RoleProtectedRoute>} />
-                    <Route path="/working-schedules" element={<RoleProtectedRoute isAllowed={(a) => a.isHRMPlus()}><WorkingSchedulesPage /></RoleProtectedRoute>} />
-                    <Route path="/attendance" element={<AttendancePage />} />
-                    <Route path="/time-off" element={<TimeOffPage />} />
-                    <Route path="/payroll/payruns" element={<RoleProtectedRoute isAllowed={(a) => a.isHRPUPlus()}><PayrunsPage /></RoleProtectedRoute>} />
-                    <Route path="/payroll/payruns/:id" element={<RoleProtectedRoute isAllowed={(a) => a.isHRPUPlus()}><PayrunDetailPage /></RoleProtectedRoute>} />
-                    <Route path="/payroll/payslips" element={<AllPayslipsPage />} />
-                    <Route path="/payroll/payslips/:id" element={<PayslipDetailPage />} />
-                    <Route path="/payroll/salary-structures" element={<RoleProtectedRoute isAllowed={(a) => a.isHRPUPlus()}><SalaryStructuresPage /></RoleProtectedRoute>} />
-                    <Route path="/payroll/structures" element={<Navigate to="/payroll/salary-structures" replace />} />
-                    <Route path="/payroll/rules" element={<Navigate to="/payroll/salary-structures" replace />} />
-                    <Route path="/payroll" element={<Navigate to="/payroll/payruns" replace />} />
-                    <Route path="/reports" element={<ReportsPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/admin/users" element={<RoleProtectedRoute isAllowed={(a) => a.isAdmin()}><UsersPage /></RoleProtectedRoute>} />
-                    <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
-                    <Route path="/system/users" element={<Navigate to="/admin/users" replace />} />
-                    <Route path="/system" element={<Navigate to="/admin/users" replace />} />
-                    <Route path="/workforce/contracts" element={<Navigate to="/contracts" replace />} />
-                    <Route path="/workforce/departments" element={<Navigate to="/departments" replace />} />
-                    <Route path="/workforce/schedules" element={<Navigate to="/working-schedules" replace />} />
-                    <Route path="/workforce" element={<Navigate to="/employees" replace />} />
-                  </Route>
-
-                  {/* Catch-all fallback */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
+                <AnimatedRoutes />
               </Suspense>
             </ErrorBoundary>
           </BrowserRouter>

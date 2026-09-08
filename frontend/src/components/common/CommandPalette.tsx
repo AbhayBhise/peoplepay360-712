@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useDebounce } from '../../hooks/useDebounce';
 import {
   Search,
   LayoutDashboard,
@@ -42,15 +43,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 }) => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const debouncedQuery = useDebounce(query, 300);
   const navigate = useNavigate();
   const { isHRMPlus, isHRPUPlus, isHRPMPlus, user } = useAuth();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        if (isOpen) onClose();
-      }
       if (e.key === 'Escape' && isOpen) {
         onClose();
       }
@@ -59,7 +57,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  const items: CommandItem[] = [
+  const items = useMemo((): CommandItem[] => [
     // Navigation
     {
       id: 'nav-dashboard',
@@ -205,18 +203,22 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       },
       roleAllowed: isHRPUPlus(),
     },
-  ];
+  ], [navigate, onClose, onTriggerQuickAction, isHRMPlus, isHRPUPlus, isHRPMPlus]);
 
-  const allowedItems = items.filter((item) => item.roleAllowed);
-  const filteredItems = allowedItems.filter((item) => {
-    if (!query) return true;
-    const q = query.toLowerCase();
-    return (
+  const filteredItems = useMemo(() => {
+    const allowedItems = items.filter((item) => item.roleAllowed);
+    if (!debouncedQuery) return allowedItems;
+    const q = debouncedQuery.toLowerCase();
+    return allowedItems.filter((item) => 
       item.title.toLowerCase().includes(q) ||
       (item.subtitle && item.subtitle.toLowerCase().includes(q)) ||
       item.category.toLowerCase().includes(q)
     );
-  });
+  }, [items, debouncedQuery]);
+
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [debouncedQuery]);
 
   if (!isOpen) return null;
 

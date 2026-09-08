@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSchedules, useCreateSchedule } from '../../hooks/useSchedules';
 import { CalendarCheck, Plus, Clock, Trash2, CheckCircle2 } from 'lucide-react';
 import { schedulesApi } from '../../api/schedules';
 import { WorkingSchedule, WorkingScheduleLine } from '../../types';
@@ -16,8 +17,9 @@ import { extractItems } from '../../utils/pagination';
 const DEFAULT_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 export const WorkingSchedulesPage: React.FC = () => {
-  const [schedules, setSchedules] = useState<WorkingSchedule[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: rawSchedules, isLoading: loading } = useSchedules();
+  const schedules = extractItems<WorkingSchedule>(rawSchedules || []);
+  const createScheduleMutation = useCreateSchedule();
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -42,26 +44,10 @@ export const WorkingSchedulesPage: React.FC = () => {
       break: 60, // 60 minutes
     }))
   );
-  const [submitting, setSubmitting] = useState(false);
+  const submitting = createScheduleMutation.isPending;
 
   const { isHRMPlus } = useAuth();
   const { success, error } = useToast();
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const data = extractItems(await schedulesApi.getSchedules());
-      setSchedules(data || []);
-    } catch (err: any) {
-      error(err.message || 'Failed to load working schedules.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -132,9 +118,8 @@ export const WorkingSchedulesPage: React.FC = () => {
       }
     }
 
-    setSubmitting(true);
     try {
-      await schedulesApi.createSchedule({
+      await createScheduleMutation.mutateAsync({
         name: name.trim(),
         type,
         lines,
@@ -142,11 +127,8 @@ export const WorkingSchedulesPage: React.FC = () => {
 
       success(`Working schedule "${name}" created.`);
       setIsModalOpen(false);
-      loadData();
     } catch (err: any) {
       error(err.message || 'Failed to save working schedule.');
-    } finally {
-      setSubmitting(false);
     }
   };
 

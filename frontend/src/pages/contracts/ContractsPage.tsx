@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { FileSpreadsheet, Plus, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { contractsApi } from '../../api/contracts';
-import { employeesApi } from '../../api/employees';
-import { departmentsApi } from '../../api/departments';
-import { payrollApi } from '../../api/payroll';
+import { useContracts, useCreateContract, useUpdateContract } from '../../hooks/useContracts';
+import { useEmployees } from '../../hooks/useEmployees';
+import { useDepartments } from '../../hooks/useDepartments';
+import { useStructures } from '../../hooks/usePayroll';
 import { Contract, Employee, Department, SalaryStructure } from '../../types';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
@@ -20,11 +21,20 @@ import { formatCurrency } from '../../utils/currency';
 import { extractItems } from '../../utils/pagination';
 
 export const ContractsPage: React.FC = () => {
-  const [contracts, setContracts] = useState<Contract[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [structures, setStructures] = useState<SalaryStructure[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: rawContracts, isLoading: loadingContracts } = useContracts();
+  const { data: rawEmployees, isLoading: loadingEmployees } = useEmployees();
+  const { data: rawDepartments, isLoading: loadingDepartments } = useDepartments();
+  const { data: rawStructures, isLoading: loadingStructures } = useStructures();
+  
+  const createContractMutation = useCreateContract();
+  const updateContractMutation = useUpdateContract();
+
+  const contracts = extractItems<Contract>(rawContracts || []);
+  const employees = extractItems<Employee>(rawEmployees || []);
+  const departments = extractItems<Department>(rawDepartments || []);
+  const structures = extractItems<SalaryStructure>(rawStructures || []);
+  
+  const loading = loadingContracts || loadingEmployees || loadingDepartments || loadingStructures;
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,35 +64,11 @@ export const ContractsPage: React.FC = () => {
   const [endDate, setEndDate] = useState('');
   const [status, setStatus] = useState<'active' | 'draft' | 'closed' | 'expired'>('active');
   const [expireExisting, setExpireExisting] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const submitting = createContractMutation.isPending || updateContractMutation.isPending;
 
   const todayStr = new Date().toISOString().split('T')[0];
   const { isHRMPlus } = useAuth();
   const { success, error } = useToast();
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [contractList, empList, deptList, structList] = await Promise.all([
-        contractsApi.getContracts().catch(() => []),
-        employeesApi.getEmployees().catch(() => []),
-        departmentsApi.getDepartments().catch(() => []),
-        payrollApi.getStructures().catch(() => []),
-      ]);
-      setContracts(extractItems<Contract>(contractList));
-      setEmployees(extractItems<Employee>(empList));
-      setDepartments(extractItems<Department>(deptList));
-      setStructures(extractItems<SalaryStructure>(structList));
-    } catch (err: any) {
-      error(err.message || 'Failed to load contracts.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
 
   const existingActiveContract = employeeId
     ? contracts.find((c) => String(c.employee_id || (c as any).employeeId) === String(employeeId) && c.status === 'active')
@@ -118,9 +104,8 @@ export const ContractsPage: React.FC = () => {
 
   const handleQuickExpire = async (c: Contract) => {
     try {
-      await contractsApi.updateContract(String(c.id), { status: 'expired' });
+      await updateContractMutation.mutateAsync({ id: String(c.id), data: { status: 'expired' } });
       success(`Contract #${c.id} set to Expired.`);
-      loadData();
     } catch (err: any) {
       error(err.message || 'Failed to expire contract.');
     }
@@ -153,27 +138,29 @@ export const ContractsPage: React.FC = () => {
       return;
     }
 
-    setSubmitting(true);
     try {
       if (editingContract) {
-        await contractsApi.updateContract(String(editingContract.id), {
-          employee_id: employeeId,
-          department_id: departmentId || undefined,
-          position,
-          wage: Number(wage),
-          salary_structure_id: structureId,
-          start_date: startDate,
-          end_date: endDate || null,
-          status,
+        await updateContractMutation.mutateAsync({
+          id: String(editingContract.id),
+          data: {
+            employee_id: employeeId,
+            department_id: departmentId || undefined,
+            position,
+            wage: Number(wage),
+            salary_structure_id: structureId,
+            start_date: startDate,
+            end_date: endDate || null,
+            status,
+          }
         });
         success(`Contract #${editingContract.id} updated successfully.`);
       } else {
         // If auto-expire checkbox is checked for an existing active contract
         if (existingActiveContract && expireExisting && status === 'active') {
-          await contractsApi.updateContract(String(existingActiveContract.id), { status: 'expired' });
+          await updateContractMutation.mutateAsync({ id: String(existingActiveContract.id), data: { status: 'expired' } });
         }
 
-        await contractsApi.createContract({
+        await createContractMutation.mutateAsync({
           employee_id: employeeId,
           department_id: departmentId || undefined,
           position,
@@ -188,11 +175,8 @@ export const ContractsPage: React.FC = () => {
 
       setIsModalOpen(false);
       setEditingContract(null);
-      loadData();
     } catch (err: any) {
       error(err.message || 'Failed to save contract.');
-    } finally {
-      setSubmitting(false);
     }
   };
 

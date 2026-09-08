@@ -1,6 +1,8 @@
 import { apiClient, apiRequest } from './client';
 import { Department, PaginationFilters, PaginatedResult } from '../types';
 
+export type DepartmentFilters = PaginationFilters & { parent_id?: string | number | null };
+
 // Backend returns camelCase (docs/02_API_CONTRACTS.md); frontend types use snake_case.
 function normalizeDepartment(raw: any): Department {
   return {
@@ -13,10 +15,8 @@ function normalizeDepartment(raw: any): Department {
 }
 
 export const departmentsApi = {
-  getDepartments: async (parentId?: string | number | null, filters?: PaginationFilters): Promise<PaginatedResult<Department> | Department[]> => {
-    const params: any = { ...filters };
-    if (parentId !== undefined && parentId !== null) params.parent_id = String(parentId);
-    const raw = await apiRequest<any>(apiClient.get('/api/departments', { params }));
+  getDepartments: async (filters?: DepartmentFilters): Promise<PaginatedResult<Department> | Department[]> => {
+    const raw = await apiRequest<any>(apiClient.get('/api/departments', { params: filters }));
     if (raw && !Array.isArray(raw) && Array.isArray(raw.items)) {
       return {
         ...raw,
@@ -24,6 +24,11 @@ export const departmentsApi = {
       };
     }
     return Array.isArray(raw) ? raw.map(normalizeDepartment) : [];
+  },
+
+  getDepartmentById: async (id: string | number): Promise<Department> => {
+    const raw = await apiRequest<any>(apiClient.get(`/api/departments/${id}`));
+    return normalizeDepartment(raw);
   },
 
   createDepartment: async (data: {

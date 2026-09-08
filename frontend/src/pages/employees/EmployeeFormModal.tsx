@@ -4,11 +4,12 @@ import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import { Button } from '../../components/common/Button';
 import { Employee, Department, WorkingSchedule } from '../../types';
-import { employeesApi } from '../../api/employees';
-import { departmentsApi } from '../../api/departments';
-import { schedulesApi } from '../../api/schedules';
+import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { extractItems } from '../../utils/pagination';
+import { useCreateEmployee, useUpdateEmployee, useEmployees } from '../../hooks/useEmployees';
+import { useDepartments } from '../../hooks/useDepartments';
+import { useSchedules } from '../../hooks/useSchedules';
 
 interface EmployeeFormModalProps {
   isOpen: boolean;
@@ -24,24 +25,37 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
   employeeToEdit,
 }) => {
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [departmentId, setDepartmentId] = useState<string>('');
   const [managerId, setManagerId] = useState<string>('');
   const [jobPosition, setJobPosition] = useState('');
   const [status, setStatus] = useState<'active' | 'inactive'>('active');
   const [workingScheduleId, setWorkingScheduleId] = useState<string>('');
 
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [potentialManagers, setPotentialManagers] = useState<Employee[]>([]);
-  const [schedules, setSchedules] = useState<WorkingSchedule[]>([]);
-
-  const [loading, setLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const { isAdmin } = useAuth();
   const { success, error } = useToast();
+  
+  const { data: deptData } = useDepartments();
+  const { data: empData } = useEmployees();
+  const { data: schedData } = useSchedules();
+
+  const createEmployeeMutation = useCreateEmployee();
+  const updateEmployeeMutation = useUpdateEmployee();
+
+  const departments = extractItems<Department>(deptData || []);
+  const schedules = extractItems<WorkingSchedule>(schedData || []);
+  const allEmployees = extractItems<Employee>(empData || []);
+  const potentialManagers = allEmployees.filter(
+    (e) => !employeeToEdit || String(e.id) !== String(employeeToEdit.id)
+  );
+
+  const submitting = createEmployeeMutation.isPending || updateEmployeeMutation.isPending;
 
   useEffect(() => {
     if (isOpen) {
       if (employeeToEdit) {
         setName(employeeToEdit.name || '');
+        setEmail(employeeToEdit.email || '');
         setDepartmentId(employeeToEdit.department_id ? String(employeeToEdit.department_id) : '');
         setManagerId(employeeToEdit.manager_id ? String(employeeToEdit.manager_id) : '');
         setJobPosition(employeeToEdit.job_position || '');
@@ -49,6 +63,7 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
         setWorkingScheduleId(employeeToEdit.working_schedule_id ? String(employeeToEdit.working_schedule_id) : '');
       } else {
         setName('');
+        setEmail('');
         setDepartmentId('');
         setManagerId('');
         setJobPosition('');
@@ -56,31 +71,7 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
         setWorkingScheduleId('');
       }
 
-      // Fetch options
-      const loadOptions = async () => {
-        setLoading(true);
-        try {
-          const [deptList, empList, schedList] = await Promise.all([
-            departmentsApi.getDepartments().catch(() => []),
-            employeesApi.getEmployees().catch(() => []),
-            schedulesApi.getSchedules().catch(() => []),
-          ]);
-          setDepartments(extractItems<Department>(deptList));
-          // Exclude self from manager list
-          const managerList = extractItems<Employee>(empList);
-          const filteredManagers = managerList.filter(
-            (e) => !employeeToEdit || String(e.id) !== String(employeeToEdit.id)
-          );
-          setPotentialManagers(filteredManagers);
-          setSchedules(extractItems<WorkingSchedule>(schedList));
-        } catch {
-          // Handled silently
-        } finally {
-          setLoading(false);
-        }
-      };
 
-      loadOptions();
     }
   }, [isOpen, employeeToEdit]);
 
@@ -96,10 +87,10 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
       return;
     }
 
-    setSubmitting(true);
     try {
       const payload = {
         name,
+        email: email || undefined,
         department_id: departmentId || undefined,
         manager_id: managerId || null,
         job_position: jobPosition,
@@ -107,20 +98,18 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
         working_schedule_id: workingScheduleId || undefined,
       };
 
-      let result: Employee;
       if (employeeToEdit) {
-        result = await employeesApi.updateEmployee(employeeToEdit.id, payload);
+        const result = await updateEmployeeMutation.mutateAsync({ id: employeeToEdit.id, data: payload });
         success(`Employee "${result.name}" updated successfully.`);
+        onSuccess(result);
       } else {
-        result = await employeesApi.createEmployee(payload);
+        const result = await createEmployeeMutation.mutateAsync(payload);
         success(`Employee "${result.name}" created successfully.`);
+        onSuccess(result);
       }
-      onSuccess(result);
       onClose();
     } catch (err: any) {
       error(err.message || 'Failed to save employee.');
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -133,13 +122,26 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
       maxWidth="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Full Name"
-          placeholder="e.g. Jane Doe"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input
+            label="Full Name"
+            placeholder="e.g. Jane Doe"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+          {isAdmin() && (
+            <Input
+              label="Email Address"
+              type="email"
+              placeholder="e.g. jane@company.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={!!employeeToEdit}
+              required={!employeeToEdit}
+            />
+          )}
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input

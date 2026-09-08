@@ -57,7 +57,7 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({
           label: 'Employees',
           path: '/employees',
           icon: <Users className="w-4 h-4" />,
-          visible: true,
+          visible: isHRMPlus(),
         },
         {
           label: 'Departments',

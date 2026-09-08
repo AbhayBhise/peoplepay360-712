@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CircleDollarSign, Plus, ChevronRight, Calendar, Users, AlertTriangle } from 'lucide-react';
 import { payrollApi } from '../../api/payroll';
@@ -11,6 +11,7 @@ import { Pagination } from '../../components/common/Pagination';
 import { PayrunWizardModal } from './PayrunWizardModal';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useDebounce } from '../../hooks/useDebounce';
 import { formatCurrency } from '../../utils/currency';
 import { extractItems } from '../../utils/pagination';
 
@@ -22,6 +23,7 @@ export const PayrunsPage: React.FC = () => {
 
   // Filter and search state
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'computed' | 'validated' | 'paid'>('all');
 
   // Pagination state
@@ -56,15 +58,17 @@ export const PayrunsPage: React.FC = () => {
     setCurrentPage(1);
   }, [search, statusFilter]);
 
-  const filteredPayruns = payruns.filter((pr) => {
-    if (statusFilter !== 'all' && pr.status !== statusFilter) return false;
-    if (!search) return true;
-    const q = search.toLowerCase();
-    const name = (pr.name || '').toLowerCase();
-    const struct = (pr.structure_name || '').toLowerCase();
-    const id = String(pr.id).toLowerCase();
-    return name.includes(q) || struct.includes(q) || id.includes(q);
-  });
+  const filteredPayruns = useMemo(() => {
+    return payruns.filter((pr) => {
+      if (statusFilter !== 'all' && pr.status !== statusFilter) return false;
+      if (!debouncedSearch) return true;
+      const q = debouncedSearch.toLowerCase();
+      const name = (pr.name || '').toLowerCase();
+      const struct = (pr.structure_name || '').toLowerCase();
+      const id = String(pr.id).toLowerCase();
+      return name.includes(q) || struct.includes(q) || id.includes(q);
+    });
+  }, [payruns, statusFilter, debouncedSearch]);
 
   const totalDisbursed = payruns.filter(p => p.status === 'paid').reduce((sum, p) => sum + (Number(p.total_net) || 0), 0);
   const validatedCount = payruns.filter(p => p.status === 'validated').length;

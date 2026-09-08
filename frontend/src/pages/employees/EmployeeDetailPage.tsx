@@ -23,6 +23,14 @@ import {
 } from 'lucide-react';
 import { employeesApi } from '../../api/employees';
 import { Employee, Contract, Attendance, TimeOffRequest, PayslipSummary } from '../../types';
+import { 
+  useEmployee, 
+  useDeleteEmployee, 
+  useEmployeeContracts, 
+  useEmployeeAttendance, 
+  useEmployeeTimeOff, 
+  useEmployeePayslips 
+} from '../../hooks/useEmployees';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { Card } from '../../components/common/Card';
@@ -41,68 +49,34 @@ export const EmployeeDetailPage: React.FC = () => {
   const { isHRMPlus, isAdmin } = useAuth();
   const { success, error } = useToast();
 
-  const [employee, setEmployee] = useState<Employee | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const { data: employee, isLoading: loading, error: employeeError } = useEmployee(id);
+  const deleteEmployeeMutation = useDeleteEmployee();
+
   const [activeTab, setActiveTab] = useState<'overview' | 'contracts' | 'attendance' | 'timeoff' | 'payslips'>('overview');
 
   // Sub-view data for smart buttons
-  const [contracts, setContracts] = useState<Contract[]>([]);
-  const [attendance, setAttendance] = useState<Attendance[]>([]);
-  const [timeOff, setTimeOff] = useState<TimeOffRequest[]>([]);
-  const [payslips, setPayslips] = useState<PayslipSummary[]>([]);
-  const [subLoading, setSubLoading] = useState(false);
+  const { data: contractsData, isLoading: loadingContracts } = useEmployeeContracts(
+    activeTab === 'contracts' ? id : undefined
+  );
+  const { data: attendanceData, isLoading: loadingAttendance } = useEmployeeAttendance(
+    activeTab === 'attendance' ? id : undefined
+  );
+  const { data: timeOffData, isLoading: loadingTimeOff } = useEmployeeTimeOff(
+    activeTab === 'timeoff' ? id : undefined
+  );
+  const { data: payslipsData, isLoading: loadingPayslips } = useEmployeePayslips(
+    activeTab === 'payslips' ? id : undefined
+  );
+
+  const contracts = extractItems(contractsData) || [];
+  const attendance = extractItems(attendanceData) || [];
+  const timeOff = extractItems(timeOffData) || [];
+  const payslips = extractItems(payslipsData) || [];
+  const subLoading = loadingContracts || loadingAttendance || loadingTimeOff || loadingPayslips;
 
   // Edit modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-  const fetchEmployeeData = async () => {
-    if (!id) return;
-    setLoading(true);
-    try {
-      const data = await employeesApi.getEmployeeById(id);
-      setEmployee(data);
-    } catch (err: any) {
-      error(err.message || 'Failed to load employee details');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchEmployeeData();
-  }, [id]);
-
-  // Fetch smart button sub-view data when active tab changes
-  useEffect(() => {
-    if (!id || activeTab === 'overview') return;
-
-    const loadSubView = async () => {
-      setSubLoading(true);
-      try {
-        if (activeTab === 'contracts') {
-          const list = extractItems(await employeesApi.getEmployeeContracts(id));
-          setContracts(list || []);
-        } else if (activeTab === 'attendance') {
-          const list = extractItems(await employeesApi.getEmployeeAttendance(id));
-          setAttendance(list || []);
-        } else if (activeTab === 'timeoff') {
-          const list = extractItems(await employeesApi.getEmployeeTimeOff(id));
-          setTimeOff(list || []);
-        } else if (activeTab === 'payslips') {
-          const list = extractItems(await employeesApi.getEmployeePayslips(id));
-          setPayslips(list || []);
-        }
-      } catch (err: any) {
-        error(err.message || `Failed to fetch ${activeTab} records`);
-      } finally {
-        setSubLoading(false);
-      }
-    };
-
-    loadSubView();
-  }, [id, activeTab]);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   if (loading) {
     return <Spinner label="Loading employee 360 profile and live metrics..." />;
@@ -127,15 +101,13 @@ export const EmployeeDetailPage: React.FC = () => {
 
   const handleDelete = async () => {
     if (!id) return;
-    setIsDeleting(true);
     try {
-      await employeesApi.deleteEmployee(id);
+      await deleteEmployeeMutation.mutateAsync(id);
       success('Employee profile removed successfully.');
       navigate('/employees');
     } catch (err: any) {
       error(err.message || 'Failed to delete employee profile.');
     } finally {
-      setIsDeleting(false);
       setDeleteConfirmOpen(false);
     }
   };
@@ -665,9 +637,7 @@ export const EmployeeDetailPage: React.FC = () => {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         employeeToEdit={employee}
-        onSuccess={(updated) => {
-          setEmployee(updated);
-        }}
+        onSuccess={() => setIsEditModalOpen(false)}
       />
 
       {/* Admin Delete Confirmation Modal */}
@@ -693,7 +663,7 @@ export const EmployeeDetailPage: React.FC = () => {
               variant="outline"
               size="sm"
               onClick={() => setDeleteConfirmOpen(false)}
-              disabled={isDeleting}
+              disabled={deleteEmployeeMutation.isPending}
             >
               Cancel
             </Button>
@@ -701,7 +671,7 @@ export const EmployeeDetailPage: React.FC = () => {
               variant="danger"
               size="sm"
               onClick={handleDelete}
-              isLoading={isDeleting}
+              isLoading={deleteEmployeeMutation.isPending}
             >
               Delete Permanently
             </Button>

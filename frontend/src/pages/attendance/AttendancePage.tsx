@@ -103,6 +103,10 @@ export const AttendancePage: React.FC = () => {
     dateFrom !== '' ||
     dateTo !== '';
 
+  const activePunchForSelected = attendanceLogs.find(
+    (log) => String(log.employee_id || (log as any).employeeId) === String(punchEmpId) && !log.check_out
+  );
+
   const handleOpenPunch = () => {
     const currentIso = new Date().toISOString().slice(0, 16);
     const defaultEmpId = user?.employee_id ? String(user.employee_id) : (employees[0]?.id ? String(employees[0].id) : '');
@@ -114,22 +118,29 @@ export const AttendancePage: React.FC = () => {
   const handlePunchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!punchEmpId || !punchCheckInTime) {
-      error('Employee and Check-In time are required.');
+      error('Employee and Timestamp are required.');
       return;
     }
 
     setPunching(true);
     try {
-      await attendanceApi.checkIn({
-        employee_id: punchEmpId,
-        check_in: punchCheckInTime,
-      });
+      if (activePunchForSelected) {
+        await attendanceApi.checkOut(activePunchForSelected.id, {
+          check_out: punchCheckInTime,
+        });
+        success('Punch-Out recorded successfully.');
+      } else {
+        await attendanceApi.checkIn({
+          employee_id: punchEmpId,
+          check_in: punchCheckInTime,
+        });
+        success('Punch-In recorded successfully.');
+      }
 
-      success('Check-In recorded successfully.');
       setIsPunchModalOpen(false);
       loadData();
     } catch (err: any) {
-      error(err.message || 'Failed to punch check-in.');
+      error(err.message || 'Failed to record punch.');
     } finally {
       setPunching(false);
     }
@@ -223,6 +234,11 @@ export const AttendancePage: React.FC = () => {
     currentPage * itemsPerPage
   );
 
+  const currentUserEmpId = user?.employee_id ? String(user.employee_id) : '';
+  const hasActivePunch = currentUserEmpId ? attendanceLogs.some(
+    (log) => String(log.employee_id || (log as any).employeeId) === currentUserEmpId && !log.check_out
+  ) : false;
+
   return (
     <div className="space-y-6 animate-fade-in text-slate-800 dark:text-slate-100">
       {/* Header */}
@@ -239,7 +255,7 @@ export const AttendancePage: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <Button variant="primary" icon={<LogIn className="w-4 h-4" />} onClick={handleOpenPunch}>
-            Record Check-In Punch
+            Log Punch
           </Button>
         </div>
       </div>
@@ -561,12 +577,12 @@ export const AttendancePage: React.FC = () => {
         </div>
       )}
 
-      {/* Check In Modal */}
+      {/* Check In / Out Modal */}
       <Modal
         isOpen={isPunchModalOpen}
         onClose={() => setIsPunchModalOpen(false)}
-        title="Record Attendance Check-In"
-        description="Punches will automatically calculate worked hours upon check-out"
+        title="Log Punch"
+        description="Records your attendance punch. Timestamp is recorded automatically by the server."
       >
         <form onSubmit={handlePunchSubmit} className="space-y-4">
           <SearchableSelect
@@ -583,7 +599,7 @@ export const AttendancePage: React.FC = () => {
           />
 
           <Input
-            label="Check-In Timestamp"
+            label="Timestamp"
             type="datetime-local"
             value={punchCheckInTime}
             onChange={(e) => setPunchCheckInTime(e.target.value)}
@@ -594,8 +610,8 @@ export const AttendancePage: React.FC = () => {
             <Button type="button" variant="outline" onClick={() => setIsPunchModalOpen(false)} disabled={punching}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" isLoading={punching}>
-              Confirm Check-In
+            <Button type="submit" variant={activePunchForSelected ? "danger" : "primary"} isLoading={punching}>
+              {activePunchForSelected ? 'Confirm Punch-Out' : 'Confirm Punch-In'}
             </Button>
           </div>
         </form>

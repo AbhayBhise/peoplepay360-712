@@ -6,7 +6,9 @@ import {
   XCircle,
   Clock,
   ShieldAlert,
-  Calendar
+  Calendar,
+  Edit2,
+  Trash2
 } from 'lucide-react';
 import { timeOffApi } from '../../api/timeoff';
 import { employeesApi } from '../../api/employees';
@@ -56,6 +58,7 @@ export const TimeOffPage: React.FC = () => {
 
   // New Request Modal state
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [editingRequestId, setEditingRequestId] = useState<string | number | null>(null);
   const [reqEmpId, setReqEmpId] = useState<string>('');
   const [reqTypeId, setReqTypeId] = useState<string>('');
   const [reqDateFrom, setReqDateFrom] = useState('');
@@ -167,6 +170,7 @@ export const TimeOffPage: React.FC = () => {
   });
 
   const handleOpenRequest = () => {
+    setEditingRequestId(null);
     const defaultEmpId = user?.employee_id ? String(user.employee_id) : (employees[0]?.id ? String(employees[0].id) : '');
     const defaultTypeId = types[0]?.id ? String(types[0].id) : '';
     setReqEmpId(defaultEmpId);
@@ -176,6 +180,27 @@ export const TimeOffPage: React.FC = () => {
     setReqDateTo(today);
     setReqReason('');
     setIsRequestModalOpen(true);
+  };
+
+  const handleEditRequest = (req: TimeOffRequest) => {
+    setEditingRequestId(req.id);
+    setReqEmpId(req.employee_id ? String(req.employee_id) : ((req as any).employeeId ? String((req as any).employeeId) : ''));
+    setReqTypeId(req.type_id ? String(req.type_id) : ((req as any).typeId ? String((req as any).typeId) : ''));
+    setReqDateFrom(req.date_from);
+    setReqDateTo(req.date_to);
+    setReqReason(req.reason || '');
+    setIsRequestModalOpen(true);
+  };
+
+  const handleDeleteRequest = async (id: string | number) => {
+    if (!window.confirm('Are you sure you want to delete this time off request?')) return;
+    try {
+      await timeOffApi.deleteRequest(id);
+      success('Leave request deleted.');
+      loadData();
+    } catch (err: any) {
+      error(err.message || 'Failed to delete request.');
+    }
   };
 
   const handleOpenAlloc = () => {
@@ -204,19 +229,30 @@ export const TimeOffPage: React.FC = () => {
 
     setSubmittingReq(true);
     try {
-      await timeOffApi.createRequest({
-        employee_id: reqEmpId,
-        type_id: reqTypeId,
-        date_from: reqDateFrom,
-        date_to: reqDateTo,
-        reason: reqReason,
-      });
+      if (editingRequestId) {
+        await timeOffApi.updateRequest(editingRequestId, {
+          employee_id: reqEmpId,
+          type_id: reqTypeId,
+          date_from: reqDateFrom,
+          date_to: reqDateTo,
+          reason: reqReason,
+        });
+        success('Time off request updated successfully.');
+      } else {
+        await timeOffApi.createRequest({
+          employee_id: reqEmpId,
+          type_id: reqTypeId,
+          date_from: reqDateFrom,
+          date_to: reqDateTo,
+          reason: reqReason,
+        });
+        success('Time off request submitted successfully for approval.');
+      }
 
-      success('Time off request submitted successfully for approval.');
       setIsRequestModalOpen(false);
       loadData();
     } catch (err: any) {
-      error(err.message || 'Failed to submit time off request.');
+      error(err.message || `Failed to ${editingRequestId ? 'update' : 'submit'} time off request.`);
     } finally {
       setSubmittingReq(false);
     }
@@ -511,7 +547,7 @@ export const TimeOffPage: React.FC = () => {
                       <th className="py-3.5 px-4">Requested Dates</th>
                       <th className="py-3.5 px-4">Duration</th>
                       <th className="py-3.5 px-4">Status</th>
-                      {isHRMPlus() && <th className="py-3.5 px-4 text-right">Approval Decision</th>}
+                      <th className="py-3.5 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -553,10 +589,30 @@ export const TimeOffPage: React.FC = () => {
                               {r.status === 'validate' ? 'Approved' : r.status}
                             </Badge>
                           </td>
-                          {isHRMPlus() && (
-                            <td className="py-3.5 px-4 text-right">
-                              {r.status === 'draft' ? (
-                                <div className="flex items-center justify-end gap-1.5">
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                              {r.status === 'draft' && (
+                                <>
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    icon={<Edit2 className="w-3.5 h-3.5" />}
+                                    onClick={() => handleEditRequest(r)}
+                                  >
+                                    Edit
+                                  </Button>
+                                  <Button
+                                    variant="danger"
+                                    size="sm"
+                                    icon={<Trash2 className="w-3.5 h-3.5" />}
+                                    onClick={() => handleDeleteRequest(r.id)}
+                                  >
+                                    Delete
+                                  </Button>
+                                </>
+                              )}
+                              {isHRMPlus() && r.status === 'draft' && (
+                                <>
                                   <Button
                                     variant="success"
                                     size="sm"
@@ -573,12 +629,13 @@ export const TimeOffPage: React.FC = () => {
                                   >
                                     Refuse
                                   </Button>
-                                </div>
-                              ) : (
+                                </>
+                              )}
+                              {r.status !== 'draft' && (
                                 <span className="text-2xs text-slate-400 font-semibold font-mono">PROCESSED</span>
                               )}
-                            </td>
-                          )}
+                            </div>
+                          </td>
                         </tr>
                       );
                     })}
@@ -768,7 +825,7 @@ export const TimeOffPage: React.FC = () => {
       <Modal
         isOpen={isRequestModalOpen}
         onClose={() => setIsRequestModalOpen(false)}
-        title="Submit Time Off Request"
+        title={editingRequestId ? "Edit Time Off Request" : "Submit Time Off Request"}
         description="Select dates. Your quota and projected balance update in real time."
         maxWidth="lg"
       >
@@ -870,7 +927,7 @@ export const TimeOffPage: React.FC = () => {
               Cancel
             </Button>
             <Button type="submit" variant="primary" isLoading={submittingReq} disabled={isInsufficient}>
-              Submit Request
+              {editingRequestId ? 'Update Request' : 'Submit Request'}
             </Button>
           </div>
         </form>

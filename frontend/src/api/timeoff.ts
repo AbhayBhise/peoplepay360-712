@@ -211,4 +211,27 @@ export const timeOffApi = {
     const raw = await apiRequest<any>(apiClient.post(`/api/time-off/requests/${id}/refuse`));
     return normalizeRequest(raw);
   },
+
+  updateRequest: async (id: number | string, data: {
+    type_id?: number | string;
+    typeId?: number | string;
+    date_from?: string;
+    dateFrom?: string;
+    date_to?: string;
+    dateTo?: string;
+    reason?: string;
+  }): Promise<TimeOffRequest> => {
+    const payload = {
+      typeId: data.typeId ? String(data.typeId) : (data.type_id ? String(data.type_id) : undefined),
+      dateFrom: data.dateFrom ?? data.date_from,
+      dateTo: data.dateTo ?? data.date_to,
+      reason: data.reason,
+    };
+    const raw = await apiRequest<any>(apiClient.put(`/api/time-off/requests/${id}`, payload));
+    return normalizeRequest(raw);
+  },
+
+  deleteRequest: async (id: number | string): Promise<void> => {
+    await apiRequest<any>(apiClient.delete(`/api/time-off/requests/${id}`));
+  },
 };
