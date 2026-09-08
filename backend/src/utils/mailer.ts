@@ -30,6 +30,7 @@ export async function sendMail(options: {
   to: string;
   subject: string;
   text: string;
+  html?: string;
   attachments?: EmailAttachment[];
 }) {
   const from = process.env.SMTP_FROM ?? "payroll@peoplepay360.local";

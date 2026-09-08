@@ -6,6 +6,7 @@ import { previewPayrunSchema, createPayrunSchema } from "./payrun.validation";
 import { evaluateFormula } from "./formulaEvaluator";
 import { generatePayslipPdf } from "./payslipPdf";
 import { sendMail } from "../../utils/mailer";
+import { emailQueue } from "../../queues/email.queue";
 import { PaginationParams, paginatedResult } from "../../utils/pagination";
 
 type PreviewInput = z.infer<typeof previewPayrunSchema>;
@@ -19,8 +20,8 @@ async function findEligibleEmployees(structureId: string, periodStart: Date, per
     where: {
       salaryStructureId: structureId,
       status: "active",
-      startDate: { lte: periodStart },
-      OR: [{ endDate: null }, { endDate: { gte: periodEnd } }],
+      startDate: { lte: periodEnd },
+      OR: [{ endDate: null }, { endDate: { gte: periodStart } }],
     },
     include: { employee: true },
   });
@@ -264,15 +265,55 @@ export async function sendPayslipsForPayrun(payrunId: string) {
       lines: payslip.lines.map((l) => ({ category: l.category, name: l.name, amount: Number(l.amount) })),
     });
 
-    await sendMail({
-      to: user.email,
-      subject: `Your payslip for ${payrun.periodStart.toISOString().slice(0, 10)} to ${payrun.periodEnd.toISOString().slice(0, 10)}`,
-      text: `Hi ${payslip.employee.name}, your payslip is attached. Net pay: ${payslip.net}.`,
-      attachments: [
-        { filename: `Payslip-${payslip.employee.name.replace(/[^a-zA-Z0-9]/g, '_')}-${payrun.periodStart.toISOString().slice(0, 7)}.pdf`, content: pdf, contentType: "application/pdf" },
-      ],
-    });
-    sent.push(payslip.employee.name);
+    try {
+      const periodStartStr = payrun.periodStart.toISOString().slice(0, 10);
+      const periodEndStr = payrun.periodEnd.toISOString().slice(0, 10);
+      
+      const htmlTemplate = `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 650px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #4f46e5; margin: 0; font-size: 28px; font-weight: 800;">PeoplePay360</h1>
+            <p style="color: #64748b; margin-top: 5px; font-size: 14px;">Your Trusted Payroll Partner</p>
+          </div>
+          <h2 style="color: #1e293b; margin-bottom: 20px; font-size: 22px;">Your Payslip is Ready! 🎉</h2>
+          <p style="font-size: 16px; color: #334155; line-height: 1.6;">Hi <strong>${payslip.employee.name}</strong>,</p>
+          <p style="font-size: 16px; color: #334155; line-height: 1.6;">
+            Great news! Your payslip for the period of <strong style="color: #4f46e5;">${periodStartStr}</strong> to <strong style="color: #4f46e5;">${periodEndStr}</strong> is now available. We appreciate all the hard work and dedication you bring to the team every single day.
+          </p>
+          <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 20px; border-left: 4px solid #4f46e5; border-radius: 8px; margin: 25px 0;">
+            <p style="font-size: 20px; margin: 0; color: #0f172a;"><strong>Net Pay:</strong> <span style="color: #10b981;">₹${payslip.net}</span></p>
+          </div>
+          <p style="font-size: 16px; color: #334155; line-height: 1.6;">
+            We have securely attached your payslip document to this email. Please find the PDF attached for a detailed breakdown of your salary, including gross pay, allowances, and deductions.
+          </p>
+          <p style="font-size: 16px; color: #334155; line-height: 1.6;">
+            Keep pushing boundaries and achieving greatness. We are proud to have you on board! 🚀
+          </p>
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 35px 0;" />
+          <p style="font-size: 13px; color: #94a3b8; text-align: center;">
+            Best regards,<br/>
+            <strong style="color: #64748b;">PeoplePay360 Payroll Team</strong><br/>
+            <br/>
+            <em>This is an automated message, please do not reply directly.</em>
+          </p>
+        </div>
+      `;
+
+      await emailQueue.add("sendPayslipEmail", {
+        to: user.email,
+        subject: `Your PeoplePay360 Payslip (${periodStartStr} to ${periodEndStr})`,
+        text: `Hi ${payslip.employee.name}, your payslip for ${periodStartStr} to ${periodEndStr} is attached. Net pay: ${payslip.net}.`,
+        html: htmlTemplate,
+        attachments: [
+          { filename: `Payslip-${payslip.employee.name.replace(/[^a-zA-Z0-9]/g, '_')}-${payrun.periodStart.toISOString().slice(0, 7)}.pdf`, content: pdf, contentType: "application/pdf" },
+        ],
+      });
+
+      sent.push(payslip.employee.name);
+    } catch (err: any) {
+      console.error(`Failed to queue payslip email for ${payslip.employee.name}:`, err);
+      skipped.push(`${payslip.employee.name}: queueing failed (${err.message})`);
+    }
   }
 
   return { sent, skipped };

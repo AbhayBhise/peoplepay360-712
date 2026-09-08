@@ -72,11 +72,13 @@ export const PayrollManagerDashboardView: React.FC<PayrollManagerDashboardViewPr
 }) => {
   const navigate = useNavigate();
 
-  const totalNet = summary?.total_net_paid || 1845000;
+  const totalNet = summary?.total_net_paid ?? 0;
   const grossEst = Math.round(totalNet * 1.25);
   const statutoryDeductions = Math.round(totalNet * 0.15);
   const otherDeductions = Math.round(totalNet * 0.10);
-  const payslipsCount = summary?.payslips_generated || 28;
+  const payslipsCount = summary?.payslips_generated ?? 0;
+
+  const currentMonthName = new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' });
 
   return (
     <div className="space-y-6 animate-fade-in text-slate-800 dark:text-slate-100">
@@ -263,7 +265,7 @@ export const PayrollManagerDashboardView: React.FC<PayrollManagerDashboardViewPr
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 text-xs">
               <div>
                 <div className="font-bold text-slate-900 dark:text-white">
-                  September 2026 Monthly Payrun
+                  {currentMonthName} Monthly Payrun
                 </div>
                 <div className="text-2xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
                   {payslipsCount} Staff · Net: <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(totalNet)}</strong>

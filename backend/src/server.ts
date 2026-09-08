@@ -1,6 +1,9 @@
 import { app } from "./app";
 import { env } from "./config/env";
 import { prisma } from "./prisma";
+import { setupEmailWorker } from "./queues/email.queue";
+
+const emailWorker = setupEmailWorker();
 
 const server = app.listen(env.port, () => {
   console.log(`PeoplePay360 backend listening on http://localhost:${env.port}`);
@@ -11,6 +14,7 @@ const server = app.listen(env.port, () => {
 function shutdown(signal: string) {
   console.log(`${signal} received, shutting down gracefully...`);
   server.close(async () => {
+    await emailWorker.close();
     await prisma.$disconnect();
     process.exit(0);
   });
