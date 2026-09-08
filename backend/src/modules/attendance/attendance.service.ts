@@ -1,13 +1,24 @@
 import { z } from "zod";
+import path from "path";
+import { AttendanceStatus } from "@prisma/client";
 import { prisma } from "../../prisma";
 import { ApiError } from "../../utils/ApiError";
 import { AuthPayload, isHrmPlus } from "../../middleware/auth";
-import { checkInSchema, checkOutSchema, correctAttendanceSchema } from "./attendance.validation";
+import {
+  checkInSchema,
+  checkOutSchema,
+  correctAttendanceSchema,
+  emergencyCheckoutSchema,
+  reviewEmergencySchema,
+} from "./attendance.validation";
 import { PaginationParams, paginatedResult } from "../../utils/pagination";
+import { emailQueue } from "../../queues/email.queue";
 
 type CheckInInput = z.infer<typeof checkInSchema>;
 type CheckOutInput = z.infer<typeof checkOutSchema>;
 type CorrectInput = z.infer<typeof correctAttendanceSchema>;
+type EmergencyCheckoutInput = z.infer<typeof emergencyCheckoutSchema>;
+type ReviewEmergencyInput = z.infer<typeof reviewEmergencySchema>;
 
 // worked_hours is always computed from check_in/check_out — docs/01_DATABASE_SCHEMA.md.
 // Never accept it as input anywhere in this module.
@@ -33,6 +44,83 @@ function withException<T extends { checkOut: Date | null; status: string }>(rows
   }));
 }
 
+// ── Shift Window ──────────────────────────────────────────────────────────────
+// Convert a "HH:MM" string to total minutes since midnight.
+function timeToMinutes(hhmm: string): number {
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + (m ?? 0);
+}
+
+const DAY_NAMES = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+
+/**
+ * Returns the allowed check-in window for today based on the employee's
+ * working schedule. Returns null if no schedule / no line for today (unrestricted).
+ *
+ * Window = (shift start − GRACE_BEFORE_MIN) → (shift start + GRACE_AFTER_MIN)
+ * Industry standard: 15 min early, 90 min late (covers most tardy-but-permitted arrivals).
+ */
+async function getShiftWindowForToday(
+  employeeId: string
+): Promise<{ openMinutes: number; closeMinutes: number; startTime: string } | null> {
+  const GRACE_BEFORE_MIN = 15;
+  const GRACE_AFTER_MIN = 90;
+
+  const employee = await prisma.employee.findUnique({
+    where: { id: employeeId },
+    include: {
+      workingSchedule: { include: { lines: true } },
+    },
+  });
+  if (!employee?.workingSchedule) return null; // no schedule assigned → unrestricted
+
+  const today = DAY_NAMES[new Date().getDay()];
+  const line = employee.workingSchedule.lines.find((l) => l.day === today);
+  if (!line) return null; // no scheduled work today → unrestricted (day off)
+
+  const startMinutes = timeToMinutes(line.startTime);
+  return {
+    openMinutes: startMinutes - GRACE_BEFORE_MIN,
+    closeMinutes: startMinutes + GRACE_AFTER_MIN,
+    startTime: line.startTime,
+  };
+}
+
+// ── Helpers for authority email resolution ────────────────────────────────────
+async function resolveAuthorityEmails(
+  employeeId: string
+): Promise<{ managerEmail: string | null; hrmEmails: string[] }> {
+  // Get the employee with their manager
+  const employee = await prisma.employee.findUnique({
+    where: { id: employeeId },
+    include: {
+      manager: { include: { user: true } },
+    },
+  });
+
+  const managerEmail = employee?.manager?.user?.email ?? null;
+
+  // All HRM+ users — find via UserRole → Role name in HRM_PLUS set
+  const HRM_ROLE_NAMES = ["HR_MANAGER", "HR_PAYROLL_USER", "HR_PAYROLL_MANAGER", "ADMIN"];
+  const hrmUsers = await prisma.user.findMany({
+    where: {
+      userRoles: {
+        some: {
+          role: { name: { in: HRM_ROLE_NAMES } },
+          effectiveTo: null, // only active assignments
+        },
+      },
+    },
+    select: { email: true },
+  });
+
+  const hrmEmails = hrmUsers.map((u) => u.email).filter((e): e is string => !!e);
+
+  return { managerEmail, hrmEmails };
+}
+
+
+// ── List Attendance ───────────────────────────────────────────────────────────
 // Pagination is opt-in — see employee.service.ts for the same pattern and why.
 export async function listAttendance(
   auth: AuthPayload,
@@ -44,7 +132,7 @@ export async function listAttendance(
   // down used to silently overwrite this restriction on every unfiltered request).
   const where = {
     employeeId: isHrmPlus(auth.roles) ? filters.employeeId || undefined : auth.employeeId ?? "__no_self_employee__",
-    status: (filters.status as "present" | "late" | "absent" | "manual_edit") || undefined,
+    status: filters.status ? (filters.status as AttendanceStatus) : undefined,
     checkIn:
       filters.dateFrom || filters.dateTo ? { gte: filters.dateFrom, lte: filters.dateTo } : undefined,
   };
@@ -73,6 +161,7 @@ export async function listAttendance(
   return paginatedResult(withException(rows), total, pagination);
 }
 
+// ── Check In ─────────────────────────────────────────────────────────────────
 export async function checkIn(auth: AuthPayload, input: CheckInInput) {
   assertSelfOrHrmPlus(auth, input.employeeId);
 
@@ -85,6 +174,21 @@ export async function checkIn(auth: AuthPayload, input: CheckInInput) {
     );
   }
 
+  // Shift window enforcement — HRM+ are exempt (they can back-fill for employees).
+  if (!isHrmPlus(auth.roles)) {
+    const window = await getShiftWindowForToday(input.employeeId);
+    if (window) {
+      const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+      if (nowMinutes < window.openMinutes || nowMinutes > window.closeMinutes) {
+        const fmt = (m: number) =>
+          `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+        throw ApiError.forbidden(
+          `attendance: check-in is only allowed between ${fmt(window.openMinutes)} and ${fmt(window.closeMinutes)} (shift starts at ${window.startTime})`
+        );
+      }
+    }
+  }
+
   // Always server time — see attendance.validation.ts for why a client-supplied
   // timestamp is never trusted here.
   const checkInTime = new Date();
@@ -93,6 +197,7 @@ export async function checkIn(auth: AuthPayload, input: CheckInInput) {
   });
 }
 
+// ── Check Out (normal) ────────────────────────────────────────────────────────
 export async function checkOut(auth: AuthPayload, id: string, input: CheckOutInput) {
   const existing = await prisma.attendance.findUnique({ where: { id } });
   if (!existing) {
@@ -113,6 +218,132 @@ export async function checkOut(auth: AuthPayload, id: string, input: CheckOutInp
   });
 }
 
+// ── Emergency Checkout ────────────────────────────────────────────────────────
+export async function emergencyCheckout(
+  auth: AuthPayload,
+  attendanceId: string,
+  input: EmergencyCheckoutInput,
+  evidenceFile?: Express.Multer.File
+) {
+  const existing = await prisma.attendance.findUnique({
+    where: { id: attendanceId },
+    include: { employee: { include: { user: true } } },
+  });
+  if (!existing) throw ApiError.notFound(`attendance: no record with id ${attendanceId}`);
+  if (existing.checkOut) throw ApiError.conflict("attendance: already checked out");
+  assertSelfOrHrmPlus(auth, existing.employeeId);
+
+  const checkOutTime = new Date();
+  const evidencePath = evidenceFile
+    ? path.join("uploads", "evidence", evidenceFile.filename)
+    : null;
+
+  const updated = await prisma.attendance.update({
+    where: { id: attendanceId },
+    data: {
+      checkOut: checkOutTime,
+      workedHours: computeWorkedHours(existing.checkIn, checkOutTime),
+      status: "emergency_checkout",
+      emergencyReason: input.reason,
+      evidencePath: evidencePath ?? undefined,
+      emergencyStatus: "pending",
+    },
+    include: { employee: { select: { name: true } } },
+  });
+
+  // ── Fire notifications ─────────────────────────────────────────────────────
+  const { managerEmail, hrmEmails } = await resolveAuthorityEmails(existing.employeeId);
+
+  const employeeName = existing.employee?.name ?? "An employee";
+  const subject = `🚨 Emergency Checkout Alert — ${employeeName}`;
+  const body = `
+${employeeName} has performed an EMERGENCY CHECKOUT at ${checkOutTime.toLocaleString()}.
+
+Reason: ${input.reason.toUpperCase()}
+Attendance Record: #${attendanceId}
+Evidence Uploaded: ${evidencePath ? "Yes" : "No"}
+
+Please review this in the HR portal under Attendance → Emergency Review.
+This record is currently pending your approval or rejection.
+`.trim();
+
+  const recipients = [...new Set([...(managerEmail ? [managerEmail] : []), ...hrmEmails])];
+  await Promise.all(
+    recipients.map((to) =>
+      emailQueue.add("emergency-checkout-alert", { to, subject, text: body })
+    )
+  );
+
+  return updated;
+}
+
+// ── List Emergency Checkouts (HRM+ only) ──────────────────────────────────────
+export async function listEmergencies(auth: AuthPayload) {
+  if (!isHrmPlus(auth.roles)) {
+    throw ApiError.forbidden("listEmergencies: requires HRM+ role");
+  }
+  return prisma.attendance.findMany({
+    where: { status: "emergency_checkout" },
+    orderBy: { checkIn: "desc" },
+    include: {
+      employee: {
+        select: {
+          id: true,
+          name: true,
+          jobPosition: true,
+          manager: { select: { id: true, name: true } },
+          department: { select: { id: true, name: true } },
+        },
+      },
+    },
+  });
+}
+
+// ── Review Emergency (HRM+ only) ──────────────────────────────────────────────
+export async function reviewEmergency(auth: AuthPayload, attendanceId: string, input: ReviewEmergencyInput) {
+  if (!isHrmPlus(auth.roles)) {
+    throw ApiError.forbidden("reviewEmergency: requires HRM+ role");
+  }
+
+  const existing = await prisma.attendance.findUnique({
+    where: { id: attendanceId },
+    include: { employee: { include: { user: true } } },
+  });
+  if (!existing) throw ApiError.notFound(`attendance: no record with id ${attendanceId}`);
+  if (existing.status !== "emergency_checkout") {
+    throw ApiError.badRequest("attendance: record is not an emergency checkout");
+  }
+
+  const updated = await prisma.attendance.update({
+    where: { id: attendanceId },
+    data: { emergencyStatus: input.action },
+    include: { employee: { select: { name: true } } },
+  });
+
+  // Notify the employee about the decision
+  const employeeEmail = existing.employee?.user?.email;
+  if (employeeEmail) {
+    const statusLabel = input.action === "approved" ? "APPROVED ✅" : "REJECTED ❌";
+    const subject = `Emergency Checkout ${statusLabel}`;
+    const body = `
+Your emergency checkout request (Record #${attendanceId}) has been ${input.action.toUpperCase()} by HR.
+
+${input.note ? `HR Note: ${input.note}` : ""}
+
+If you have questions, please contact your HR department.
+`.trim();
+
+    await emailQueue.add("emergency-review-result", {
+      to: employeeEmail,
+      subject,
+      text: body,
+    });
+  }
+
+  return updated;
+}
+
+// ── Correct Attendance (HRM+ only) ────────────────────────────────────────────
 // Corrections restricted to HRM+ at the route layer — plain employees can only
 // create today's check-in/out, never edit past records (docs/roles/FRONTEND.md).
 export async function correctAttendance(id: string, input: CorrectInput) {
@@ -137,4 +368,21 @@ export async function correctAttendance(id: string, input: CorrectInput) {
       status: input.status ?? "manual_edit",
     },
   });
+}
+
+// ── Get Shift Window (for frontend UI) ────────────────────────────────────────
+// Returns the shift window for a given employee today — used by the frontend to
+// show/hide the check-in button without waiting for a rejected API call.
+export async function getShiftWindow(auth: AuthPayload, employeeId: string) {
+  assertSelfOrHrmPlus(auth, employeeId);
+  const window = await getShiftWindowForToday(employeeId);
+  if (!window) return { restricted: false };
+  const fmt = (m: number) =>
+    `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+  return {
+    restricted: true,
+    openTime: fmt(window.openMinutes),
+    closeTime: fmt(window.closeMinutes),
+    shiftStart: window.startTime,
+  };
 }

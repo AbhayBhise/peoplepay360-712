@@ -15,3 +15,19 @@ export const correctAttendanceSchema = z.object({
   checkOut: z.coerce.date().optional().nullable(),
   status: z.enum(["present", "late", "absent", "manual_edit"]).optional(),
 });
+
+// Emergency checkout — reason is mandatory; evidence file is validated at the multer layer.
+export const EMERGENCY_REASONS = ["medical", "personal", "security", "family"] as const;
+export type EmergencyReason = typeof EMERGENCY_REASONS[number];
+
+export const emergencyCheckoutSchema = z.object({
+  reason: z.enum(EMERGENCY_REASONS, {
+    errorMap: () => ({ message: `reason must be one of: ${EMERGENCY_REASONS.join(", ")}` }),
+  }),
+});
+
+// HRM+ review action — either approve or reject, with an optional note sent to the employee.
+export const reviewEmergencySchema = z.object({
+  action: z.enum(["approved", "rejected"]),
+  note: z.string().max(500).optional(),
+});

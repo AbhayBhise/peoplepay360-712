@@ -23,5 +23,7 @@ timeOffRouter.post("/allocations/:id/approve", requireRole(...HRM_PLUS), timeOff
 timeOffRouter.get("/requests", timeOffController.listRequests);
 timeOffRouter.get("/requests/balance", timeOffController.getBalance);
 timeOffRouter.post("/requests", timeOffController.createRequest);
+timeOffRouter.put("/requests/:id", timeOffController.updateRequest);
+timeOffRouter.delete("/requests/:id", timeOffController.deleteRequest);
 timeOffRouter.post("/requests/:id/approve", requireRole(...HRM_PLUS), timeOffController.approveRequest);
 timeOffRouter.post("/requests/:id/refuse", requireRole(...HRM_PLUS), timeOffController.refuseRequest);

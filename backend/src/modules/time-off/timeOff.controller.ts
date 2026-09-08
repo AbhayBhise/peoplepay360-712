@@ -11,6 +11,7 @@ import {
   updateTimeOffTypeSchema,
   createAllocationSchema,
   createRequestSchema,
+  updateRequestSchema,
 } from "./timeOff.validation";
 
 // ---- Types ----
@@ -72,6 +73,14 @@ export const getBalance = asyncHandler(async (req: Request, res: Response) => {
 export const createRequest = asyncHandler(async (req: Request, res: Response) => {
   const body = createRequestSchema.parse(req.body);
   return ok(res, await requestService.createRequest(req.auth!, body), 201);
+});
+export const updateRequest = asyncHandler(async (req: Request, res: Response) => {
+  const body = updateRequestSchema.parse(req.body);
+  return ok(res, await requestService.updateRequest(req.auth!, req.params.id, body));
+});
+export const deleteRequest = asyncHandler(async (req: Request, res: Response) => {
+  await requestService.deleteRequest(req.auth!, req.params.id);
+  return ok(res, { success: true });
 });
 export const approveRequest = asyncHandler(async (req: Request, res: Response) => {
   return ok(res, await requestService.approveRequest(req.params.id));

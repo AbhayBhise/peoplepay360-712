@@ -22,5 +22,26 @@ export const createRequestSchema = z
     typeId: z.string().min(1, { message: "is required" }),
     dateFrom: z.coerce.date(),
     dateTo: z.coerce.date(),
+    requestUnit: z.enum(["full_day", "half_day"]).default("full_day"),
+    requestUnitHalf: z.enum(["morning", "afternoon"]).optional().nullable(),
   })
-  .refine((r) => r.dateTo >= r.dateFrom, { message: "must be on/after dateFrom", path: ["dateTo"] });
+  .refine((r) => r.dateTo >= r.dateFrom, { message: "must be on/after dateFrom", path: ["dateTo"] })
+  .refine((r) => r.requestUnit === "full_day" || (r.requestUnit === "half_day" && r.requestUnitHalf), {
+    message: "Half day requests must specify morning or afternoon",
+    path: ["requestUnitHalf"],
+  });
+
+export const updateRequestSchema = z
+  .object({
+    typeId: z.string().min(1, { message: "is required" }).optional(),
+    dateFrom: z.coerce.date().optional(),
+    dateTo: z.coerce.date().optional(),
+    requestUnit: z.enum(["full_day", "half_day"]).optional(),
+    requestUnitHalf: z.enum(["morning", "afternoon"]).optional().nullable(),
+  })
+  .refine((r) => !r.dateFrom || !r.dateTo || r.dateTo >= r.dateFrom, { message: "must be on/after dateFrom", path: ["dateTo"] })
+  .refine((r) => !r.requestUnit || r.requestUnit === "full_day" || (r.requestUnit === "half_day" && r.requestUnitHalf), {
+    message: "Half day requests must specify morning or afternoon",
+    path: ["requestUnitHalf"],
+  });
+

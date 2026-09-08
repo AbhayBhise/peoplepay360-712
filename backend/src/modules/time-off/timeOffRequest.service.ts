@@ -2,11 +2,12 @@ import { z } from "zod";
 import { prisma } from "../../prisma";
 import { ApiError } from "../../utils/ApiError";
 import { AuthPayload, isHrmPlus } from "../../middleware/auth";
-import { createRequestSchema } from "./timeOff.validation";
+import { createRequestSchema, updateRequestSchema } from "./timeOff.validation";
 import { getUsableAllocations } from "./timeOffAllocation.service";
 import { PaginationParams, paginatedResult } from "../../utils/pagination";
 
 type CreateInput = z.infer<typeof createRequestSchema>;
+type UpdateInput = z.infer<typeof updateRequestSchema>;
 
 // Excludes weekends, per manage-leave.md ("duration in days, exclude weekends").
 // Working-schedule-aware weekday exclusion would be a further refinement; Sat/Sun is the
@@ -81,7 +82,16 @@ export async function createRequest(auth: AuthPayload, input: CreateInput) {
   const type = await prisma.timeOffType.findUnique({ where: { id: input.typeId } });
   if (!type) throw ApiError.badRequest(`typeId: no time off type with id ${input.typeId}`);
 
-  const duration = countWeekdays(input.dateFrom, input.dateTo);
+  let duration = countWeekdays(input.dateFrom, input.dateTo);
+  if (input.requestUnit === "half_day") {
+    duration = 0.5;
+    input.dateTo = input.dateFrom; // enforce single day
+  }
+
+  if (type.unit === "hours") {
+    duration *= 8; // 8 hours for a full day, 4 hours for a half day
+  }
+
   if (duration <= 0) {
     throw ApiError.badRequest("dateTo: range contains no working days");
   }
@@ -99,10 +109,82 @@ export async function createRequest(auth: AuthPayload, input: CreateInput) {
       typeId: input.typeId,
       dateFrom: input.dateFrom,
       dateTo: input.dateTo,
+      requestUnit: input.requestUnit,
+      requestUnitHalf: input.requestUnitHalf,
       duration,
       status: "draft",
     },
   });
+}
+
+export async function updateRequest(auth: AuthPayload, id: string, input: UpdateInput) {
+  const request = await prisma.timeOffRequest.findUnique({ where: { id } });
+  if (!request) throw ApiError.notFound(`timeOffRequest: no request with id ${id}`);
+  
+  assertSelfOrHrmPlus(auth, request.employeeId);
+  
+  if (request.status !== "draft") {
+    throw ApiError.conflict(`timeOffRequest: cannot edit a request in status '${request.status}'`);
+  }
+  
+  const typeId = input.typeId ?? request.typeId;
+  const type = await prisma.timeOffType.findUnique({ where: { id: typeId } });
+  if (!type) throw ApiError.badRequest(`typeId: no time off type with id ${typeId}`);
+
+  let dateFrom = input.dateFrom ?? request.dateFrom;
+  let dateTo = input.dateTo ?? request.dateTo;
+  const requestUnit = input.requestUnit ?? request.requestUnit;
+  const requestUnitHalf = input.requestUnitHalf !== undefined ? input.requestUnitHalf : request.requestUnitHalf;
+
+  if (dateTo < dateFrom) {
+    throw ApiError.badRequest("dateTo: must be on/after dateFrom");
+  }
+
+  let duration = countWeekdays(dateFrom, dateTo);
+  if (requestUnit === "half_day") {
+    duration = 0.5;
+    dateTo = dateFrom; // enforce single day
+  }
+
+  if (type.unit === "hours") {
+    duration *= 8; // 8 hours for a full day, 4 hours for a half day
+  }
+
+  if (duration <= 0) {
+    throw ApiError.badRequest("dateTo: range contains no working days");
+  }
+
+  if (type.requiresAllocation) {
+    const { remaining } = await getRemainingBalance(request.employeeId, typeId, dateFrom);
+    if (remaining !== null && duration > remaining) {
+      throw ApiError.conflict(`timeOff: insufficient balance, remaining ${remaining} ${type.unit}`);
+    }
+  }
+
+  return prisma.timeOffRequest.update({
+    where: { id },
+    data: {
+      typeId,
+      dateFrom,
+      dateTo,
+      requestUnit,
+      requestUnitHalf,
+      duration,
+    },
+  });
+}
+
+export async function deleteRequest(auth: AuthPayload, id: string) {
+  const request = await prisma.timeOffRequest.findUnique({ where: { id } });
+  if (!request) throw ApiError.notFound(`timeOffRequest: no request with id ${id}`);
+  
+  assertSelfOrHrmPlus(auth, request.employeeId);
+  
+  if (request.status !== "draft") {
+    throw ApiError.conflict(`timeOffRequest: cannot delete a request in status '${request.status}'`);
+  }
+  
+  await prisma.timeOffRequest.delete({ where: { id } });
 }
 
 // Approval and balance deduction happen atomically (docs/roles/ARCHITECT.md transaction

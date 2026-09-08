@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { ok } from "../../utils/response";
+import { ApiError } from "../../utils/ApiError";
 import * as employeeService from "./employee.service";
 import { createEmployeeSchema, updateEmployeeSchema } from "./employee.validation";
 import { parsePaginationIfRequested } from "../../utils/pagination";
@@ -26,6 +27,11 @@ export const getById = asyncHandler(async (req: Request, res: Response) => {
 
 export const create = asyncHandler(async (req: Request, res: Response) => {
   const body = createEmployeeSchema.parse(req.body);
+  
+  if (body.email && !req.auth!.roles.includes("ADMIN")) {
+    throw ApiError.forbidden("only ADMIN users can specify an email address during employee creation");
+  }
+
   const employee = await employeeService.createEmployee(body);
   await recordAudit(req, { module: "employee", action: "create", recordId: employee.id, after: employee });
   return ok(res, employee, 201);

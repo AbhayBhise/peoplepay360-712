@@ -1,6 +1,9 @@
 import { z } from "zod";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { prisma } from "../../prisma";
 import { ApiError } from "../../utils/ApiError";
+import { emailQueue } from "../../queues/email.queue";
 import { AuthPayload, isHrmPlus } from "../../middleware/auth";
 import { createEmployeeSchema, updateEmployeeSchema } from "./employee.validation";
 import { PaginationParams, paginatedResult } from "../../utils/pagination";
@@ -101,15 +104,62 @@ export async function createEmployee(input: CreateInput) {
   await assertDepartmentExists(input.departmentId);
   await assertManagerIsDifferentEmployee(undefined, input.managerId);
 
-  return prisma.employee.create({
-    data: {
-      name: input.name,
-      departmentId: input.departmentId ?? undefined,
-      managerId: input.managerId ?? undefined,
-      jobPosition: input.jobPosition ?? undefined,
-      status: input.status,
-      workingScheduleId: input.workingScheduleId ?? undefined,
-    },
+  return prisma.$transaction(async (tx) => {
+    const employee = await tx.employee.create({
+      data: {
+        name: input.name,
+        departmentId: input.departmentId ?? undefined,
+        managerId: input.managerId ?? undefined,
+        jobPosition: input.jobPosition ?? undefined,
+        status: input.status,
+        workingScheduleId: input.workingScheduleId ?? undefined,
+      },
+    });
+
+    if (input.email) {
+      const existingUser = await tx.user.findUnique({ where: { email: input.email } });
+      if (existingUser) {
+        throw ApiError.conflict(`email: an account with ${input.email} already exists`);
+      }
+      
+      const tempPassword = crypto.randomBytes(6).toString("hex");
+      const passwordHash = await bcrypt.hash(tempPassword, 10);
+      
+      const employeeRole = await tx.role.findUnique({ where: { name: "Employee" } });
+      const userRoles = employeeRole 
+        ? { create: [{ roleId: employeeRole.id }] } 
+        : undefined;
+
+      await tx.user.create({
+        data: {
+          email: input.email,
+          passwordHash,
+          employeeId: employee.id,
+          userRoles,
+        },
+      });
+
+      await emailQueue.add("send-welcome-email", {
+        to: input.email,
+        subject: "Welcome to PeoplePay360!",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+            <h2 style="color: #2563eb;">Welcome to PeoplePay360, ${employee.name}!</h2>
+            <p>Your employee profile and system account have been successfully created.</p>
+            <p>Please log in using your temporary credentials below:</p>
+            <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p style="margin: 5px 0;"><strong>Email:</strong> ${input.email}</p>
+              <p style="margin: 5px 0;"><strong>Password:</strong> <code style="background: #e5e7eb; padding: 2px 5px; border-radius: 3px;">${tempPassword}</code></p>
+            </div>
+            <p style="color: #b91c1c; font-weight: bold;">Security Notice: We strongly advise you to log in and change your password immediately to ensure your account remains secure.</p>
+            <p>If you encounter any issues, please contact your HR or IT department.</p>
+            <p>Best regards,<br/>The PeoplePay360 Team</p>
+          </div>
+        `,
+      });
+    }
+
+    return employee;
   });
 }
 

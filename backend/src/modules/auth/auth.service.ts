@@ -5,7 +5,7 @@ import { env } from "../../config/env";
 import { prisma } from "../../prisma";
 import { ApiError } from "../../utils/ApiError";
 import { AuthPayload, RoleName } from "../../middleware/auth";
-import { sendMail } from "../../utils/mailer";
+import { emailQueue } from "../../queues/email.queue";
 
 export async function login(email: string, password: string) {
   const safeEmail = email.trim().toLowerCase();
@@ -112,7 +112,7 @@ export async function forgotPassword(email: string) {
 
   const resetLink = `${env.frontendUrl}/reset-password?token=${token}`;
   
-  await sendMail({
+  await emailQueue.add("send-forgot-password-email", {
     to: safeEmail,
     subject: "Password Reset Request",
     text: `You requested a password reset. Click the link to reset your password: ${resetLink}\nThis link expires in 1 hour.`,
