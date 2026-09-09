@@ -68,20 +68,11 @@ export const authApi = {
   },
 
   getMe: async (): Promise<UserProfile> => {
-    try {
-      const raw = await apiRequest<any>(apiClient.get('/api/auth/me'));
-      return normalizeUser(raw);
-    } catch (err: any) {
-      const savedUser = localStorage.getItem('peoplepay_user');
-      if (savedUser) {
-        try {
-          return JSON.parse(savedUser);
-        } catch {
-          // Ignore
-        }
-      }
-      throw err;
-    }
+    // The server is the source of truth for the current token's identity and
+    // roles. Never restore a cached profile after this request fails: doing so
+    // can show an Admin UI while the bearer token belongs to another user.
+    const raw = await apiRequest<any>(apiClient.get('/api/auth/me'));
+    return normalizeUser(raw);
   },
 
   changePassword: async (data: { currentPassword: string; newPassword: string }): Promise<{ message: string }> => {

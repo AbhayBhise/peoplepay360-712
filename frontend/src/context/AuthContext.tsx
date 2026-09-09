@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, Role } from '../types';
 import { authApi } from '../api/auth';
+import { queryClient } from '../queryClient';
 
 interface AuthContextValue {
   user: User | null;
@@ -61,6 +62,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string): Promise<User> => {
     const res = await authApi.login({ email, password });
+    // Do not reuse data fetched under a previous account or role.
+    queryClient.clear();
     setToken(res.token);
     setUser(res.user);
     localStorage.setItem(TOKEN_KEY, res.token);
@@ -76,6 +79,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {
       // Ignore error on logout
     } finally {
+      // Remove account-scoped API data so the next session starts clean.
+      queryClient.clear();
       setToken(null);
       setUser(null);
       localStorage.removeItem(TOKEN_KEY);
