@@ -1,17 +1,37 @@
 import { Queue, Worker, Job } from "bullmq";
 import IORedis from "ioredis";
 import { sendMail } from "../utils/mailer";
+import { env } from "../config/env";
 
-const connection = new IORedis({
-  host: process.env.REDIS_HOST || "127.0.0.1",
-  port: Number(process.env.REDIS_PORT) || 6379,
-  maxRetriesPerRequest: null,
-  lazyConnect: false,
-});
+type EmailJob = {
+  to: string;
+  subject: string;
+  text?: string;
+  html?: string;
+  attachments?: any[];
+};
 
-export const emailQueue = new Queue("emailQueue", { connection });
+const connection = env.emailQueueEnabled && env.redisUrl
+  ? new IORedis(env.redisUrl, { maxRetriesPerRequest: null, lazyConnect: false })
+  : null;
+
+const queue = connection ? new Queue("emailQueue", { connection }) : null;
+
+// A Redis-free fallback keeps password reset, emergency alerts, and payslip
+// delivery functional on free web services. It is intentionally best-effort;
+// configure REDIS_URL for durable jobs and retries.
+export const emailQueue = {
+  async add(_name: string, data: EmailJob) {
+    if (queue) return queue.add(_name, data);
+    return sendMail({ ...data, text: data.text ?? "" });
+  },
+};
 
 export const setupEmailWorker = () => {
+  if (!connection || !queue) {
+    return { close: async () => undefined };
+  }
+
   const worker = new Worker(
     "emailQueue",
     async (job: Job) => {
@@ -33,7 +53,7 @@ export const setupEmailWorker = () => {
       await sendMail({
         to,
         subject,
-        text,
+        text: text ?? "",
         html,
         attachments: parsedAttachments,
       });

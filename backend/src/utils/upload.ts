@@ -1,6 +1,7 @@
 import multer from "multer";
 import path from "path";
 import crypto from "crypto";
+import fs from "fs";
 import { ApiError } from "./ApiError";
 
 // Evidence files are stored under uploads/evidence/ relative to the backend process root.
@@ -8,7 +9,9 @@ import { ApiError } from "./ApiError";
 // directory traversal attacks (multer does not sanitise the original name by default).
 const storage = multer.diskStorage({
   destination(_req, _file, cb) {
-    cb(null, path.join(process.cwd(), "uploads", "evidence"));
+    const destination = path.join(process.cwd(), "uploads", "evidence");
+    fs.mkdirSync(destination, { recursive: true });
+    cb(null, destination);
   },
   filename(_req, file, cb) {
     const ext = path.extname(file.originalname).toLowerCase();

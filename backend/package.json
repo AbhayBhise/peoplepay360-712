@@ -3,13 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "main": "dist/server.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "dev:debug": "ts-node-dev --inspect --respawn --transpile-only src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
+    "start:prod": "npm run prisma:migrate:deploy && npm start",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "ts-node prisma/seed.ts",
     "prisma:studio": "prisma studio",
     "test:e2e": "ts-node scripts/e2e-smoke-test.ts"

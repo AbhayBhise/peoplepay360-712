@@ -18,6 +18,7 @@ if (!["development", "production", "test"].includes(nodeEnv)) {
 }
 
 const frontendUrl = optional("FRONTEND_URL", "http://localhost:3000");
+const redisUrl = optional("REDIS_URL", "");
 
 export const env = {
   nodeEnv,
@@ -49,4 +50,9 @@ export const env = {
   smtpUser: optional("SMTP_USER", ""),
   smtpPass: optional("SMTP_PASS", ""),
   smtpFrom: optional("SMTP_FROM", "payroll@peoplepay360.dev"),
+
+  // Redis is optional on the free deployment path. When it is absent, email
+  // jobs are delivered in-process instead of being queued.
+  redisUrl,
+  emailQueueEnabled: optional("EMAIL_QUEUE_ENABLED", redisUrl ? "true" : "false") === "true",
 };
