@@ -232,7 +232,6 @@ export const TimeOffPage: React.FC = () => {
     try {
       if (editingRequestId) {
         await timeOffApi.updateRequest(editingRequestId, {
-          employee_id: reqEmpId,
           type_id: reqTypeId,
           date_from: reqDateFrom,
           date_to: reqDateTo,

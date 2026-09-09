@@ -17,6 +17,13 @@ import {
 import { attendanceApi } from '../../api/attendance';
 import { employeesApi } from '../../api/employees';
 import { Attendance, Employee } from '../../types';
+import { useQuery } from '@tanstack/react-query';
+import {
+  useAttendanceList,
+  useCheckIn,
+  useCheckOut,
+  useUpdateAttendance
+} from '../../hooks/useAttendance';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { Card } from '../../components/common/Card';
@@ -34,9 +41,6 @@ import { extractItems } from '../../utils/pagination';
 export type AttendanceFilterMode = 'all' | 'exceptions' | 'missing' | 'late' | 'normal';
 
 export const AttendancePage: React.FC = () => {
-  const [attendanceLogs, setAttendanceLogs] = useState<Attendance[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filterMode, setFilterMode] = useState<AttendanceFilterMode>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
@@ -62,25 +66,20 @@ export const AttendancePage: React.FC = () => {
   const { user, isHRMPlus } = useAuth();
   const { success, error } = useToast();
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [logs, empList] = await Promise.all([
-        attendanceApi.getAttendance().catch(() => []),
-        employeesApi.getEmployees().catch(() => []),
-      ]);
-      setAttendanceLogs(extractItems<Attendance>(logs));
-      setEmployees(extractItems<Employee>(empList));
-    } catch (err: any) {
-      error(err.message || 'Failed to fetch attendance logs.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: rawAttendanceData, isLoading: isLoadingAttendance } = useAttendanceList();
+  const attendanceLogs = rawAttendanceData ? extractItems<Attendance>(rawAttendanceData) : [];
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  const { data: rawEmployeeData, isLoading: isLoadingEmployees } = useQuery({
+    queryKey: ['employees'],
+    queryFn: () => employeesApi.getEmployees().catch(() => []),
+  });
+  const employees = rawEmployeeData ? extractItems<Employee>(rawEmployeeData) : [];
+
+  const loading = isLoadingAttendance || isLoadingEmployees;
+
+  const checkInMutation = useCheckIn();
+  const checkOutMutation = useCheckOut();
+  const updateAttendanceMutation = useUpdateAttendance();
 
   // Reset page whenever any filter criteria changes
   useEffect(() => {
@@ -125,12 +124,13 @@ export const AttendancePage: React.FC = () => {
     setPunching(true);
     try {
       if (activePunchForSelected) {
-        await attendanceApi.checkOut(activePunchForSelected.id, {
-          check_out: punchCheckInTime,
+        await checkOutMutation.mutateAsync({
+          id: activePunchForSelected.id,
+          data: { check_out: punchCheckInTime },
         });
         success('Punch-Out recorded successfully.');
       } else {
-        await attendanceApi.checkIn({
+        await checkInMutation.mutateAsync({
           employee_id: punchEmpId,
           check_in: punchCheckInTime,
         });
@@ -138,7 +138,6 @@ export const AttendancePage: React.FC = () => {
       }
 
       setIsPunchModalOpen(false);
-      loadData();
     } catch (err: any) {
       error(err.message || 'Failed to record punch.');
     } finally {
@@ -149,9 +148,8 @@ export const AttendancePage: React.FC = () => {
   const handleCheckOutNow = async (log: Attendance) => {
     try {
       const currentIso = new Date().toISOString().slice(0, 16);
-      await attendanceApi.checkOut(log.id, { check_out: currentIso });
+      await checkOutMutation.mutateAsync({ id: log.id, data: { check_out: currentIso } });
       success('Checked out successfully. Worked hours calculated.');
-      loadData();
     } catch (err: any) {
       error(err.message || 'Failed to check out.');
     }
@@ -174,14 +172,16 @@ export const AttendancePage: React.FC = () => {
 
     setCorrSubmitting(true);
     try {
-      await attendanceApi.updateAttendance(editingLog.id, {
-        check_in: corrCheckIn,
-        check_out: corrCheckOut || undefined,
+      await updateAttendanceMutation.mutateAsync({
+        id: editingLog.id,
+        data: {
+          check_in: corrCheckIn,
+          check_out: corrCheckOut || undefined,
+        },
       });
 
       success('Attendance corrected and worked hours recomputed.');
       setEditingLog(null);
-      loadData();
     } catch (err: any) {
       error(err.message || 'Failed to update attendance.');
     } finally {

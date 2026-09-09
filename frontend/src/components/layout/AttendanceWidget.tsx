@@ -1,41 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { attendanceApi } from '../../api/attendance';
 import { Attendance } from '../../types';
 import { Play, Square } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format, differenceInSeconds } from 'date-fns';
+import { useAttendanceList, useCheckIn, useCheckOut } from '../../hooks/useAttendance';
 
 export const AttendanceWidget: React.FC = () => {
   const { user } = useAuth();
-  const [currentAttendance, setCurrentAttendance] = useState<Attendance | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  const fetchAttendance = async () => {
-    if (!user?.employee_id) {
-      setIsLoading(false);
-      return;
-    }
-    try {
-      const res = await attendanceApi.getAttendance({
-        employee_id: user.employee_id,
-        limit: 10,
-      });
-      const items = Array.isArray(res) ? res : (res as any).items || [];
-      // Find active session
-      const active = items.find((a: Attendance) => !(a as any).checkOut && !a.check_out);
-      setCurrentAttendance(active || null);
-    } catch (error) {
-      console.error('Error fetching attendance:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data: attendanceData, isLoading: isFetching } = useAttendanceList(
+    { employee_id: user?.employee_id, limit: 10 },
+    { enabled: !!user?.employee_id }
+  );
 
-  useEffect(() => {
-    fetchAttendance();
-  }, [user]);
+  const checkInMutation = useCheckIn();
+  const checkOutMutation = useCheckOut();
+
+  const isLoading = isFetching || checkInMutation.isPending || checkOutMutation.isPending;
+
+  const items = Array.isArray(attendanceData) ? attendanceData : (attendanceData as any)?.items || [];
+  const currentAttendance = items.find((a: Attendance) => !(a as any).checkOut && !a.check_out);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -47,6 +33,8 @@ export const AttendanceWidget: React.FC = () => {
       };
       updateElapsed();
       interval = setInterval(updateElapsed, 1000);
+    } else {
+      setElapsedSeconds(0);
     }
     return () => {
       if (interval) clearInterval(interval);
@@ -59,30 +47,24 @@ export const AttendanceWidget: React.FC = () => {
       return;
     }
 
-    setIsLoading(true);
     try {
       if (currentAttendance) {
         // Check out
-        await attendanceApi.checkOut(currentAttendance.id, {
-          checkOut: new Date().toISOString(),
+        await checkOutMutation.mutateAsync({
+          id: currentAttendance.id,
+          data: { checkOut: new Date().toISOString() },
         });
-        setCurrentAttendance(null);
-        setElapsedSeconds(0);
         toast.success('Successfully checked out.');
       } else {
         // Check in
-        const res = await attendanceApi.checkIn({
+        await checkInMutation.mutateAsync({
           employeeId: user.employee_id,
           checkIn: new Date().toISOString(),
         });
-        setCurrentAttendance(res);
         toast.success('Successfully checked in.');
       }
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Error updating attendance');
-    } finally {
-      setIsLoading(false);
-      fetchAttendance();
     }
   };
 
