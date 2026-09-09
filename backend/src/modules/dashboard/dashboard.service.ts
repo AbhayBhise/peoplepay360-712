@@ -1,5 +1,5 @@
 import { prisma } from "../../prisma";
-import { getZonedClock } from "../../utils/timezone";
+import { getZonedClock, normalizeScheduleDay } from "../../utils/timezone";
 
 export interface DashboardFilters {
   periodStart?: Date;
@@ -223,7 +223,7 @@ export async function getMyDashboard(employeeId: string) {
     }),
   ]);
 
-  const todayLine = employee?.workingSchedule?.lines.find((line) => line.day === getZonedClock().day) ?? null;
+  const todayLine = employee?.workingSchedule?.lines.find((line) => normalizeScheduleDay(line.day) === getZonedClock().day) ?? null;
 
   const present = attendanceThisMonth.filter((a) => a.status === "present" || a.status === "late").length;
   const late = attendanceThisMonth.filter((a) => a.status === "late").length;

@@ -120,11 +120,11 @@ async function main() {
   });
 
   const scheduleLines = [
-    ["monday", "09:00", "18:00"],
-    ["tuesday", "09:00", "18:00"],
-    ["wednesday", "09:00", "18:00"],
-    ["thursday", "09:00", "18:00"],
-    ["friday", "09:00", "18:00"],
+    ["mon", "09:00", "18:00"],
+    ["tue", "09:00", "18:00"],
+    ["wed", "09:00", "18:00"],
+    ["thu", "09:00", "18:00"],
+    ["fri", "09:00", "18:00"],
   ] as const;
 
   for (const [day, start, end] of scheduleLines) {

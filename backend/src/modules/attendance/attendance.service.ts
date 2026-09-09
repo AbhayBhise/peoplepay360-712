@@ -13,7 +13,7 @@ import {
 } from "./attendance.validation";
 import { PaginationParams, paginatedResult } from "../../utils/pagination";
 import { emailQueue } from "../../queues/email.queue";
-import { getZonedClock } from "../../utils/timezone";
+import { getZonedClock, normalizeScheduleDay } from "../../utils/timezone";
 
 type CheckInInput = z.infer<typeof checkInSchema>;
 type CheckOutInput = z.infer<typeof checkOutSchema>;
@@ -74,7 +74,7 @@ async function getShiftWindowForToday(
   if (!employee?.workingSchedule) return null; // no schedule assigned → unrestricted
 
   const today = getZonedClock().day;
-  const line = employee.workingSchedule.lines.find((l) => l.day === today);
+  const line = employee.workingSchedule.lines.find((l) => normalizeScheduleDay(l.day) === today);
   if (!line) return null; // no scheduled work today → unrestricted (day off)
 
   const startMinutes = timeToMinutes(line.startTime);
