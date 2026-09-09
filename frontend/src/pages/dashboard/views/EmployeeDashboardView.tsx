@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Clock,
@@ -31,6 +31,12 @@ export const EmployeeDashboardView: React.FC<EmployeeDashboardViewProps> = ({
   data,
 }) => {
   const navigate = useNavigate();
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const presentDays = data?.attendanceThisMonth.present ?? 0;
   const totalDays = data?.attendanceThisMonth.totalDays ?? 22;
@@ -40,6 +46,52 @@ export const EmployeeDashboardView: React.FC<EmployeeDashboardViewProps> = ({
   const recentRequests = data?.recentTimeOffRequests || [];
   const recentPayslips = data?.recentPayslips || [];
   const latestPayslip = recentPayslips[0];
+
+  const schedule = data?.todaySchedule ?? null;
+  const activeAttendance = data?.activeAttendance ?? null;
+
+  const toMinutes = (value: string) => {
+    const [hours, minutes] = value.split(':').map(Number);
+    return (hours * 60) + (minutes || 0);
+  };
+
+  const formatScheduleTime = (value?: string) => {
+    if (!value) return '--:--';
+    const [rawHours, rawMinutes] = value.split(':').map(Number);
+    const suffix = rawHours >= 12 ? 'PM' : 'AM';
+    const hours = rawHours % 12 || 12;
+    return `${String(hours).padStart(2, '0')}:${String(rawMinutes).padStart(2, '0')} ${suffix}`;
+  };
+
+  const formatClockTime = (value?: string) => {
+    if (!value) return '--:--';
+    return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDuration = (seconds: number) => {
+    const safeSeconds = Math.max(0, Math.floor(seconds));
+    const hours = Math.floor(safeSeconds / 3600);
+    const minutes = Math.floor((safeSeconds % 3600) / 60);
+    return `${hours}h ${String(minutes).padStart(2, '0')}m`;
+  };
+
+  const scheduleStartMinutes = schedule ? toMinutes(schedule.startTime) : 0;
+  const scheduleEndMinutes = schedule ? toMinutes(schedule.endTime) : 0;
+  const scheduledMinutes = schedule
+    ? Math.max(0, scheduleEndMinutes - scheduleStartMinutes - Number(schedule.breakMins || 0))
+    : 0;
+  const scheduleStart = new Date(now);
+  scheduleStart.setHours(Math.floor(scheduleStartMinutes / 60), scheduleStartMinutes % 60, 0, 0);
+  const scheduleEnd = new Date(now);
+  scheduleEnd.setHours(Math.floor(scheduleEndMinutes / 60), scheduleEndMinutes % 60, 0, 0);
+  const checkInAt = activeAttendance?.checkIn ? new Date(activeAttendance.checkIn) : null;
+  const workedSeconds = checkInAt ? Math.max(0, (now.getTime() - checkInAt.getTime()) / 1000) : 0;
+  const progressStart = checkInAt ?? scheduleStart;
+  const progressWindow = scheduleEnd.getTime() - progressStart.getTime();
+  const progress = progressWindow > 0
+    ? Math.min(100, Math.max(0, ((now.getTime() - progressStart.getTime()) / progressWindow) * 100))
+    : 0;
+  const shiftStatus = activeAttendance ? 'Shift Active' : schedule ? 'Not Checked In' : 'No Schedule';
 
   const totalRemainingLeaves = leaveBalances.reduce(
     (acc, b) => acc + (b.remaining || 0),
@@ -110,7 +162,7 @@ export const EmployeeDashboardView: React.FC<EmployeeDashboardViewProps> = ({
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-400 text-xs font-bold font-mono">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Shift Active</span>
+              <span>{shiftStatus}</span>
             </span>
           </div>
         </div>
@@ -120,26 +172,26 @@ export const EmployeeDashboardView: React.FC<EmployeeDashboardViewProps> = ({
           <div className="flex items-center justify-between text-xs font-mono font-bold">
             <div className="flex items-center gap-1.5 text-slate-900 dark:text-white">
               <UserCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>09:00 AM (Check In)</span>
+              <span>{checkInAt ? `${formatClockTime(activeAttendance?.checkIn)} (Check In)` : 'Not checked in'}</span>
             </div>
             <div className="text-teal-700 dark:text-teal-400 font-financial font-black text-sm">
-              Worked: ~6h 15m
+              Worked: {activeAttendance ? formatDuration(workedSeconds) : '0h 00m'}
             </div>
             <div className="text-slate-500 dark:text-slate-400">
-              06:00 PM (Scheduled Exit)
+              {schedule ? `${formatScheduleTime(schedule.endTime)} (Scheduled Exit)` : 'No scheduled exit'}
             </div>
           </div>
 
           <div className="w-full bg-slate-200 dark:bg-slate-700 h-3 rounded-full overflow-hidden relative">
             <div
               className="bg-linear-to-r from-teal-500 via-indigo-500 to-indigo-600 h-full rounded-full transition-all duration-700"
-              style={{ width: '70%' }}
+              style={{ width: `${progress}%` }}
             />
           </div>
 
           <div className="flex items-center justify-between text-2xs text-slate-500 dark:text-slate-400 pt-1">
-            <span>Standard Working Hours: 8h 00m</span>
-            <span>Estimated Out: 06:00 PM</span>
+            <span>Standard Working Hours: {formatDuration(scheduledMinutes * 60)}</span>
+            <span>{schedule ? `Estimated Out: ${formatScheduleTime(schedule.endTime)}` : 'No schedule assigned'}</span>
           </div>
         </div>
       </div>

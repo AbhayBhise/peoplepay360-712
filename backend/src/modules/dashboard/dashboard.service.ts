@@ -1,4 +1,5 @@
 import { prisma } from "../../prisma";
+import { getZonedClock } from "../../utils/timezone";
 
 export interface DashboardFilters {
   periodStart?: Date;
@@ -195,7 +196,11 @@ export async function getMyDashboard(employeeId: string) {
   const now = new Date();
   const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
-  const [attendanceThisMonth, allocations, recentRequests, recentPayslips] = await Promise.all([
+  const [employee, attendanceThisMonth, allocations, recentRequests, recentPayslips, activeAttendance] = await Promise.all([
+    prisma.employee.findUnique({
+      where: { id: employeeId },
+      include: { workingSchedule: { include: { lines: true } } },
+    }),
     prisma.attendance.findMany({ where: { employeeId, checkIn: { gte: monthStart } } }),
     prisma.timeOffAllocation.findMany({
       where: { employeeId, status: "validate" },
@@ -212,7 +217,13 @@ export async function getMyDashboard(employeeId: string) {
       orderBy: { createdAt: "desc" },
       take: 3,
     }),
+    prisma.attendance.findFirst({
+      where: { employeeId, checkOut: null },
+      orderBy: { checkIn: "desc" },
+    }),
   ]);
+
+  const todayLine = employee?.workingSchedule?.lines.find((line) => line.day === getZonedClock().day) ?? null;
 
   const present = attendanceThisMonth.filter((a) => a.status === "present" || a.status === "late").length;
   const late = attendanceThisMonth.filter((a) => a.status === "late").length;
@@ -227,6 +238,23 @@ export async function getMyDashboard(employeeId: string) {
 
   return {
     attendanceThisMonth: { present, late, missingCheckouts, totalDays: attendanceThisMonth.length },
+    todaySchedule: todayLine
+      ? {
+          day: todayLine.day,
+          startTime: todayLine.startTime,
+          endTime: todayLine.endTime,
+          breakMins: todayLine.breakMins,
+          weeklyHours: employee?.workingSchedule?.weeklyHours ?? 0,
+        }
+      : null,
+    activeAttendance: activeAttendance
+      ? {
+          id: activeAttendance.id,
+          checkIn: activeAttendance.checkIn,
+          checkOut: activeAttendance.checkOut,
+          workedHours: activeAttendance.workedHours,
+        }
+      : null,
     leaveBalances,
     recentTimeOffRequests: recentRequests.map((r) => ({
       typeName: r.type.name,

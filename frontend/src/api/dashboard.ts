@@ -85,6 +85,8 @@ export const dashboardApi = {
         leaveBalances: [],
         recentTimeOffRequests: [],
         recentPayslips: [],
+        todaySchedule: null,
+        activeAttendance: null,
       };
     }
     return raw as EmployeeDashboard;

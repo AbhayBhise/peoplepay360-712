@@ -13,6 +13,7 @@ import {
 } from "./attendance.validation";
 import { PaginationParams, paginatedResult } from "../../utils/pagination";
 import { emailQueue } from "../../queues/email.queue";
+import { getZonedClock } from "../../utils/timezone";
 
 type CheckInInput = z.infer<typeof checkInSchema>;
 type CheckOutInput = z.infer<typeof checkOutSchema>;
@@ -51,8 +52,6 @@ function timeToMinutes(hhmm: string): number {
   return h * 60 + (m ?? 0);
 }
 
-const DAY_NAMES = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
-
 /**
  * Returns the allowed check-in window for today based on the employee's
  * working schedule. Returns null if no schedule / no line for today (unrestricted).
@@ -74,7 +73,7 @@ async function getShiftWindowForToday(
   });
   if (!employee?.workingSchedule) return null; // no schedule assigned → unrestricted
 
-  const today = DAY_NAMES[new Date().getDay()];
+  const today = getZonedClock().day;
   const line = employee.workingSchedule.lines.find((l) => l.day === today);
   if (!line) return null; // no scheduled work today → unrestricted (day off)
 
@@ -178,7 +177,7 @@ export async function checkIn(auth: AuthPayload, input: CheckInInput) {
   if (!isHrmPlus(auth.roles)) {
     const window = await getShiftWindowForToday(input.employeeId);
     if (window) {
-      const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+      const nowMinutes = getZonedClock().minutes;
       if (nowMinutes < window.openMinutes || nowMinutes > window.closeMinutes) {
         const fmt = (m: number) =>
           `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;

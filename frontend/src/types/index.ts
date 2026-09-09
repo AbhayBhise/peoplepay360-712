@@ -239,6 +239,19 @@ export interface EmployeeDashboard {
     missingCheckouts: number;
     totalDays: number;
   };
+  todaySchedule: {
+    day: string;
+    startTime: string;
+    endTime: string;
+    breakMins: number;
+    weeklyHours: number | string;
+  } | null;
+  activeAttendance: {
+    id: string;
+    checkIn: string;
+    checkOut?: string | null;
+    workedHours?: number | string;
+  } | null;
   leaveBalances: Array<{
     typeName: string;
     allocated: number;

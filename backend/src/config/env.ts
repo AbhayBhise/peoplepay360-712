@@ -19,6 +19,7 @@ if (!["development", "production", "test"].includes(nodeEnv)) {
 
 const frontendUrl = optional("FRONTEND_URL", "http://localhost:3000");
 const redisUrl = optional("REDIS_URL", "");
+const appTimeZone = optional("APP_TIMEZONE", "Asia/Kolkata");
 
 export const env = {
   nodeEnv,
@@ -35,6 +36,7 @@ export const env = {
 
   // CORS — always explicit, never wildcard
   frontendUrl,
+  appTimeZone,
   corsOrigins: optional("CORS_ORIGIN", frontendUrl)
     .split(",")
     .map((s) => s.trim())
