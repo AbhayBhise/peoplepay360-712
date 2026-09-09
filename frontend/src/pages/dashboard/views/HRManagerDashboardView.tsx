@@ -56,18 +56,18 @@ export const HRManagerDashboardView: React.FC<HRManagerDashboardViewProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  const totalHeadcount = departments.reduce((acc, d) => acc + (d.employee_count || 0), 0) || 128;
-  const presentCount = attendanceOverview?.present ?? 118;
-  const lateCount = attendanceOverview?.late ?? 6;
-  const missingCheckoutCount = attendanceOverview?.missing_checkouts ?? 2;
-  const absentCount = attendanceOverview?.absent ?? 4;
-  const onLeaveCount = summary?.approved_time_off_count ?? 3;
-  const totalAttTracked = presentCount + lateCount + missingCheckoutCount + absentCount || 100;
+  const totalHeadcount = departments.reduce((acc, d) => acc + (d.employee_count || 0), 0);
+  const presentCount = attendanceOverview?.present ?? 0;
+  const lateCount = attendanceOverview?.late ?? 0;
+  const missingCheckoutCount = attendanceOverview?.missing_checkouts ?? 0;
+  const absentCount = attendanceOverview?.absent ?? 0;
+  const onLeaveCount = summary?.approved_time_off_count ?? 0;
+  const totalAttTracked = presentCount + lateCount + missingCheckoutCount + absentCount;
 
-  const presentPct = Math.round((presentCount / totalAttTracked) * 100);
-  const latePct = Math.round((lateCount / totalAttTracked) * 100);
-  const missingPct = Math.round((missingCheckoutCount / totalAttTracked) * 100);
-  const absentPct = Math.max(100 - presentPct - latePct - missingPct, 0);
+  const presentPct = totalAttTracked > 0 ? Math.round((presentCount / totalAttTracked) * 100) : 0;
+  const latePct = totalAttTracked > 0 ? Math.round((lateCount / totalAttTracked) * 100) : 0;
+  const missingPct = totalAttTracked > 0 ? Math.round((missingCheckoutCount / totalAttTracked) * 100) : 0;
+  const absentPct = totalAttTracked > 0 ? Math.max(100 - presentPct - latePct - missingPct, 0) : 0;
 
   return (
     <div className="space-y-6 animate-fade-in text-slate-800 dark:text-slate-100">
@@ -457,7 +457,7 @@ export const HRManagerDashboardView: React.FC<HRManagerDashboardViewProps> = ({
                   </div>
                 </div>
                 <div className="px-3 py-1 rounded-full bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 font-mono font-bold text-xs border border-teal-200 dark:border-teal-800/60">
-                  {d.employee_count || 12} Staff
+                  {d.employee_count || 0} Staff
                 </div>
               </div>
             ))}

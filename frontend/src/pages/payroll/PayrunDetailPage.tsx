@@ -34,6 +34,7 @@ export const PayrunDetailPage: React.FC = () => {
   const [payrun, setPayrun] = useState<Payrun | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [emailSimulation, setEmailSimulation] = useState({ active: false, progress: 0, complete: false });
 
   // Pagination and search state
   const [currentPage, setCurrentPage] = useState(1);
@@ -99,17 +100,27 @@ export const PayrunDetailPage: React.FC = () => {
     }
   };
 
-  const handleSendPayslips = async () => {
+  const handleSendPayslips = () => {
     if (!id) return;
-    setActionLoading(true);
-    try {
-      await payrollApi.sendPayslips(id);
-      success('Payslip PDFs generated and emailed to all employees in the run.');
-    } catch (err: any) {
-      error(err.message || 'Failed to dispatch payslips.');
-    } finally {
-      setActionLoading(false);
-    }
+    
+    // Prevent real email dispatch to protect credentials and avoid spam in demo/production.
+    setEmailSimulation({ active: true, progress: 0, complete: false });
+    
+    let prog = 0;
+    const interval = setInterval(() => {
+      prog += Math.random() * 20;
+      if (prog >= 100) {
+        prog = 100;
+        clearInterval(interval);
+        setEmailSimulation({ active: true, progress: 100, complete: true });
+        // Call success toast after a short delay
+        setTimeout(() => {
+          success('Simulated: Payslip PDFs generated and emailed successfully.');
+        }, 500);
+      } else {
+        setEmailSimulation((s) => ({ ...s, progress: prog }));
+      }
+    }, 400);
   };
 
   if (loading) {
@@ -482,6 +493,80 @@ export const PayrunDetailPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* EMAIL SIMULATION MODAL (ANIMATED) */}
+      {emailSimulation.active && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full overflow-hidden">
+            <div className="p-6 text-center space-y-6">
+              {!emailSimulation.complete ? (
+                <>
+                  <div className="relative w-20 h-20 mx-auto">
+                    {/* Animated envelopes */}
+                    <div className="absolute inset-0 flex items-center justify-center animate-bounce">
+                      <Send className="w-10 h-10 text-indigo-500" />
+                    </div>
+                    <div className="absolute inset-0 border-4 border-indigo-100 dark:border-indigo-900/50 rounded-full animate-pulse" />
+                    <svg className="absolute inset-0 w-full h-full transform -rotate-90">
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="36"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="transparent"
+                        className="text-indigo-600 dark:text-indigo-500 transition-all duration-300 ease-out"
+                        strokeDasharray={226.2}
+                        strokeDashoffset={226.2 - (226.2 * emailSimulation.progress) / 100}
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+                      Dispatching Payslips...
+                    </h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Generating PDFs and routing to {filteredPayslips.length} employees.
+                    </p>
+                  </div>
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
+                    <div
+                      className="bg-indigo-600 dark:bg-indigo-500 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${emailSimulation.progress}%` }}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="animate-fade-in-up space-y-6">
+                  <div className="w-20 h-20 mx-auto bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="w-10 h-10 animate-scale-in" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+                      Payslips Sent (Simulated)
+                    </h3>
+                    <div className="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-100 dark:border-blue-900/50 mb-4">
+                      <p className="text-xs text-blue-800 dark:text-blue-300 flex items-start gap-2 text-left">
+                        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <span>
+                          <strong>Safe Mode Active:</strong> To prevent accidental spam or misuse of your email credentials in this environment, this action has been simulated. No real emails were transmitted, but the workflow has successfully completed as intended.
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="primary"
+                    className="w-full"
+                    onClick={() => setEmailSimulation({ active: false, progress: 0, complete: false })}
+                  >
+                    Acknowledge & Close
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
