@@ -7,7 +7,6 @@ It is designed as a production-oriented portfolio project: the UI is role-aware,
 [![Frontend build](https://img.shields.io/badge/frontend-Vite%20%2B%20React-646CFF)](./frontend)
 [![Backend build](https://img.shields.io/badge/backend-Node%20%2B%20Express-339933)](./backend)
 [![Database](https://img.shields.io/badge/database-PostgreSQL-4169E1)](./backend/prisma/schema.prisma)
-[![Deployment](https://img.shields.io/badge/deployment-Vercel%20%2B%20Render-000000)](./DEPLOYMENT.md)
 
 ## Product summary
 
