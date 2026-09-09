@@ -28,7 +28,7 @@ export const useCheckIn = () => {
     mutationFn: (data: { employee_id?: number | string; employeeId?: number | string; check_in?: string; checkIn?: string }) =>
       attendanceApi.checkIn(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      return queryClient.invalidateQueries({ queryKey: ['attendance'] });
     },
   });
 };
@@ -40,7 +40,7 @@ export const useCheckOut = () => {
     mutationFn: ({ id, data }: { id: number | string; data: { check_out?: string; checkOut?: string } }) =>
       attendanceApi.checkOut(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      return queryClient.invalidateQueries({ queryKey: ['attendance'] });
     },
   });
 };
@@ -57,7 +57,7 @@ export const useUpdateAttendance = () => {
       data: { check_in?: string; checkIn?: string; check_out?: string; checkOut?: string; status?: any; note?: string };
     }) => attendanceApi.updateAttendance(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      return queryClient.invalidateQueries({ queryKey: ['attendance'] });
     },
   });
 };

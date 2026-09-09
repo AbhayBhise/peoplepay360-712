@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Attendance } from '../../types';
-import { Play, Square } from 'lucide-react';
+import { Play, Square, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format, differenceInSeconds } from 'date-fns';
 import { useAttendanceList, useCheckIn, useCheckOut } from '../../hooks/useAttendance';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const AttendanceWidget: React.FC = () => {
   const { user } = useAuth();
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  const { data: attendanceData, isLoading: isFetching } = useAttendanceList(
+  const { data: attendanceData, isLoading: isFetching, refetch } = useAttendanceList(
     { employee_id: user?.employee_id, limit: 10 },
     { enabled: !!user?.employee_id }
   );
@@ -63,6 +64,7 @@ export const AttendanceWidget: React.FC = () => {
         });
         toast.success('Successfully checked in.');
       }
+      await refetch();
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Error updating attendance');
     }
@@ -80,19 +82,23 @@ export const AttendanceWidget: React.FC = () => {
   const isActive = !!currentAttendance;
 
   return (
-    <div className="flex items-center gap-2 px-2 py-1 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="flex items-center gap-2 px-2 py-1 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700"
+    >
       <div
-        className={`w-2 h-2 rounded-full animate-pulse ${
-          isActive ? 'bg-emerald-500' : 'bg-rose-500'
-        }`}
+        className={`w-2 h-2 rounded-full transition-colors duration-300 ${isActive ? 'animate-pulse bg-emerald-500' : 'bg-rose-500'}`}
       />
       <div className="text-xs font-mono font-medium text-slate-700 dark:text-slate-300 w-16 text-center">
         {isActive ? formatTime(elapsedSeconds) : '00:00:00'}
       </div>
-      <button
+      <motion.button
+        whileHover={{ scale: isLoading ? 1 : 1.05 }}
+        whileTap={{ scale: isLoading ? 1 : 0.95 }}
         onClick={handleToggle}
         disabled={isLoading}
-        className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-2xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50
+        className={`relative overflow-hidden flex items-center justify-center min-w-[90px] gap-1.5 px-2 py-1 rounded-md text-2xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-70
           ${
             isActive
               ? 'bg-rose-100 text-rose-700 hover:bg-rose-200 border border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800/50 dark:hover:bg-rose-900/50'
@@ -100,9 +106,32 @@ export const AttendanceWidget: React.FC = () => {
           }
         `}
       >
-        {isActive ? <Square className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-        {isActive ? 'CHECK OUT' : 'CHECK IN'}
-      </button>
-    </div>
+        <AnimatePresence mode="wait">
+          {isLoading ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            </motion.div>
+          ) : (
+            <motion.div
+              key={isActive ? 'checkout' : 'checkin'}
+              initial={{ opacity: 0, y: -15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 15 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              className="flex items-center gap-1.5"
+            >
+              {isActive ? <Square className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+              {isActive ? 'CHECK OUT' : 'CHECK IN'}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.button>
+    </motion.div>
   );
 };
