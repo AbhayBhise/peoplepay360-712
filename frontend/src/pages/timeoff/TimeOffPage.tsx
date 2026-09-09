@@ -77,6 +77,7 @@ export const TimeOffPage: React.FC = () => {
 
   // New Leave Type Modal state (HRM)
   const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
+  const [editingTypeId, setEditingTypeId] = useState<string | number | null>(null);
   const [newTypeName, setNewTypeName] = useState('');
   const [newTypeUnit, setNewTypeUnit] = useState<'days' | 'hours'>('days');
   const [newTypeRequiresAlloc, setNewTypeRequiresAlloc] = useState(true);
@@ -316,6 +317,7 @@ export const TimeOffPage: React.FC = () => {
   };
 
   const handleOpenCreateType = () => {
+    setEditingTypeId(null);
     setNewTypeName('');
     setNewTypeUnit('days');
     setNewTypeRequiresAlloc(true);
@@ -331,19 +333,49 @@ export const TimeOffPage: React.FC = () => {
     }
     setSubmittingType(true);
     try {
-      await timeOffApi.createType({
-        name: newTypeName.trim(),
-        unit: newTypeUnit,
-        requires_allocation: newTypeRequiresAlloc,
-        payroll_integration: newTypePayroll,
-      });
-      success(`Leave type "${newTypeName}" created successfully.`);
+      if (editingTypeId) {
+        await timeOffApi.updateType(editingTypeId, {
+          name: newTypeName.trim(),
+          unit: newTypeUnit,
+          requires_allocation: newTypeRequiresAlloc,
+          payroll_integration: newTypePayroll,
+        });
+        success(`Leave type "${newTypeName}" updated successfully.`);
+      } else {
+        await timeOffApi.createType({
+          name: newTypeName.trim(),
+          unit: newTypeUnit,
+          requires_allocation: newTypeRequiresAlloc,
+          payroll_integration: newTypePayroll,
+        });
+        success(`Leave type "${newTypeName}" created successfully.`);
+      }
       setIsTypeModalOpen(false);
       loadData();
     } catch (err: any) {
-      error(err.message || 'Failed to create leave type.');
+      error(err.message || `Failed to ${editingTypeId ? 'update' : 'create'} leave type.`);
     } finally {
       setSubmittingType(false);
+    }
+  };
+
+  const handleEditType = (type: TimeOffType) => {
+    setEditingTypeId(type.id);
+    setNewTypeName(type.name);
+    setNewTypeUnit(type.unit as 'days' | 'hours');
+    setNewTypeRequiresAlloc(type.requires_allocation);
+    setNewTypePayroll(type.payroll_integration);
+    setIsTypeModalOpen(true);
+  };
+
+  const handleDeleteType = async (id: string | number) => {
+    if (!window.confirm('Are you sure you want to delete this leave type?')) return;
+    try {
+      await timeOffApi.deleteType(id);
+      success('Leave type deleted.');
+      loadData();
+    } catch (err: any) {
+      error(err.message || 'Failed to delete leave type.');
     }
   };
 
@@ -801,9 +833,29 @@ export const TimeOffPage: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <h3 className="font-bold text-slate-900 dark:text-white text-sm">{t.name}</h3>
-                    <span className="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 text-2xs font-bold border border-indigo-100 dark:border-indigo-800/60 uppercase">
-                      {t.unit}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 text-2xs font-bold border border-indigo-100 dark:border-indigo-800/60 uppercase">
+                        {t.unit}
+                      </span>
+                      {isHRMPlus() && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleEditType(t)}
+                            className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteType(t.id)}
+                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <p className="text-2xs text-slate-500 dark:text-slate-400 mt-1">
                     {t.requires_allocation ? 'Requires approved quota allocation' : 'Open / Unallocated leave'}
@@ -999,12 +1051,13 @@ export const TimeOffPage: React.FC = () => {
         </form>
       </Modal>
 
-      {/* Create Leave Type Modal */}
+      {/* CREATE TYPE MODAL (HRM) */}
       <Modal
         isOpen={isTypeModalOpen}
         onClose={() => setIsTypeModalOpen(false)}
-        title="Create New Leave Type"
-        description="Define a new policy for annual, sick, casual, or compensatory leave"
+        title={editingTypeId ? "Edit Leave Type" : "Create Leave Type"}
+        description={editingTypeId ? "Update the configuration for this leave type." : "Configure a new leave type for your organization."}
+        maxWidth="md"
       >
         <form onSubmit={handleCreateTypeSubmit} className="space-y-4">
           <Input
@@ -1058,7 +1111,7 @@ export const TimeOffPage: React.FC = () => {
               Cancel
             </Button>
             <Button type="submit" variant="primary" isLoading={submittingType}>
-              Create Leave Type
+              {editingTypeId ? 'Save Changes' : 'Create Leave Type'}
             </Button>
           </div>
         </form>

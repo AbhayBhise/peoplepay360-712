@@ -34,7 +34,7 @@ attendance           (id PK, employee_id FK -> employees, check_in, check_out, w
 ## Time off
 
 ```
-time_off_types       (id PK, name, unit [days|hours], requires_allocation [bool], payroll_integration)
+time_off_types       (id PK, name, unit [days|hours], requires_allocation [bool], payroll_integration, requires_certificate [bool])
 time_off_allocations (id PK, employee_id FK -> employees, type_id FK -> time_off_types,
                         allocated, taken, remaining [computed], valid_from, valid_to, status)
 time_off_requests    (id PK, employee_id FK -> employees, type_id FK -> time_off_types,

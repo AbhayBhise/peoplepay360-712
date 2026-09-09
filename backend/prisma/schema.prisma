@@ -250,11 +250,12 @@ model Attendance {
 // ---------- Time off ----------
 
 model TimeOffType {
-  id                 String  @id @default(uuid()) @db.Uuid
-  name               String
-  unit               String  @default("days")
-  requiresAllocation Boolean @default(true) @map("requires_allocation")
-  payrollIntegration Boolean @default(true) @map("payroll_integration")
+  id                  String  @id @default(uuid()) @db.Uuid
+  name                String
+  unit                String  @default("days")
+  requiresAllocation  Boolean @default(true) @map("requires_allocation")
+  payrollIntegration  Boolean @default(true) @map("payroll_integration")
+  requiresCertificate Boolean @default(false) @map("requires_certificate")
 
   allocations TimeOffAllocation[]
   requests    TimeOffRequest[]

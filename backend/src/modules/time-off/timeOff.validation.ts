@@ -5,6 +5,7 @@ export const createTimeOffTypeSchema = z.object({
   unit: z.enum(["days", "hours"]).default("days"),
   requiresAllocation: z.boolean().default(true),
   payrollIntegration: z.boolean().default(true),
+  requiresCertificate: z.boolean().default(false),
 });
 export const updateTimeOffTypeSchema = createTimeOffTypeSchema.partial();
 

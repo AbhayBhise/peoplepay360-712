@@ -1,0 +1,949 @@
+<!doctype html>
+<title>Control Flow Manual</title>
+<meta name="description" content="A codebase-grounded field manual on PeoplePay360's request lifecycle and the CS fundamentals behind it, built for technical review prep.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+  :root{
+    --bg:#F4F6F9;
+    --panel:#E9EDF2;
+    --panel-raised:#FFFFFF;
+    --ink:#12181F;
+    --ink-muted:#57616D;
+    --border:#D7DCE3;
+    --accent:#B45309;
+    --accent-ink:#7A3A05;
+    --accent-soft:#F1E1CB;
+    --flow:#0F6E6E;
+    --flow-soft:#DCEEEC;
+    --code-bg:#101720;
+    --code-text:#DCE6F0;
+    --code-border:#26344A;
+    --hl-keyword:#F0A64C;
+    --hl-string:#8FCB8F;
+    --hl-comment:#7C8AA0;
+    --hl-title:#6EC7E0;
+    --hl-attr:#E0A9E0;
+    --hl-number:#E0A9E0;
+    --shadow: 0 1px 2px rgba(18,24,31,0.06), 0 8px 24px -12px rgba(18,24,31,0.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0A0E13;
+      --panel:#121821;
+      --panel-raised:#171F2A;
+      --ink:#E7ECF2;
+      --ink-muted:#8FA0B2;
+      --border:#243141;
+      --accent:#F0A84E;
+      --accent-ink:#FBD9A6;
+      --accent-soft:#332312;
+      --flow:#3FBFBA;
+      --flow-soft:#0F2725;
+      --code-bg:#080C11;
+      --code-text:#DCE6F0;
+      --code-border:#1C2938;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 12px 32px -14px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0A0E13;
+    --panel:#121821;
+    --panel-raised:#171F2A;
+    --ink:#E7ECF2;
+    --ink-muted:#8FA0B2;
+    --border:#243141;
+    --accent:#F0A84E;
+    --accent-ink:#FBD9A6;
+    --accent-soft:#332312;
+    --flow:#3FBFBA;
+    --flow-soft:#0F2725;
+    --code-bg:#080C11;
+    --code-text:#DCE6F0;
+    --code-border:#1C2938;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 12px 32px -14px rgba(0,0,0,0.6);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+    font-size:15.5px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--accent-soft); color:var(--accent-ink);}
+
+  a{color:var(--flow);}
+  code, pre, .mono{font-family:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;}
+
+  /* ---------- doc header / cover strip ---------- */
+  .doc-header{
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+    padding:22px clamp(18px,4vw,48px);
+  }
+  .doc-header-inner{
+    max-width:1180px;
+    margin:0 auto;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:18px 32px;
+  }
+  .doc-title{
+    font-size:clamp(22px,3vw,30px);
+    font-weight:700;
+    letter-spacing:-0.01em;
+    text-wrap:balance;
+    margin:0 0 4px;
+  }
+  .doc-sub{
+    margin:0;
+    color:var(--ink-muted);
+    font-size:14px;
+  }
+  .doc-meta{
+    display:grid;
+    grid-template-columns:repeat(4,auto);
+    gap:2px 22px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+  }
+  .doc-meta dt{
+    color:var(--ink-muted);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    grid-row:1;
+  }
+  .doc-meta dd{
+    margin:0;
+    grid-row:2;
+    font-weight:500;
+  }
+  .doc-meta .flag{color:var(--accent-ink); font-weight:600;}
+
+  /* ---------- layout ---------- */
+  .layout{
+    max-width:1180px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns:236px minmax(0,1fr);
+    gap:0 40px;
+    padding:32px clamp(18px,4vw,48px) 80px;
+  }
+  @media (max-width:860px){
+    .layout{grid-template-columns:1fr;}
+  }
+
+  .toc{
+    align-self:start;
+    position:sticky;
+    top:20px;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    padding-right:8px;
+    max-height:calc(100vh - 40px);
+    overflow-y:auto;
+  }
+  @media (max-width:860px){
+    .toc{position:static; max-height:none; margin-bottom:28px; border:1px solid var(--border); border-radius:10px; padding:10px 14px; background:var(--panel);}
+  }
+  .toc-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--ink-muted);
+    margin:0 0 8px 10px;
+  }
+  .toc a{
+    display:flex;
+    gap:9px;
+    align-items:baseline;
+    padding:6px 10px;
+    border-radius:7px;
+    color:var(--ink);
+    text-decoration:none;
+    font-size:13px;
+    line-height:1.35;
+  }
+  .toc a:hover{background:var(--panel);}
+  .toc a.active{background:var(--flow-soft); color:var(--flow);}
+  .toc a .n{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--ink-muted);
+    flex:0 0 auto;
+  }
+  .toc a.active .n{color:var(--flow);}
+
+  .content section{
+    padding-top:38px;
+    margin-top:4px;
+    border-top:1px solid var(--border);
+  }
+  .content section:first-child{border-top:none; padding-top:6px;}
+
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--accent-ink);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:8px;
+  }
+  .eyebrow::before{
+    content:'';
+    width:16px; height:1px;
+    background:var(--accent);
+  }
+  h2{
+    font-size:clamp(19px,2.4vw,24px);
+    margin:0 0 14px;
+    text-wrap:balance;
+    letter-spacing:-.005em;
+  }
+  h3{
+    font-size:15.5px;
+    margin:22px 0 8px;
+    color:var(--ink);
+  }
+  .lede{
+    color:var(--ink-muted);
+    max-width:66ch;
+    margin:0 0 18px;
+  }
+  p{max-width:70ch;}
+  p, ul, ol{margin:0 0 14px;}
+  ul, ol{padding-left:1.25em;}
+  li{margin-bottom:5px;}
+  strong{font-weight:600;}
+
+  .callout{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-left:3px solid var(--flow);
+    border-radius:8px;
+    padding:12px 16px;
+    margin:16px 0;
+    max-width:66ch;
+    font-size:14px;
+  }
+  .callout.answer{border-left-color:var(--accent);}
+  .callout p{margin:0;}
+  .callout .tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--flow);
+    display:block;
+    margin-bottom:5px;
+  }
+  .callout.answer .tag{color:var(--accent-ink);}
+
+  /* ---------- code blocks ---------- */
+  .code-wrap{
+    margin:14px 0 18px;
+    border-radius:10px;
+    overflow:hidden;
+    border:1px solid var(--code-border);
+    box-shadow:var(--shadow);
+    max-width:100%;
+  }
+  .code-label{
+    background:var(--code-border);
+    color:var(--code-text);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    padding:7px 14px;
+    display:flex;
+    justify-content:space-between;
+    opacity:.85;
+  }
+  .code-wrap pre{
+    margin:0;
+    background:var(--code-bg);
+    padding:14px 16px;
+    overflow-x:auto;
+    font-size:12.5px;
+    line-height:1.6;
+  }
+  .code-wrap code{color:var(--code-text);}
+  .hljs-keyword,.hljs-built_in{color:var(--hl-keyword);}
+  .hljs-string{color:var(--hl-string);}
+  .hljs-comment{color:var(--hl-comment); font-style:italic;}
+  .hljs-title,.hljs-title.function_{color:var(--hl-title);}
+  .hljs-attr,.hljs-property{color:var(--hl-attr);}
+  .hljs-number,.hljs-literal{color:var(--hl-number);}
+  .hljs-params{color:var(--code-text);}
+
+  /* ---------- trace steps ---------- */
+  .trace{
+    list-style:none;
+    margin:16px 0 22px;
+    padding:0;
+    counter-reset:step;
+    max-width:74ch;
+  }
+  .trace li{
+    counter-increment:step;
+    position:relative;
+    padding:2px 0 18px 34px;
+    border-left:1px solid var(--border);
+    margin-left:11px;
+  }
+  .trace li:last-child{border-left-color:transparent; padding-bottom:0;}
+  .trace li::before{
+    content:counter(step);
+    position:absolute;
+    left:-11px; top:0;
+    width:22px; height:22px;
+    border-radius:50%;
+    background:var(--panel-raised);
+    border:1px solid var(--flow);
+    color:var(--flow);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .trace .file{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    color:var(--flow);
+    display:block;
+    margin-bottom:2px;
+  }
+  .trace p{margin:2px 0 0; font-size:14px;}
+
+  /* ---------- diagrams ---------- */
+  figure.diagram{
+    margin:18px 0 26px;
+    max-width:640px;
+  }
+  figure.diagram svg{
+    width:100%;
+    height:auto;
+    display:block;
+    color:var(--ink);
+  }
+  figcaption{
+    font-size:12.5px;
+    color:var(--ink-muted);
+    margin-top:8px;
+    max-width:60ch;
+  }
+
+  /* ---------- tables ---------- */
+  .tbl-wrap{overflow-x:auto; margin:14px 0 20px;}
+  table{
+    border-collapse:collapse;
+    width:100%;
+    min-width:480px;
+    font-size:13.5px;
+  }
+  th, td{
+    text-align:left;
+    padding:9px 12px;
+    border-bottom:1px solid var(--border);
+    vertical-align:top;
+  }
+  th{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--ink-muted);
+    font-weight:500;
+  }
+  td code{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:1px 6px;
+    font-size:12px;
+  }
+  tr:last-child td{border-bottom:none;}
+
+  .two-col{display:grid; grid-template-columns:1fr 1fr; gap:0 28px;}
+  @media (max-width:700px){.two-col{grid-template-columns:1fr;}}
+
+  .end-note{
+    margin-top:52px;
+    padding-top:20px;
+    border-top:1px solid var(--border);
+    color:var(--ink-muted);
+    font-size:13px;
+    max-width:66ch;
+  }
+</style>
+
+<header class="doc-header">
+  <div class="doc-header-inner">
+    <div>
+      <p class="doc-title">Control Flow Manual</p>
+      <p class="doc-sub">PeoplePay360 — how a request actually moves through this codebase, and the fundamentals behind each stop</p>
+    </div>
+    <dl class="doc-meta">
+      <dt>Subject</dt><dd>peoplepay360-712</dd>
+      <dt>Compiled for</dt><dd>Abhay · backend</dd>
+      <dt>Prepared by</dt><dd>next review</dd>
+      <dt>Status</dt><dd class="flag">study before re-review</dd>
+    </dl>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" id="toc">
+    <p class="toc-label">Contents</p>
+    <a href="#s00"><span class="n">00</span> How to use this</a>
+    <a href="#s01"><span class="n">01</span> Request lifecycle, generally</a>
+    <a href="#s02"><span class="n">02</span> Worked trace: check-in</a>
+    <a href="#s03"><span class="n">03</span> Middleware</a>
+    <a href="#s04"><span class="n">04</span> AuthN vs AuthZ</a>
+    <a href="#s05"><span class="n">05</span> Promises &amp; async/await</a>
+    <a href="#s06"><span class="n">06</span> Node's concurrency model</a>
+    <a href="#s07"><span class="n">07</span> Why TypeScript</a>
+    <a href="#s08"><span class="n">08</span> React Context</a>
+    <a href="#s09"><span class="n">09</span> package.json vs lock</a>
+    <a href="#s10"><span class="n">10</span> CAP theorem</a>
+    <a href="#s11"><span class="n">11</span> SQL: users &amp; roles</a>
+    <a href="#s12"><span class="n">12</span> Rapid-fire answers</a>
+    <a href="#s13"><span class="n">13</span> Error &amp; exception handling</a>
+    <a href="#s14"><span class="n">14</span> Scaling: horizontal &amp; vertical</a>
+    <a href="#s15"><span class="n">15</span> Incident log: the crash</a>
+    <a href="#s16"><span class="n">16</span> require vs import, resolve vs reject</a>
+    <a href="#s17"><span class="n">17</span> Pagination</a>
+    <a href="#s18"><span class="n">18</span> Debugging, properly</a>
+  </nav>
+
+  <main class="content">
+
+    <section id="s00">
+      <p class="eyebrow">00 · Brief</p>
+      <h2>How to use this document</h2>
+      <p class="lede">This isn't generic tutorial content — every trace below points at real files in this exact repo. The goal isn't to memorize these thirteen sections; it's to walk out able to do <strong>the same trace on any file a reviewer points at</strong>, including ones not covered here.</p>
+      <h3>The two-question method</h3>
+      <p>When someone points at a line of code and asks "what is this, and where does it come from," you're really answering two separate questions:</p>
+      <ol>
+        <li><strong>What is its type/shape?</strong> Check the Zod schema right above it, the TypeScript interface, or the Prisma model. Say it out loud: "this is an object with an <code>employeeId</code> string and a <code>checkIn</code> date."</li>
+        <li><strong>What is its concrete source, for one real call?</strong> Not "req.body is the request body" (true but says nothing) — trace it to the exact line upstream that built it. Section 02 does this for one real endpoint, start to finish.</li>
+      </ol>
+      <h3>Finding any route yourself, in under a minute</h3>
+      <div class="trace">
+        <li><span class="file">frontend/src/api/*.ts</span><p>Grep for the resource name (e.g. "contract") — every backend call in this app goes through one of these files, each wrapping a single <code>apiClient.get/post/put/delete</code> call.</p></li>
+        <li><span class="file">docs/02_API_CONTRACTS.md</span><p>Confirms the exact method, path, and expected shape — the contract both sides were built against.</p></li>
+        <li><span class="file">backend/src/routes/index.ts</span><p>Shows which module router owns that URL prefix.</p></li>
+        <li><span class="file">backend/src/modules/&lt;name&gt;/*.routes.ts → *.controller.ts → *.service.ts</span><p>Same three-file shape every time: routes wire middleware, controller validates input, service holds the actual logic and talks to Prisma.</p></li>
+      </div>
+    </section>
+
+    <section id="s01">
+      <p class="eyebrow">01 · General pattern</p>
+      <h2>The request lifecycle, in general</h2>
+      <p class="lede">Every single API call in this app — Employees, Attendance, Payroll, all of it — follows the same six-stop shape. Learn this once.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 600 596" role="img" aria-label="Six-stage request lifecycle: UI event triggers the API client, which sends an HTTP request through Express's middleware chain, into a controller that validates input, a service that runs business logic against Prisma, which queries the database, with the result flowing back up the same path as a JSON response.">
+          <defs>
+            <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+              <polygon points="0,0 8,4 0,8" fill="currentColor"/>
+            </marker>
+          </defs>
+          <!-- boxes -->
+          <g font-family="IBM Plex Mono, monospace" font-size="12">
+            <g>
+              <rect x="30" y="20" width="540" height="56" rx="8" fill="none" stroke="currentColor" opacity="0.55"/>
+              <text x="50" y="44" fill="currentColor" font-weight="600">UI event</text>
+              <text x="50" y="62" fill="currentColor" opacity="0.65" font-size="11">click / mount → calls a function in src/api/*.ts</text>
+            </g>
+            <line x1="300" y1="76" x2="300" y2="112" stroke="currentColor" opacity="0.55" marker-end="url(#arr)"/>
+            <text x="316" y="98" fill="currentColor" opacity="0.7" font-size="10.5">JS object (args)</text>
+
+            <g>
+              <rect x="30" y="116" width="540" height="56" rx="8" fill="none" stroke="currentColor" opacity="0.55"/>
+              <text x="50" y="140" fill="currentColor" font-weight="600">API client (axios)</text>
+              <text x="50" y="158" fill="currentColor" opacity="0.65" font-size="11">client.ts — attaches JWT, serializes body to JSON</text>
+            </g>
+            <line x1="300" y1="172" x2="300" y2="208" stroke="currentColor" opacity="0.55" marker-end="url(#arr)"/>
+            <text x="316" y="194" fill="currentColor" opacity="0.7" font-size="10.5">raw HTTP request</text>
+
+            <g>
+              <rect x="30" y="212" width="540" height="56" rx="8" fill="none" stroke="var(--flow)" stroke-width="1.4"/>
+              <text x="50" y="236" fill="var(--flow)" font-weight="600">Express middleware chain</text>
+              <text x="50" y="254" fill="currentColor" opacity="0.65" font-size="11">app.ts — helmet, cors, json-parser, then auth</text>
+            </g>
+            <line x1="300" y1="268" x2="300" y2="304" stroke="currentColor" opacity="0.55" marker-end="url(#arr)"/>
+            <text x="316" y="290" fill="currentColor" opacity="0.7" font-size="10.5">parsed req.body + req.auth</text>
+
+            <g>
+              <rect x="30" y="308" width="540" height="56" rx="8" fill="none" stroke="currentColor" opacity="0.55"/>
+              <text x="50" y="332" fill="currentColor" font-weight="600">Controller</text>
+              <text x="50" y="350" fill="currentColor" opacity="0.65" font-size="11">*.controller.ts — Zod-validates input, calls the service</text>
+            </g>
+            <line x1="300" y1="364" x2="300" y2="400" stroke="currentColor" opacity="0.55" marker-end="url(#arr)"/>
+            <text x="316" y="386" fill="currentColor" opacity="0.7" font-size="10.5">validated, typed DTO</text>
+
+            <g>
+              <rect x="30" y="404" width="540" height="56" rx="8" fill="none" stroke="var(--accent)" stroke-width="1.4"/>
+              <text x="50" y="428" fill="var(--accent-ink)" font-weight="600">Service (business logic)</text>
+              <text x="50" y="446" fill="currentColor" opacity="0.65" font-size="11">*.service.ts — the actual rules live here, calls Prisma</text>
+            </g>
+            <line x1="300" y1="460" x2="300" y2="496" stroke="currentColor" opacity="0.55" marker-end="url(#arr)"/>
+            <text x="316" y="482" fill="currentColor" opacity="0.7" font-size="10.5">generated SQL</text>
+
+            <g>
+              <rect x="30" y="500" width="540" height="56" rx="8" fill="none" stroke="currentColor" opacity="0.55"/>
+              <text x="50" y="524" fill="currentColor" font-weight="600">PostgreSQL</text>
+              <text x="50" y="542" fill="currentColor" opacity="0.65" font-size="11">executes the query, returns rows</text>
+            </g>
+          </g>
+        </svg>
+        <figcaption>Every endpoint — Employees, Contracts, Payroll, all of it — is this same six-stop shape. The response then retraces this exact path upward as <code>{ success, data }</code>.</figcaption>
+      </figure>
+
+      <p>Two stops are worth calling out because they're where reviewers probe hardest:</p>
+      <ul>
+        <li><strong>The middleware chain</strong> runs in the exact order it's registered in <code>app.ts</code>, every time, no exceptions — <code>express.json()</code> must run before any route that reads <code>req.body</code>, or <code>req.body</code> is simply <code>undefined</code>.</li>
+        <li><strong>Controller vs service</strong> is a deliberate split: the controller's only job is "parse input, call one service function, shape the response" — zero business logic. The service is where every rule this app enforces actually lives (RBAC checks, the contract-overlap rule, the payroll math). If asked "where would you add a new validation rule," the answer is almost always the service, not the controller.</li>
+      </ul>
+    </section>
+
+    <section id="s02">
+      <p class="eyebrow">02 · Worked example</p>
+      <h2>Byte-by-byte: clicking "Check In"</h2>
+      <p class="lede">This is the exact scenario from the review — tracing <code>attendance.controller.ts</code>'s <code>checkIn</code> handler back to its actual source, with the real code at every stop.</p>
+
+      <div class="trace">
+        <li>
+          <span class="file">frontend/src/pages/attendance/AttendancePage.tsx</span>
+          <p>The form's submit handler fires:</p>
+          <div class="code-wrap"><div class="code-label"><span>AttendancePage.tsx</span><span>handlePunchSubmit</span></div><pre><code class="language-typescript">await attendanceApi.checkIn({
+  employee_id: Number(punchEmpId),
+  check_in: punchCheckInTime,
+});</code></pre></div>
+        </li>
+        <li>
+          <span class="file">frontend/src/api/attendance.ts</span>
+          <p>Reshapes the call into the backend's expected field names and fires the HTTP request:</p>
+          <div class="code-wrap"><div class="code-label"><span>attendance.ts</span><span>checkIn</span></div><pre><code class="language-typescript">const payload = {
+  employeeId: String(data.employee_id || 1),
+  checkIn: data.check_in || new Date().toISOString(),
+};
+return apiRequest(apiClient.post('/api/attendance/check-in', payload));</code></pre></div>
+        </li>
+        <li>
+          <span class="file">frontend/src/api/client.ts</span>
+          <p>The axios instance's request interceptor attaches the stored JWT before anything leaves the browser:</p>
+          <div class="code-wrap"><div class="code-label"><span>client.ts</span><span>request interceptor</span></div><pre><code class="language-typescript">const token = localStorage.getItem('peoplepay_token');
+config.headers.Authorization = `Bearer ${token}`;</code></pre></div>
+          <p>At this point a real HTTP POST leaves the browser: body <code>{"employeeId":"...", "checkIn":"..."}</code> as a JSON string, header <code>Content-Type: application/json</code>, header <code>Authorization: Bearer eyJhbGc...</code>.</p>
+        </li>
+        <li>
+          <span class="file">backend/src/app.ts</span>
+          <p><strong>This is the direct answer to "where does <code>req.body</code> come from."</strong> <code>express.json()</code> is registered here, before routing. It reads the raw request body stream and parses that JSON text into a plain object — <em>this</em> is the line that creates <code>req.body</code>; nothing before it exists yet.</p>
+          <div class="code-wrap"><div class="code-label"><span>app.ts</span></div><pre><code class="language-typescript">app.use(helmet());
+app.use(cors());
+app.use(morgan("dev"));
+app.use(express.json());   // req.body now exists, for every route below this line
+app.use("/api", apiRouter);</code></pre></div>
+        </li>
+        <li>
+          <span class="file">backend/src/modules/attendance/attendance.routes.ts</span>
+          <p>The router matches <code>/attendance/check-in</code> and runs <code>authenticate</code> first — verifies the JWT and sets <code>req.auth</code>:</p>
+          <div class="code-wrap"><div class="code-label"><span>attendance.routes.ts</span></div><pre><code class="language-typescript">attendanceRouter.use(authenticate);
+attendanceRouter.post("/check-in", attendanceController.checkIn);</code></pre></div>
+        </li>
+        <li>
+          <span class="file">backend/src/modules/attendance/attendance.controller.ts</span>
+          <p>Now the exact line from the review. At this point, for this call, <code>req.body</code> is a plain JS object: <code>{ employeeId: "seed-emp-eng-1", checkIn: "2026-08-05T09:00:00.000Z" }</code> — that specific shape, because that's exactly what step 2 built and step 4 parsed. <code>checkInSchema.parse(...)</code> (Zod) throws if it doesn't match; otherwise <code>body</code> is now the same object, but TypeScript-typed and guaranteed valid.</p>
+          <div class="code-wrap"><div class="code-label"><span>attendance.controller.ts</span></div><pre><code class="language-typescript">export const checkIn = asyncHandler(async (req: Request, res: Response) => {
+  const body = checkInSchema.parse(req.body);
+  const row = await attendanceService.checkIn(req.auth!, body);
+  return ok(res, row, 201);
+});</code></pre></div>
+        </li>
+        <li>
+          <span class="file">backend/src/modules/attendance/attendance.service.ts</span>
+          <p>The actual rule enforcement and the database write:</p>
+          <div class="code-wrap"><div class="code-label"><span>attendance.service.ts</span></div><pre><code class="language-typescript">assertSelfOrHrmPlus(auth, input.employeeId); // is this your own record, or are you HRM+?
+return prisma.attendance.create({
+  data: { employeeId: input.employeeId, checkIn: checkInTime, workedHours: 0, status: "present" },
+});</code></pre></div>
+        </li>
+        <li>
+          <span class="file">PostgreSQL</span>
+          <p>Prisma turns that call into a parameterized <code>INSERT INTO attendance (...) VALUES (...)</code>, executes it, and returns the created row — which flows back up through the service, the controller's <code>ok(res, row, 201)</code>, over HTTP as <code>{"success":true,"data":{...}}</code>, through axios's response interceptor, unwrapped by <code>apiRequest</code>, and lands back in <code>handlePunchSubmit</code> as a plain typed object.</p>
+        </li>
+      </div>
+
+      <div class="callout answer">
+        <span class="tag">If asked again, cold</span>
+        <p><code>req.body</code> is never magic — it's whatever <code>express.json()</code> parsed from the raw HTTP body the frontend sent, and its exact shape is only knowable by reading the one <code>src/api/*.ts</code> function that built the request. Say the source file, not the concept.</p>
+      </div>
+    </section>
+
+    <section id="s03">
+      <p class="eyebrow">03 · Pipeline</p>
+      <h2>Middleware</h2>
+      <p class="lede">A middleware is a function shaped <code>(req, res, next) =&gt; {}</code> that sits between "request received" and "your route handler runs." It can read or mutate <code>req</code>/<code>res</code>, end the request early, or call <code>next()</code> to let the next one run. Express executes them in exactly the order they're registered — never out of order, never in parallel.</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Scope</th><th>Registered</th><th>Our example</th></tr></thead>
+          <tbody>
+            <tr><td>Global</td><td><code>app.use(x)</code> in app.ts</td><td><code>helmet()</code>, <code>cors()</code>, <code>express.json()</code> — runs on every request</td></tr>
+            <tr><td>Router-level</td><td><code>router.use(x)</code></td><td><code>attendanceRouter.use(authenticate)</code> — every attendance route</td></tr>
+            <tr><td>Route-specific</td><td>2nd arg to <code>.post()</code></td><td><code>requireRole(...HRM_PLUS)</code> on one single route</td></tr>
+            <tr><td>Error-handling</td><td>last, 4-arg signature</td><td><code>errorHandler</code> — only runs when something calls <code>next(err)</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>General use cases beyond auth: request logging, rate limiting, response compression, CORS, input sanitization — anything you'd otherwise have to repeat inside every single controller.</p>
+    </section>
+
+    <section id="s04">
+      <p class="eyebrow">04 · The distinction they always ask</p>
+      <h2>Authentication vs. authorization</h2>
+      <div class="two-col">
+        <div>
+          <h3>Authentication — who are you</h3>
+          <p>Proving identity. Our login endpoint compares a bcrypt hash, then signs a JWT containing <code>{'{'}userId, employeeId, roles{'}'}</code>. Every later request proves identity by presenting that token; <code>authenticate</code> middleware verifies it and attaches <code>req.auth</code>.</p>
+        </div>
+        <div>
+          <h3>Authorization — what are you allowed to do</h3>
+          <p>Deciding if <em>this specific action, on this specific data</em>, is permitted for an already-proven identity. Two layers here: coarse role gates (<code>requireRole(...)</code>) and finer service-level checks (an Employee can only view their <em>own</em> attendance — that can't be expressed as "does this role exist," it needs the actual data).</p>
+        </div>
+      </div>
+      <div class="callout">
+        <span class="tag">One-liner</span>
+        <p>Authentication is the same check on every request. Authorization can change per action and per row of data — that's why some of it lives in route middleware and some of it has to live inside the service.</p>
+      </div>
+    </section>
+
+    <section id="s05">
+      <p class="eyebrow">05 · Async control flow</p>
+      <h2>Promises and async/await</h2>
+      <p class="lede">A Promise represents a value that will exist later — <code>pending</code>, then either <code>fulfilled</code> or <code>rejected</code>, exactly once. <code>.then(onOk, onErr)</code> schedules callbacks for whichever happens; <code>.catch(fn)</code> is shorthand for <code>.then(undefined, fn)</code>.</p>
+      <h3>Chaining — the "trailing" part</h3>
+      <p>Each <code>.then()</code> returns a <em>new</em> promise, so a chain runs in strict order, and a single trailing <code>.catch()</code> catches a rejection from <strong>any</strong> earlier link:</p>
+      <div class="code-wrap"><div class="code-label"><span>chaining, illustrative</span></div><pre><code class="language-typescript">fetchUser(id)
+  .then(user => fetchRoles(user))   // only runs if fetchUser resolved
+  .then(roles => render(roles))     // only runs if fetchRoles resolved
+  .catch(err => showError(err));    // catches a rejection from EITHER step above</code></pre></div>
+      <h3>async/await is the same thing, different syntax</h3>
+      <p><code>await</code> pauses only the current async function (not the whole thread — other requests keep being handled) until a promise settles, then either hands back the value or throws the rejection as a normal exception you can <code>try/catch</code>.</p>
+      <div class="code-wrap"><div class="code-label"><span>asyncHandler.ts — why it exists</span></div><pre><code class="language-typescript">// Express 4 does NOT forward a rejected promise from an async route handler
+// to error middleware on its own. Without this wrapper, a thrown error
+// inside an async controller hangs the request instead of reaching errorHandler.
+export function asyncHandler(handler) {
+  return (req, res, next) => { handler(req, res, next).catch(next); };
+}</code></pre></div>
+      <p>Also used constantly: <code>Promise.all([...])</code> — e.g. <code>getEmployeeById</code> fetches the four smart-button counts (contracts/attendance/time-off/payslips) concurrently instead of four sequential round-trips.</p>
+    </section>
+
+    <section id="s06">
+      <p class="eyebrow">06 · Runtime model</p>
+      <h2>Is Node.js single-threaded?</h2>
+      <p class="lede">Yes — one call stack, one thing executing JS at a time. But Node (via libuv) also runs an event loop plus a small background thread pool for work that would otherwise block: file I/O, DNS, and CPU-heavy crypto. Network I/O — our Postgres queries — doesn't even need the thread pool; the OS handles it asynchronously and delivers the result back to the single JS thread as a callback when ready.</p>
+      <h3>Why this is a deliberate design, not a limitation</h3>
+      <p>An API server like this one spends almost all its time <em>waiting</em> — on the database, on the network — not computing. A single-threaded event loop skips the cost and the bug-class (races, locks, deadlocks) of thread synchronization for all that waiting time: while one request awaits its Prisma query, the loop is free to start the next request immediately.</p>
+      <div class="callout">
+        <span class="tag">Concrete spot in this codebase</span>
+        <p><code>bcrypt.compare()</code> in <code>auth.service.ts</code> is deliberately slow (that's what makes it secure) and CPU-bound — the async bcrypt API pushes that work off the main JS thread via libuv's pool, so one login attempt hashing a password doesn't stall every other request on the server.</p>
+      </div>
+    </section>
+
+    <section id="s07">
+      <p class="eyebrow">07 · Type system</p>
+      <h2>Why TypeScript</h2>
+      <p class="lede">TypeScript adds static types checked at compile time (<code>tsc</code>), then erases them entirely — the output is plain JavaScript with zero runtime cost or behavior difference.</p>
+      <ul>
+        <li><strong>Catches bugs before they run:</strong> a wrong argument type or a typo'd property name is a red squiggle at write-time, not a silent <code>undefined</code> during a judged demo.</li>
+        <li><strong>Safe refactors:</strong> rename a Prisma field, and every call site that breaks lights up immediately — no grepping and hoping.</li>
+        <li><strong>The schema becomes the types:</strong> Prisma generates a fully-typed client straight from <code>schema.prisma</code>, so the database shape and the code's types can never quietly drift apart.</li>
+      </ul>
+      <p>Why here specifically: RBAC logic and payroll math are exactly the kind of code where a misread field name is expensive — TypeScript catches that class of mistake at build time. More broadly, it earns its keep on any codebase touched by more than one person, or with a contract shared between two sides (our <code>docs/02_API_CONTRACTS.md</code> field names are enforced as real types, not just documentation someone can forget to update).</p>
+    </section>
+
+    <section id="s08">
+      <p class="eyebrow">08 · Component data flow</p>
+      <h2>React Context and prop drilling</h2>
+      <p class="lede">The problem, concretely: <code>Parent(name) → Child1(name) → Child2(name) → Child3(name)</code> — if only <code>Child3</code> actually uses <code>name</code>, <code>Child1</code> and <code>Child2</code> still have to accept and forward it purely as a relay.</p>
+      <h3>Drawbacks of the chain</h3>
+      <ul>
+        <li>Every intermediate component's props are polluted with data it never reads itself.</li>
+        <li>Renaming or removing that value means touching every file in the chain, not just the one that needs it.</li>
+        <li>Forgetting to forward it at one link silently produces <code>undefined</code> three components later — a hard bug to trace.</li>
+        <li>Intermediate components become harder to reuse elsewhere, since they now require props unrelated to what they actually do.</li>
+      </ul>
+      <h3>How Context fixes it — our real example</h3>
+      <p><code>AuthContext.tsx</code> puts <code>user</code>, <code>token</code>, and <code>hasRole()</code> on a Provider once, near the top of the tree. The Sidebar, TopHeader, every page's route guard, and deep-nested action buttons each call <code>useAuth()</code> directly — none of them received <code>user</code> as a prop from their parent.</p>
+      <div class="callout">
+        <span class="tag">The trade-off, if pushed on it</span>
+        <p>Context isn't free: every consumer re-renders when the context value changes. That's fine for something that changes rarely (the logged-in user) and a bad fit for something that changes on every keystroke — which is exactly why this app has two small, infrequently-changing contexts (<code>AuthContext</code>, <code>ToastContext</code>) rather than one giant context holding everything.</p>
+      </div>
+    </section>
+
+    <section id="s09">
+      <p class="eyebrow">09 · Dependency management</p>
+      <h2>package.json vs. package-lock.json</h2>
+      <div class="two-col">
+        <div>
+          <h3>package.json</h3>
+          <p>Hand-authored manifest: project metadata, the <code>scripts</code> you run (<code>npm run dev</code>), and dependencies as <strong>version ranges</strong> — <code>^5.20.0</code> means "5.20.0 or any newer compatible 5.x.x."</p>
+        </div>
+        <div>
+          <h3>package-lock.json</h3>
+          <p>Auto-generated. Pins the <strong>exact</strong> resolved version of every dependency — direct and transitive — plus integrity hashes, at the moment it was installed.</p>
+        </div>
+      </div>
+      <p>The reason both exist: two machines running <code>npm install</code> against the same <code>package.json</code>, weeks apart, could legally resolve different patch versions within the same range. The lockfile makes that installation reproducible byte-for-byte instead. Commit both, always; never hand-edit the lockfile; <code>npm ci</code> (used in CI/production) installs strictly from the lockfile and fails loudly if it's out of sync, where plain <code>npm install</code> would just quietly update it.</p>
+    </section>
+
+    <section id="s10">
+      <p class="eyebrow">10 · Distributed systems</p>
+      <h2>CAP theorem</h2>
+      <p class="lede">In a distributed data system, once a network Partition (P) happens — and eventually one will — you can keep only one of <strong>Consistency</strong> (every read reflects the latest write, or errors) or <strong>Availability</strong> (every request gets a response, possibly stale). Not both, during that partition. Outside of a partition, you can have both.</p>
+      <p>Where this actually binds us: a single Postgres instance and a single backend process isn't a distributed system yet, so CAP doesn't constrain this build today. It becomes the live question the moment you add a read replica, shard the database, or run multiple backend instances behind a load balancer.</p>
+      <div class="callout">
+        <span class="tag">If asked "which would PeoplePay360 pick"</span>
+        <p>Payroll leans <strong>CP</strong> (consistency over availability): a payslip computation briefly failing is far better than silently under- or over-paying someone from stale data. Contrast with something like a social feed, which reasonably leans <strong>AP</strong> — showing slightly stale content beats an error page.</p>
+      </div>
+    </section>
+
+    <section id="s11">
+      <p class="eyebrow">11 · From scratch</p>
+      <h2>SQL: users, roles, and assignments</h2>
+      <p class="lede">The exact shape of our real <code>users</code> / <code>roles</code> / <code>user_roles</code> tables — a classic many-to-many via a junction table — written as plain SQL.</p>
+      <div class="code-wrap"><div class="code-label"><span>schema</span></div><pre><code class="language-sql">CREATE TABLE roles (
+  id   SERIAL PRIMARY KEY,
+  name VARCHAR(50) UNIQUE NOT NULL          -- 'ADMIN', 'HR_MANAGER', ...
+);
+
+CREATE TABLE users (
+  id            SERIAL PRIMARY KEY,
+  name          VARCHAR(120) NOT NULL,
+  email         VARCHAR(255) UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL
+);
+
+-- junction table: one user can hold many roles, one role can belong to many users
+CREATE TABLE user_roles (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role_id INTEGER NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  PRIMARY KEY (user_id, role_id)
+);</code></pre></div>
+      <div class="code-wrap"><div class="code-label"><span>seed + assign</span></div><pre><code class="language-sql">INSERT INTO roles (name) VALUES ('ADMIN'), ('EMPLOYEE');
+
+INSERT INTO users (name, email, password_hash)
+VALUES ('Priya Sharma', 'priya@peoplepay360.dev', '$2a$10$examplehash...');
+
+INSERT INTO user_roles (user_id, role_id)
+SELECT u.id, r.id FROM users u, roles r
+WHERE u.email = 'priya@peoplepay360.dev' AND r.name = 'ADMIN';</code></pre></div>
+      <div class="code-wrap"><div class="code-label"><span>read: a user and their role(s)</span></div><pre><code class="language-sql">SELECT u.id, u.name, u.email, r.name AS role_name
+FROM users u
+JOIN user_roles ur ON ur.user_id = u.id
+JOIN roles r       ON r.id = ur.role_id
+WHERE u.email = 'priya@peoplepay360.dev';</code></pre></div>
+      <div class="code-wrap"><div class="code-label"><span>read: every ADMIN (reverse direction)</span></div><pre><code class="language-sql">SELECT u.id, u.name, u.email
+FROM users u
+JOIN user_roles ur ON ur.user_id = u.id
+JOIN roles r       ON r.id = ur.role_id
+WHERE r.name = 'ADMIN';</code></pre></div>
+      <p>Prisma generates this exact JOIN for us from <code>prisma.user.findUnique({'{'} include: {'{'} userRoles: {'{'} include: {'{'} role: true {'}'} {'}'} {'}'} {'}'})</code> — same query, written as a typed builder call instead of raw SQL.</p>
+    </section>
+
+    <section id="s12">
+      <p class="eyebrow">12 · Nerves check</p>
+      <h2>Rapid-fire answers</h2>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Question</th><th>One-line answer</th></tr></thead>
+          <tbody>
+            <tr><td>What does <code>express.json()</code> do?</td><td>Parses a JSON request body into <code>req.body</code>. Without it, <code>req.body</code> is <code>undefined</code>.</td></tr>
+            <tr><td>Where does <code>req.auth</code> come from?</td><td>Set by the <code>authenticate</code> middleware after verifying the JWT — not part of the raw HTTP request.</td></tr>
+            <tr><td>Why does <code>asyncHandler</code> exist?</td><td>Express 4 won't auto-forward a rejected promise from an async handler to error middleware.</td></tr>
+            <tr><td>401 vs 403?</td><td>401 = not authenticated (missing/invalid token). 403 = authenticated, but not allowed to do this.</td></tr>
+            <tr><td>Why UUID primary keys, not auto-increment ints?</td><td>A team decision to avoid rippling type changes through code already written against string ids — a trade-off, not a universal rule.</td></tr>
+            <tr><td>Two requests race to create the same payslip — what stops a duplicate?</td><td>A DB-level <code>UNIQUE(payrunId, employeeId)</code> constraint — enforced by Postgres itself, not application code.</td></tr>
+            <tr><td>Why is validation in the service, not just the controller?</td><td>The controller only checks shape (Zod). Business rules — like "no overlapping contracts" — need a database lookup, which belongs in the service.</td></tr>
+            <tr><td>What's a race condition, and where could one bite us?</td><td>Two operations reading-then-writing shared state without isolation. Payroll validation guards against it with a DB CHECK (maker ≠ checker) plus a transaction.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="end-note">This document is a floor, not a ceiling — the real test next review is whether you can do the section 02 trace live, on a file nobody prepped. Practice it on one more endpoint you didn't pick tonight.</p>
+    </section>
+
+    <section id="s13">
+      <p class="eyebrow">13 · Failure paths</p>
+      <h2>Error &amp; exception handling</h2>
+      <p class="lede">The rule this codebase follows: <strong>every failure becomes a typed, predictable object</strong> — never a raw stack trace to a client, never a silently swallowed error, never a hung request.</p>
+
+      <h3>Backend: three layers</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Layer</th><th>Technique</th><th>Where</th></tr></thead>
+          <tbody>
+            <tr><td>Input shape</td><td>Zod schema <code>.parse()</code> throws <code>ZodError</code> on anything malformed</td><td>Every controller, before touching the service</td></tr>
+            <tr><td>Business rules</td><td>Services throw a typed <code>ApiError</code> (<code>badRequest</code>, <code>conflict</code>, <code>forbidden</code>, <code>notFound</code>) with a specific status + human message</td><td><code>*.service.ts</code> — e.g. contract overlap → <code>ApiError.conflict(...)</code></td></tr>
+            <tr><td>Data integrity</td><td>Postgres itself rejects the write (UNIQUE, CHECK, exclusion constraints) if application logic somehow missed it</td><td>DB constraints — the last line of defense, not the first</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="code-wrap"><div class="code-label"><span>errorHandler.ts — the single place that turns any of the above into a response</span></div><pre><code class="language-typescript">export function errorHandler(err, _req, res, _next) {
+  if (err instanceof ApiError) {
+    return res.status(err.statusCode).json({ success: false, error: err.message });
+  }
+  if (err instanceof ZodError) {
+    const first = err.issues[0];
+    return res.status(422).json({ success: false, error: `${first.path.join('.')}: ${first.message}` });
+  }
+  console.error(err); // anything truly unexpected still gets logged server-side
+  return res.status(500).json({ success: false, error: "internal: unexpected server error" });
+}</code></pre></div>
+      <p>Everything reaches this one function because every async controller is wrapped by <code>asyncHandler</code> (section 05) — a thrown <code>ApiError</code>, a thrown <code>ZodError</code>, or a genuinely unexpected exception all funnel to the exact same place, so the response shape is never inconsistent depending on which layer failed.</p>
+
+      <h3>Frontend: normalize once, at the boundary</h3>
+      <p><code>client.ts</code>'s axios response interceptor reads the backend's <code>{'{'}success:false, error{'}'}</code> envelope (or maps a bare HTTP status like 401/403/409 to a plain-language message when the backend didn't get a chance to respond at all) and re-throws a single normalized <code>Error</code> — so every calling component just does one <code>try/catch</code> and shows <code>err.message</code>, never branching on response shape itself.</p>
+
+      <div class="callout">
+        <span class="tag">The distinction worth stating precisely</span>
+        <p><strong>Validation error</strong> (Zod, 422) = the request itself is malformed — wrong type, missing field. <strong>Business rule error</strong> (ApiError, 409/403/400) = the request is well-formed but violates a rule that requires knowing the current data — an overlapping contract, insufficient leave balance. <strong>Exception</strong> (500) = something nobody anticipated — a bug, a DB connection drop. Only the last category should ever reach a bare <code>catch</code> with a generic message; the first two should always be specific and actionable.</p>
+      </div>
+    </section>
+
+    <section id="s14">
+      <p class="eyebrow">14 · Growth</p>
+      <h2>Horizontal vs. vertical scaling</h2>
+      <div class="two-col">
+        <div>
+          <h3>Vertical — a bigger machine</h3>
+          <p>Give the existing single server more CPU/RAM/disk. Simple, no code changes, but has a hard ceiling (there's a biggest machine money can buy) and it's a single point of failure — that one box going down takes everything with it.</p>
+        </div>
+        <div>
+          <h3>Horizontal — more machines</h3>
+          <p>Run multiple copies of the app behind a load balancer, splitting traffic across them. No hard ceiling, survives one instance dying, but requires the app to not depend on any one instance's local memory.</p>
+        </div>
+      </div>
+
+      <h3>Where this app already scales horizontally for free — and why</h3>
+      <p>Our auth is a <strong>stateless JWT</strong> — the server holds no session data in memory; every request carries everything needed to verify identity in the token itself. That means any of N identical Express instances can handle any request with zero "sticky session" requirement — a load balancer could round-robin across them today with no code change. This was the actual reason to choose JWT over server-side sessions, not just convention.</p>
+
+      <h3>Where it wouldn't scale yet, and what would have to change</h3>
+      <ul>
+        <li><strong>The database is the real bottleneck.</strong> One Postgres instance, one connection pool. Horizontal scaling of the Express layer doesn't help if 50 instances are all hammering the same single DB. The DB itself scales vertically first (bigger instance), then via read replicas (route <code>GET</code>s to replicas, keep writes on the primary) — which is exactly where CAP theorem (section 10) stops being theoretical: a replica can lag behind the primary by milliseconds, so a read right after a write might not reflect it yet.</li>
+        <li><strong>The payroll compute loop</strong> (section 02-adjacent: <code>payrun.service.ts</code>'s <code>computePayrun</code>) currently processes payslips in a loop within one request. At real scale (thousands of employees per payrun) that would move to a background job queue instead of blocking one HTTP request — the API would return immediately with "processing," and a worker pool (which itself scales horizontally, independently of the web tier) would do the actual computation.</li>
+        <li><strong>File-based things</strong> (the PDF generation) are fine stateless today since nothing is written to local disk — the PDF is generated in memory and streamed straight to the response. That's deliberate: it means any instance can serve that request, with no shared-filesystem requirement to solve later.</li>
+      </ul>
+      <div class="callout">
+        <span class="tag">If asked "how would you scale this to 10,000 companies"</span>
+        <p>Horizontally scale the stateless Express layer behind a load balancer (free, given the JWT choice already made) → add a Postgres read replica for the read-heavy Dashboard queries → move payroll compute to a background job queue → only then consider vertical scaling or sharding the database itself, since that's the expensive, hard-to-reverse step.</p>
+      </div>
+    </section>
+
+    <section id="s15">
+      <p class="eyebrow">15 · Postmortem</p>
+      <h2>Incident log: the silent backend crash</h2>
+      <p class="lede">A real incident from this build, worth being able to narrate — "walk me through a bug you debugged" is a favorite review question, and this one is genuine, not rehearsed.</p>
+      <div class="trace">
+        <li><span class="file">Symptom</span><p>Frontend appeared to make no visible progress against the live backend during a review; a reviewer checking DevTools' Network tab reported seeing nothing meaningful.</p></li>
+        <li><span class="file">First hypothesis (rejected)</span><p>Assumed a frontend bug — a request never being fired. Ruled out by grepping the codebase for any page bypassing the API layer to render mock data directly: none existed. The API layer always attempts a real network call first.</p></li>
+        <li><span class="file">Investigation</span><p><code>curl http://localhost:4000/health</code> returned nothing — connection refused. The backend process itself was gone, even though nobody had intentionally stopped it.</p></li>
+        <li><span class="file">Root cause, found in the server's own log</span><p>The dev server runs under <code>ts-node-dev --respawn</code> (auto-restart on file change). A file on disk changed (a git operation touching a backend file counts, same as an editor save), triggering a restart — and the respawn silently failed to rebind port 4000, most likely a port-release race condition on Windows. No crash message reached anyone because it was running as an unattended background process.</p></li>
+        <li><span class="file">Fix</span><p>Restarted the process manually for continued development. For anything actually presented live, switched the recommendation to <code>npm run build &amp;&amp; npm start</code> — the compiled server has no file-watcher and nothing to silently fail a restart on.</p></li>
+        <li><span class="file">Prevention</span><p>Always verify both servers respond immediately before presenting (<code>curl</code> the health endpoint, or just load the page) — "it worked earlier" is not evidence it works now. A background dev process is a development convenience, not a demo-time guarantee.</p></li>
+      </div>
+    </section>
+
+    <section id="s16">
+      <p class="eyebrow">16 · Two quick vocabulary pairs</p>
+      <h2>require vs. import, resolve vs. reject</h2>
+      <p class="lede">Covering both, since either could be what was actually asked.</p>
+
+      <h3><code>require()</code> vs <code>import</code></h3>
+      <p><code>require()</code> is CommonJS — Node's original module system. It's synchronous: the whole required file runs to completion before the line after <code>require()</code> executes. <code>import</code> is the ES Module standard (native to modern JS, including the browser) — it's statically analyzable (tooling can see your dependency graph without running the code) and supports asynchronous loading. Our backend's <code>tsconfig.json</code> targets <code>commonjs</code> (that's what <code>ts-node</code>/Node running directly compiles down to), but we write <code>import</code> syntax throughout — TypeScript transpiles our <code>import</code> statements into <code>require()</code> calls under the hood before Node ever sees them. The frontend (bundled by Vite) uses real native ES Modules, no transpilation to CommonJS needed, since browsers and modern build tools support <code>import</code> directly.</p>
+
+      <h3><code>resolve</code> vs. <code>reject</code></h3>
+      <p>The two functions a Promise's executor receives: <code>new Promise((resolve, reject) => {'{'} ... {'}'})</code>. Calling <code>resolve(value)</code> fulfills the promise — anything chained with <code>.then()</code> runs next. Calling <code>reject(error)</code> fails it — control jumps to the nearest <code>.catch()</code> (or the <code>catch</code> block of a surrounding <code>try/await</code>). In our own code we rarely construct a <code>new Promise</code> by hand — <code>async</code> functions do this implicitly: a <code>return value</code> is an automatic <code>resolve</code>, a <code>throw err</code> is an automatic <code>reject</code>. That's precisely why <code>throw ApiError.conflict(...)</code> inside an async service function behaves like a rejected promise, which is exactly what <code>asyncHandler</code>'s <code>.catch(next)</code> is there to catch (section 05).</p>
+    </section>
+
+    <section id="s17">
+      <p class="eyebrow">17 · List responses at scale</p>
+      <h2>Pagination — backend and UI</h2>
+      <p class="lede">Why it exists: returning every row of a large table in one response is slow, wastes bandwidth, and doesn't scale — pagination splits a large result set into pages the client asks for one at a time.</p>
+
+      <h3>Two backend techniques</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Technique</th><th>How</th><th>Trade-off</th></tr></thead>
+          <tbody>
+            <tr><td>Offset/limit</td><td><code>?page=2&amp;limit=20</code> → SQL <code>LIMIT 20 OFFSET 20</code> (Prisma: <code>take: 20, skip: 20</code>)</td><td>Simple, supports jumping to any page number — but slow on very large tables (the DB still has to scan past all skipped rows), and a row inserted mid-list can shift results between page loads</td></tr>
+            <tr><td>Cursor-based</td><td><code>?after=&lt;last_seen_id&gt;&amp;limit=20</code> → <code>WHERE id &gt; last_seen_id ORDER BY id LIMIT 20</code></td><td>Fast at any depth, stable under concurrent inserts — but can't jump to an arbitrary page number, only "next"</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>UI side</h3>
+      <p>The frontend needs: current page state, a way to request the next/previous page (numbered page buttons, "Load more", or infinite scroll firing the next request as the user nears the bottom), and a total count or a "there's more" flag from the backend to know whether to keep showing a "next" control.</p>
+
+      <div class="callout answer">
+        <span class="tag">Honest answer if pushed on our code specifically</span>
+        <p><strong>This API doesn't paginate yet</strong> — <code>GET /api/employees</code>, <code>/attendance</code>, and every other list endpoint return every matching row in one response. That's a real, known gap, acceptable for the seed-data scale of a hackathon demo (dozens of rows) but the first thing that would need adding before this handled a company with thousands of employees. The fix is mechanical: add <code>page</code>/<code>limit</code> query params to each list endpoint's Zod-validated query schema, pass them to Prisma as <code>skip</code>/<code>take</code>, and return a small envelope like <code>{'{'} data: [...], total: 400, page: 2, pageSize: 20 {'}'}</code> instead of a bare array.</p>
+      </div>
+    </section>
+
+    <section id="s18">
+      <p class="eyebrow">18 · The actual skill, not a feature</p>
+      <h2>Debugging, properly</h2>
+      <p class="lede">Correcting something directly: <strong>debugging is not "write a function that does the debugging."</strong> A logging function is one possible <em>tool</em> you might use while debugging — debugging itself is the process of comparing what the program actually does against what you expected, narrowing down exactly where those two diverge, using whatever tool answers that fastest.</p>
+
+      <h3>The real toolbox, cheapest to most powerful</h3>
+      <div class="trace">
+        <li><span class="file">Read the error, fully, top to bottom</span><p>A stack trace lists every function call that led to the crash. Find the first line that's <em>your</em> code, not a library's — that's almost always where the real problem lives, even if the crash happened three library-internal frames later.</p></li>
+        <li><span class="file">Strategic <code>console.log</code></span><p>Fast and ubiquitous, but manual: log the input and output of a suspect function, re-run, read the actual values, compare against what you expected. This is the "add a logging function" instinct — fine as one tactic, just not the whole answer.</p></li>
+        <li><span class="file">A real debugger with breakpoints</span><p>Far more powerful: pause execution at an exact line and inspect <em>everything</em> live — every variable in scope, the full call stack, without editing the code at all. For our backend:</p>
+          <div class="code-wrap"><div class="code-label"><span>package.json — add a debug script</span></div><pre><code class="language-json">"dev:debug": "ts-node-dev --inspect --respawn --transpile-only src/server.ts"</code></pre></div>
+          <p>Run it, then either open <code>chrome://inspect</code> in Chrome and click "inspect," or in VS Code use "Attach to Node Process." Click the gutter left of a line (e.g. <code>const body = checkInSchema.parse(req.body)</code> in <code>attendance.controller.ts</code>) to set a breakpoint, trigger that request from the frontend or Postman, and execution pauses exactly there — <code>req.body</code>, <code>req.auth</code>, every local variable is inspectable in the Variables panel, and you can step line-by-line (Step Over/Into/Out) to watch the trace from section 02 happen in real time instead of reading it as prose.</p>
+        </li>
+        <li><span class="file">React DevTools (frontend)</span><p>The Components tab shows the live component tree with each component's current props, state, and context values — the direct way to answer "why did <code>AttendancePage</code> render with the wrong data," without adding a single <code>console.log</code>.</p></li>
+        <li><span class="file">The Network tab</span><p>For "is the bug in my code, or in what the server sent me" — inspect the actual request payload and response body for one specific call, which is also exactly how the earlier network-tab investigation (section 15) got solved.</p></li>
+        <li><span class="file"><code>git bisect</code></span><p>For "this used to work" bugs: binary-searches your commit history, running your reproduction step at each candidate commit, to find the exact commit that introduced a regression — far faster than manually checking out commits one at a time.</p></li>
+      </div>
+
+      <div class="callout">
+        <span class="tag">If asked to debug a specific function live</span>
+        <p>Narrate the method, don't just stare at the code: "First I'd read the error/stack trace to find where it actually throws. Then I'd set a breakpoint right before that line and inspect the real values of its inputs — if they're not what I expected, the bug is upstream of here, so I'd move the breakpoint back one call in the trace and repeat, until the actual value and the expected value diverge for the first time. That's the line the bug is on." That's the whole method — bisecting a call chain by inspecting real state, not adding a special "debug function."</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  hljs.highlightAll();
+
+  const links = document.querySelectorAll('.toc a');
+  const targets = Array.from(links).map(a => document.querySelector(a.getAttribute('href')));
+  function onScroll(){
+    let idx = 0;
+    const y = window.scrollY + 120;
+    targets.forEach((t, i) => { if (t && t.offsetTop <= y) idx = i; });
+    links.forEach((a, i) => a.classList.toggle('active', i === idx));
+  }
+  document.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+</script>
