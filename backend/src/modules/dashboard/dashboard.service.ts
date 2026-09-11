@@ -1,5 +1,6 @@
 import { prisma } from "../../prisma";
 import { getZonedClock, normalizeScheduleDay } from "../../utils/timezone";
+import { loadSchedulesFor, scheduledHoursForDay, overtimeHoursFor } from "../attendance/overtime";
 
 export interface DashboardFilters {
   periodStart?: Date;
@@ -138,14 +139,28 @@ export async function getNetSalaryTrend(filters: DashboardFilters) {
 
 export async function getAttendanceOverview(filters: DashboardFilters) {
   const where = attendanceWhere(filters);
-  const [present, late, absent, manualEdits, missingCheckouts, total] = await Promise.all([
+  const [present, late, absent, manualEdits, missingCheckouts, total, closedRows] = await Promise.all([
     prisma.attendance.count({ where: { ...where, status: "present" } }),
     prisma.attendance.count({ where: { ...where, status: "late" } }),
     prisma.attendance.count({ where: { ...where, status: "absent" } }),
     prisma.attendance.count({ where: { ...where, status: "manual_edit" } }),
     prisma.attendance.count({ where: { ...where, checkOut: null } }),
     prisma.attendance.count({ where }),
+    // Same overtime policy as the Attendance list (overtime.ts) — hours worked
+    // beyond what the employee's assigned schedule allots for that weekday.
+    // Fetched here rather than counted in SQL because the policy needs each row's
+    // own schedule, not a value the database can filter on directly.
+    prisma.attendance.findMany({
+      where: { ...where, checkOut: { not: null } },
+      select: { employeeId: true, checkIn: true, workedHours: true },
+    }),
   ]);
+
+  const scheduleByEmployee = await loadSchedulesFor(closedRows.map((r) => r.employeeId));
+  const overtime = closedRows.filter((r) => {
+    const lines = scheduleByEmployee.get(r.employeeId) ?? [];
+    return overtimeHoursFor(Number(r.workedHours), scheduledHoursForDay(lines, r.checkIn)) > 0;
+  }).length;
 
   return {
     present,
@@ -153,6 +168,7 @@ export async function getAttendanceOverview(filters: DashboardFilters) {
     absent,
     manualEdits,
     missingCheckouts,
+    overtime,
     coveragePct: total > 0 ? round2(((total - absent) / total) * 100) : 0,
   };
 }

@@ -14,6 +14,7 @@ import {
 import { PaginationParams, paginatedResult } from "../../utils/pagination";
 import { emailQueue } from "../../queues/email.queue";
 import { getZonedClock, normalizeScheduleDay } from "../../utils/timezone";
+import { loadSchedulesFor, scheduledHoursForDay, overtimeHoursFor } from "./overtime";
 
 type CheckInInput = z.infer<typeof checkInSchema>;
 type CheckOutInput = z.infer<typeof checkOutSchema>;
@@ -37,12 +38,25 @@ function assertSelfOrHrmPlus(auth: AuthPayload, employeeId: string) {
 
 // docs/02_API_CONTRACTS.md section 5: exception is missing_checkout|late|none —
 // missing_checkout takes priority since it's the more actionable of the two.
-function withException<T extends { checkOut: Date | null; status: string }>(rows: T[]) {
-  return rows.map((r) => ({
-    ...r,
-    exception:
-      r.checkOut === null ? ("missing_checkout" as const) : r.status === "late" ? ("late" as const) : ("none" as const),
-  }));
+// overtimeHours is computed here too (see overtime.ts) rather than stored on the
+// row, so both the exception flag and the overtime figure come from one enrichment
+// pass over the same rows.
+async function withException<
+  T extends { employeeId: string; checkIn: Date; checkOut: Date | null; status: string; workedHours: unknown }
+>(rows: T[]) {
+  const scheduleByEmployee = await loadSchedulesFor(rows.map((r) => r.employeeId));
+  return rows.map((r) => {
+    const lines = scheduleByEmployee.get(r.employeeId) ?? [];
+    const overtimeHours = r.checkOut
+      ? overtimeHoursFor(Number(r.workedHours), scheduledHoursForDay(lines, r.checkIn))
+      : 0;
+    return {
+      ...r,
+      overtimeHours,
+      exception:
+        r.checkOut === null ? ("missing_checkout" as const) : r.status === "late" ? ("late" as const) : ("none" as const),
+    };
+  });
 }
 
 // ── Shift Window ──────────────────────────────────────────────────────────────
@@ -144,7 +158,7 @@ export async function listAttendance(
 
   if (!pagination) {
     const rows = await prisma.attendance.findMany({ where, orderBy: { checkIn: "desc" }, include: employeeSelect });
-    return withException(rows);
+    return await withException(rows);
   }
 
   const [rows, total] = await Promise.all([
@@ -157,7 +171,7 @@ export async function listAttendance(
     }),
     prisma.attendance.count({ where }),
   ]);
-  return paginatedResult(withException(rows), total, pagination);
+  return paginatedResult(await withException(rows), total, pagination);
 }
 
 // ── Check In ─────────────────────────────────────────────────────────────────
