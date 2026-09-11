@@ -244,24 +244,27 @@ export const ReportsPage: React.FC = () => {
     }
   };
 
-  // Calculations for Personal Analytics
+  // Calculations for Personal Analytics — real figures only. An account with no
+  // attendance/allocation history yet shows real zeros, not a plausible-looking
+  // placeholder number.
   const userRole = user?.roles?.[0] || 'Employee';
-  const totalHoursLogged = attendances.reduce((acc, curr) => acc + (curr.worked_hours ?? 8), 0);
-  const totalDaysPresent = attendances.length || 18;
-  const onTimeCount =
-    attendances.filter((a) => a.status === 'validated' || a.status === 'present' || !a.exception).length || 17;
-  const punctualityScore = Math.round((onTimeCount / totalDaysPresent) * 100);
+  const totalHoursLogged = attendances.reduce((acc, curr) => acc + (curr.worked_hours ?? 0), 0);
+  const totalDaysPresent = attendances.length;
+  const onTimeCount = attendances.filter(
+    (a) => a.status === 'validated' || a.status === 'present' || !a.exception
+  ).length;
+  const punctualityScore = totalDaysPresent > 0 ? Math.round((onTimeCount / totalDaysPresent) * 100) : 0;
 
-  const totalAllocatedLeaves = allocations.reduce((sum, a) => sum + Number(a.allocated || 0), 0) || 24;
-  const totalTakenLeaves = allocations.reduce((sum, a) => sum + Number(a.taken || 0), 0) || 3;
+  const totalAllocatedLeaves = allocations.reduce((sum, a) => sum + Number(a.allocated || 0), 0);
+  const totalTakenLeaves = allocations.reduce((sum, a) => sum + Number(a.taken || 0), 0);
   const remainingLeaves = totalAllocatedLeaves - totalTakenLeaves;
 
   // Pie chart attendance data
   const attendancePieData = [
-    { name: 'Present', value: attendanceOverview?.present ?? 22, color: '#10b981' },
-    { name: 'Late', value: attendanceOverview?.late ?? 3, color: '#f59e0b' },
-    { name: 'Missing Checkouts', value: attendanceOverview?.missing_checkouts ?? 1, color: '#f43f5e' },
-    { name: 'Absent', value: attendanceOverview?.absent ?? 2, color: '#64748b' },
+    { name: 'Present', value: attendanceOverview?.present ?? 0, color: '#10b981' },
+    { name: 'Late', value: attendanceOverview?.late ?? 0, color: '#f59e0b' },
+    { name: 'Missing Checkouts', value: attendanceOverview?.missing_checkouts ?? 0, color: '#f43f5e' },
+    { name: 'Absent', value: attendanceOverview?.absent ?? 0, color: '#64748b' },
   ].filter((item) => item.value > 0);
 
   return (
@@ -636,31 +639,37 @@ export const ReportsPage: React.FC = () => {
               </div>
 
               <div className="h-64 w-full pt-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={attendancePieData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={80}
-                      paddingAngle={4}
-                      dataKey="value"
-                    >
-                      {attendancePieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<ChartTooltip isCurrency={false} unit=" shifts" />} />
-                    <Legend
-                      verticalAlign="bottom"
-                      height={36}
-                      formatter={(value) => (
-                        <span className="text-2xs text-slate-700 dark:text-slate-300 font-medium">{value}</span>
-                      )}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+                {attendancePieData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={attendancePieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={80}
+                        paddingAngle={4}
+                        dataKey="value"
+                      >
+                        {attendancePieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<ChartTooltip isCurrency={false} unit=" shifts" />} />
+                      <Legend
+                        verticalAlign="bottom"
+                        height={36}
+                        formatter={(value) => (
+                          <span className="text-2xs text-slate-700 dark:text-slate-300 font-medium">{value}</span>
+                        )}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-xs text-slate-400">
+                    No attendance data available
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -24,12 +24,6 @@ const WORKFLOW_STEPS = [
   { icon: CircleDollarSign, label: 'Payroll', sub: 'Compute & disburse' },
 ];
 
-const DEMO_ACCOUNTS = [
-  { label: 'Admin', email: 'admin@peoplepay360.dev', password: 'Admin@123' },
-  { label: 'HR Manager', email: 'hr.manager@peoplepay360.dev', password: 'Manager@123' },
-  { label: 'Employee', email: 'employee.demo@peoplepay360.dev', password: 'Employee@123' },
-];
-
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -259,22 +253,6 @@ export const LoginPage: React.FC = () => {
               Sign In to Workspace
             </Button>
           </form>
-
-          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Demo access</p>
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              {DEMO_ACCOUNTS.map((account) => (
-                <button
-                  key={account.email}
-                  type="button"
-                  onClick={() => { setEmail(account.email); setPassword(account.password); setErrorMessage(null); setErrorType(null); }}
-                  className="rounded-lg border border-slate-700 px-2 py-2 text-xs font-medium text-slate-300 transition hover:border-indigo-500 hover:bg-indigo-950/40 hover:text-white"
-                >
-                  {account.label}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>

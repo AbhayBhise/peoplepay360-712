@@ -152,7 +152,7 @@ export const payrollApi = {
 
   createRule: async (data: Partial<SalaryRule>): Promise<SalaryRule> => {
     const payload = {
-      salaryStructureId: data.structure_id ? String(data.structure_id) : undefined,
+      structureId: data.structure_id ? String(data.structure_id) : undefined,
       name: data.name,
       code: data.code,
       category: data.category?.toLowerCase(),
