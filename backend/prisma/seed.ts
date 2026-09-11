@@ -127,13 +127,16 @@ async function main() {
     ["fri", "09:00", "18:00"],
   ] as const;
 
+  // ScheduleLine has no natural unique key on (scheduleId, day) to upsert against,
+  // and generating a fresh randomUUID() per run — the previous approach — can never
+  // match a prior row, so it always fell through to create and re-ran the seed
+  // duplicated every line each time. Clearing this schedule's lines first makes the
+  // seed idempotent regardless of how many times it's re-run without a full reset.
+  await prisma.scheduleLine.deleteMany({ where: { scheduleId: schedule.id } });
   for (const [day, start, end] of scheduleLines) {
-    const lineId = randomUUID();
-    await prisma.scheduleLine.upsert({
-      where: { id: lineId },
-      update: {},
-      create: {
-        id: lineId,
+    await prisma.scheduleLine.create({
+      data: {
+        id: randomUUID(),
         scheduleId: schedule.id,
         day,
         startTime: start,
